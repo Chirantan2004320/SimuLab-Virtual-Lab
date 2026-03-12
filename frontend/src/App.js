@@ -13,6 +13,7 @@ import DSDLabIndex from "./pages/DSDLabIndex.jsx";
 import DSDLogicGates from "./pages/DSDLogicGates.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import DSDAdders from "./pages/DSDAdders.jsx";
+import DSDMultiplexer from "./pages/DSDMultiplexer.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
 
@@ -104,6 +105,10 @@ function AppContent() {
         <Route
           path="/labs/dsd/adders"
           element={<ProtectedRoute><DSDAdders /></ProtectedRoute>}
+        />
+        <Route
+          path="/labs/dsd/multiplexer"
+          element={<ProtectedRoute><DSDMultiplexer /></ProtectedRoute>}
         />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
