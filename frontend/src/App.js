@@ -15,6 +15,7 @@ import AIAssistant from "./components/AIAssistant.jsx";
 import DSDAdders from "./pages/DSDAdders.jsx";
 import DSDMultiplexer from "./pages/DSDMultiplexer.jsx";
 import DSDFlipFlops from "./pages/DSDFlipFlops.jsx";
+import DSDPropagationDelay from "./pages/DSDPropagationDelay.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
 
@@ -114,6 +115,10 @@ function AppContent() {
         <Route
           path="/labs/dsd/flip-flops"
           element={<ProtectedRoute><DSDFlipFlops /></ProtectedRoute>}
+        />
+        <Route
+          path="/labs/dsd/propagation-delay"
+          element={<ProtectedRoute><DSDPropagationDelay /></ProtectedRoute>}
         />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
