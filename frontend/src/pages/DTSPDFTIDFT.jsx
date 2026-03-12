@@ -1,44 +1,7 @@
 import React, { useState } from "react";
 import ExperimentLayout from "../components/experiments/ExperimentLayout";
+import { computeDFT, computeIDFT, getMagnitude, getPhase } from "../utils/dtsp/fourier";
 import "./Lab.css";
-
-function computeDFT(sequence) {
-  const N = sequence.length;
-  if (N === 0) return [];
-  const X = [];
-  for (let k = 0; k < N; k++) {
-    let re = 0;
-    let im = 0;
-    for (let n = 0; n < N; n++) {
-      const angle = (2 * Math.PI * k * n) / N;
-      re += sequence[n] * Math.cos(angle);
-      im -= sequence[n] * Math.sin(angle);
-    }
-    X.push({ re, im });
-  }
-  return X;
-}
-
-function computeIDFT(X) {
-  const N = X.length;
-  if (N === 0) return [];
-  const x = [];
-  for (let n = 0; n < N; n++) {
-    let re = 0;
-    let im = 0;
-    for (let k = 0; k < N; k++) {
-      const angle = (2 * Math.PI * k * n) / N;
-      const xr = X[k].re * Math.cos(angle) - X[k].im * Math.sin(angle);
-      const xi = X[k].re * Math.sin(angle) + X[k].im * Math.cos(angle);
-      re += xr;
-      im += xi;
-    }
-    // IDFT theoretical result may have tiny imaginary parts due to rounding.
-    // Here we keep only the real part and normalize by N.
-    x.push(re / N);
-  }
-  return x;
-}
 
 function formatNumber(value, digits = 3) {
   const v = Number(value);
@@ -184,8 +147,8 @@ export default function DTSPDFTIDFT() {
               </thead>
               <tbody>
                 {dftResult.map((Xk, k) => {
-                  const mag = Math.sqrt(Xk.re * Xk.re + Xk.im * Xk.im);
-                  const phase = Math.atan2(Xk.im, Xk.re);
+                  const mag = getMagnitude(Xk);
+                  const phase = getPhase(Xk);
                   return (
                     <tr key={k} style={{ fontSize: "0.9rem" }}>
                       <td style={{ padding: "0.25rem 0.5rem" }}>{k}</td>
