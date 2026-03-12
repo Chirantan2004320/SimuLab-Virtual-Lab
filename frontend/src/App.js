@@ -6,6 +6,7 @@ import LinkedListLab from "./pages/LinkedList.jsx";
 import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
 import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
 import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
+import DTSPLinearCircularConvolution from "./pages/DTSPLinearCircularConvolution.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
@@ -100,6 +101,10 @@ function AppContent() {
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
         <Route path="/labs/dtsp/dft-idft" element={<ProtectedRoute><DTSPDFTIDFT /></ProtectedRoute>} />
         <Route path="/labs/dtsp/dft-properties" element={<ProtectedRoute><DTSPDFTProperties /></ProtectedRoute>} />
+        <Route
+          path="/labs/dtsp/linear-convolution-using-circular-convolution"
+          element={<ProtectedRoute><DTSPLinearCircularConvolution /></ProtectedRoute>}
+        />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
