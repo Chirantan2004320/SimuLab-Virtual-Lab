@@ -7,6 +7,7 @@ import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
 import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
 import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
 import DTSPLinearCircularConvolution from "./pages/DTSPLinearCircularConvolution.jsx";
+import DTSPPoleZeroAnalysis from "./pages/DTSPPoleZeroAnalysis.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
@@ -29,29 +30,6 @@ const ProtectedRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" />;
 };
 
-// function getPerformance() {
-//   // Quiz scores
-//   let quizScores = {};
-//   try {
-//     const scores = JSON.parse(localStorage.getItem('vlab_scores') || '[]');
-//     if (scores.length) {
-//       // Aggregate by subject if available
-//       quizScores.DSA = Math.round((scores[scores.length-1].correct / scores[scores.length-1].total) * 100);
-//     }
-//   } catch {}
-//   // Coding practice (simulate)
-//   let codingPractice = {};
-//   try {
-//     const practice = JSON.parse(localStorage.getItem('vlab_practice') || '{}');
-//     codingPractice = practice;
-//   } catch {}
-//   // Completed experiments (simulate)
-//   let completedExperiments = [];
-//   try {
-//     completedExperiments = JSON.parse(localStorage.getItem('vlab_completed_experiments') || '[]');
-//   } catch {}
-//   return { quizScores, codingPractice, completedExperiments };
-// }
 
 
 function AppContent() {
@@ -99,6 +77,7 @@ function AppContent() {
         <Route path="/labs/dsa/linked-list" element={<ProtectedRoute><LinkedListLab /></ProtectedRoute>} />
         {/* DTSP Lab index and experiments (frontend-only for now) */}
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
+        <Route path="/labs/dtsp/pole-zero-analysis" element={<ProtectedRoute><DTSPPoleZeroAnalysis /></ProtectedRoute>} />
         <Route path="/labs/dtsp/dft-idft" element={<ProtectedRoute><DTSPDFTIDFT /></ProtectedRoute>} />
         <Route path="/labs/dtsp/dft-properties" element={<ProtectedRoute><DTSPDFTProperties /></ProtectedRoute>} />
         <Route
