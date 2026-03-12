@@ -4,6 +4,7 @@ import DSALabIndex from "./pages/DSALabIndex.jsx";
 import QueueLab from "./pages/Queue.jsx";
 import LinkedListLab from "./pages/LinkedList.jsx";
 import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
+import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
@@ -95,8 +96,9 @@ function AppContent() {
         <Route path="/labs/dsa/sorting" element={<ProtectedRoute><SortingLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/queue" element={<ProtectedRoute><QueueLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/linked-list" element={<ProtectedRoute><LinkedListLab /></ProtectedRoute>} />
-        {/* DTSP Lab index (DTSP experiments are frontend-only for now) */}
+        {/* DTSP Lab index and experiments (frontend-only for now) */}
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
+        <Route path="/labs/dtsp/dft-idft" element={<ProtectedRoute><DTSPDFTIDFT /></ProtectedRoute>} />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
