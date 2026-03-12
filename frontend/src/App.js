@@ -9,6 +9,7 @@ import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
 import DTSPLinearCircularConvolution from "./pages/DTSPLinearCircularConvolution.jsx";
 import DTSPPoleZeroAnalysis from "./pages/DTSPPoleZeroAnalysis.jsx";
 import DTSPLinearPhaseFIRAnalysis from "./pages/DTSPLinearPhaseFIRAnalysis.jsx";
+import DSDLabIndex from "./pages/DSDLabIndex.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
@@ -50,6 +51,9 @@ function AppContent() {
     if (path.includes('/labs/dtsp')) {
       return { page: 'labs/dtsp', algorithm: null };
     }
+    if (path.includes('/labs/dsd')) {
+      return { page: 'labs/dsd', algorithm: null };
+    }
     if (path === '/') {
       return { page: 'home', algorithm: null };
     }
@@ -89,6 +93,8 @@ function AppContent() {
           path="/labs/dtsp/linear-phase-fir-analysis"
           element={<ProtectedRoute><DTSPLinearPhaseFIRAnalysis /></ProtectedRoute>}
         />
+        {/* DSD Lab index (frontend-only for now) */}
+        <Route path="/labs/dsd" element={<ProtectedRoute><DSDLabIndex /></ProtectedRoute>} />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
