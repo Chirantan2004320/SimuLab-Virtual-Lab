@@ -8,6 +8,7 @@ import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
 import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
 import DTSPLinearCircularConvolution from "./pages/DTSPLinearCircularConvolution.jsx";
 import DTSPPoleZeroAnalysis from "./pages/DTSPPoleZeroAnalysis.jsx";
+import DTSPLinearPhaseFIRAnalysis from "./pages/DTSPLinearPhaseFIRAnalysis.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
@@ -83,6 +84,10 @@ function AppContent() {
         <Route
           path="/labs/dtsp/linear-convolution-using-circular-convolution"
           element={<ProtectedRoute><DTSPLinearCircularConvolution /></ProtectedRoute>}
+        />
+        <Route
+          path="/labs/dtsp/linear-phase-fir-analysis"
+          element={<ProtectedRoute><DTSPLinearPhaseFIRAnalysis /></ProtectedRoute>}
         />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />

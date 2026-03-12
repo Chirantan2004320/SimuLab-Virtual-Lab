@@ -107,7 +107,6 @@ export default function DTSPPoleZeroAnalysis() {
 
     const mags = denResult.roots.map(magnitude);
     const maxMag = Math.max(...mags);
-    const minMag = Math.min(...mags);
     const tol = 1e-3;
 
     if (maxMag < 1 - tol) {
