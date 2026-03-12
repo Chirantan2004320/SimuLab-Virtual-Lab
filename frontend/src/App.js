@@ -10,6 +10,7 @@ import DTSPLinearCircularConvolution from "./pages/DTSPLinearCircularConvolution
 import DTSPPoleZeroAnalysis from "./pages/DTSPPoleZeroAnalysis.jsx";
 import DTSPLinearPhaseFIRAnalysis from "./pages/DTSPLinearPhaseFIRAnalysis.jsx";
 import DSDLabIndex from "./pages/DSDLabIndex.jsx";
+import DSDLogicGates from "./pages/DSDLogicGates.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
@@ -95,6 +96,10 @@ function AppContent() {
         />
         {/* DSD Lab index (frontend-only for now) */}
         <Route path="/labs/dsd" element={<ProtectedRoute><DSDLabIndex /></ProtectedRoute>} />
+        <Route
+          path="/labs/dsd/logic-gates"
+          element={<ProtectedRoute><DSDLogicGates /></ProtectedRoute>}
+        />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
