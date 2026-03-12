@@ -3,6 +3,7 @@ import SortingLab from "./pages/SortingLab.jsx";
 import DSALabIndex from "./pages/DSALabIndex.jsx";
 import QueueLab from "./pages/Queue.jsx";
 import LinkedListLab from "./pages/LinkedList.jsx";
+import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
@@ -65,6 +66,9 @@ function AppContent() {
     if (path.includes('/labs/stack')) {
       return { page: 'labs/stack', algorithm: null };
     }
+    if (path.includes('/labs/dtsp')) {
+      return { page: 'labs/dtsp', algorithm: null };
+    }
     if (path === '/') {
       return { page: 'home', algorithm: null };
     }
@@ -91,6 +95,8 @@ function AppContent() {
         <Route path="/labs/dsa/sorting" element={<ProtectedRoute><SortingLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/queue" element={<ProtectedRoute><QueueLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/linked-list" element={<ProtectedRoute><LinkedListLab /></ProtectedRoute>} />
+        {/* DTSP Lab index (DTSP experiments are frontend-only for now) */}
+        <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
