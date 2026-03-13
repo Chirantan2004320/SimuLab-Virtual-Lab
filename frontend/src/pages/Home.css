@@ -328,3 +328,20 @@
   .gradient-text { font-size: 2.1rem; }
   .hero-description { font-size: 1rem; }
 }
+
+.home-buttons {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .home-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .home-buttons .btn {
+    width: 100%;
+    max-width: 260px;
+  }
+}
