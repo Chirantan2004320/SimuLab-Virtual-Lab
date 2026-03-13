@@ -20,6 +20,8 @@ import DVLSILabIndex from "./pages/DVLSILabIndex.jsx";
 import DVLSIMOSFETCharacteristics from "./pages/DVLSIMOSFETCharacteristics.jsx";
 import DVLSILambdaRulesMicrowind from "./pages/DVLSILambdaRulesMicrowind.jsx";
 import DVLSICMOSInverterSimulation from "./pages/DVLSICMOSInverterSimulation.jsx";
+import DVLSICMOSInverterLayout from "./pages/DVLSICMOSInverterLayout.jsx";
+import DVLSICMOSNORGate from "./pages/DVLSICMOSNORGate.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
 
@@ -132,6 +134,8 @@ function AppContent() {
         <Route path="/labs/dvlsi/mosfet-characteristics" element={<ProtectedRoute><DVLSIMOSFETCharacteristics /></ProtectedRoute>} />
         <Route path="/labs/dvlsi/lambda-rules-microwind" element={<ProtectedRoute><DVLSILambdaRulesMicrowind /></ProtectedRoute>} />
         <Route path="/labs/dvlsi/cmos-inverter-simulation" element={<ProtectedRoute><DVLSICMOSInverterSimulation /></ProtectedRoute>} />
+        <Route path="/labs/dvlsi/cmos-inverter-layout" element={<ProtectedRoute><DVLSICMOSInverterLayout /></ProtectedRoute>} />
+        <Route path="/labs/dvlsi/cmos-nor-gate" element={<ProtectedRoute><DVLSICMOSNORGate /></ProtectedRoute>} />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
