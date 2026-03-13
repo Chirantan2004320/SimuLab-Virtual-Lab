@@ -16,6 +16,7 @@ import DSDAdders from "./pages/DSDAdders.jsx";
 import DSDMultiplexer from "./pages/DSDMultiplexer.jsx";
 import DSDFlipFlops from "./pages/DSDFlipFlops.jsx";
 import DSDPropagationDelay from "./pages/DSDPropagationDelay.jsx";
+import DVLSILabIndex from "./pages/DVLSILabIndex.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
 
@@ -58,6 +59,9 @@ function AppContent() {
     }
     if (path.includes('/labs/dsd')) {
       return { page: 'labs/dsd', algorithm: null };
+    }
+    if (path.includes('/labs/dvlsi')) {
+      return { page: 'labs/dvlsi', algorithm: null };
     }
     if (path === '/') {
       return { page: 'home', algorithm: null };
@@ -120,9 +124,12 @@ function AppContent() {
           path="/labs/dsd/propagation-delay"
           element={<ProtectedRoute><DSDPropagationDelay /></ProtectedRoute>}
         />
+        {/* DVLSI Lab index and experiments */}
+        <Route path="/labs/dvlsi" element={<ProtectedRoute><DVLSILabIndex /></ProtectedRoute>} />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
+
 
       {/* AI Assistant - Available on all pages */}
       <AIAssistant currentPage={page} instituteMode={instituteMode} />
