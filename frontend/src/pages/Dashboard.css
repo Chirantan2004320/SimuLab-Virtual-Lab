@@ -209,3 +209,26 @@ body {
     padding: 0 16px;
   }
 }
+
+.dashboard-lab-card p {
+  color: #cbd5e1;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.dashboard-lab-btn {
+  margin-top: 12px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.dashboard-lab-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}

@@ -6,7 +6,30 @@ const Dashboard = ({ instituteMode = false }) => {
   const navigate = useNavigate();
 
   const labs = [
-    { name: "DSA Lab", path: "/labs/dsa", desc: "Data Structures & Algorithms" }
+    {
+      name: "DSA Lab",
+      path: "/labs/dsa",
+      desc: "Data Structures & Algorithms",
+      icon: "🧠",
+    },
+    {
+      name: "DTSP Lab",
+      path: "/labs/dtsp",
+      desc: "Discrete Time Signal Processing",
+      icon: "📊",
+    },
+    {
+      name: "DSD Lab",
+      path: "/labs/dsd",
+      desc: "Digital System Design",
+      icon: "🔧",
+    },
+    {
+      name: "DVLSI Lab",
+      path: "/labs/dvlsi",
+      desc: "Digital VLSI Design",
+      icon: "🧪",
+    },
   ];
 
   const handleLogout = () => {
@@ -17,14 +40,16 @@ const Dashboard = ({ instituteMode = false }) => {
 
   return (
     <div className="dashboard-container">
-      {/* ================= Sidebar ================= */}
       <aside className="dashboard-sidebar">
         <div>
-          <h2>{instituteMode ? 'Institute SimuLab: Virtual Lab' : 'SimuLab: Virtual Lab'}</h2>
+          <h2>{instituteMode ? "Institute SimuLab: Virtual Lab" : "SimuLab: Virtual Lab"}</h2>
           <nav>
             <Link to="/dashboard" className="active">🏠 Dashboard</Link>
             <Link to="/profile">👤 Profile</Link>
             <Link to="/labs/dsa">🧠 DSA Lab</Link>
+            <Link to="/labs/dtsp">📊 DTSP Lab</Link>
+            <Link to="/labs/dsd">🔧 DSD Lab</Link>
+            <Link to="/labs/dvlsi">🧪 DVLSI Lab</Link>
           </nav>
         </div>
 
@@ -33,11 +58,13 @@ const Dashboard = ({ instituteMode = false }) => {
         </button>
       </aside>
 
-      {/* ================= Main Section ================= */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Top Navigation Bar */}
         <header className="dashboard-topnav">
-          <h3>{instituteMode ? 'Welcome to Institute SimuLab: Virtual Lab' : 'Welcome to SimuLab: Virtual Lab'}</h3>
+          <h3>
+            {instituteMode
+              ? "Welcome to Institute SimuLab: Virtual Lab"
+              : "Welcome to SimuLab: Virtual Lab"}
+          </h3>
           <div className="user-profile">
             <img
               src="https://randomuser.me/api/portraits/lego/5.jpg"
@@ -46,34 +73,23 @@ const Dashboard = ({ instituteMode = false }) => {
           </div>
         </header>
 
-        {/* Dashboard Content */}
         <section className="dashboard-content">
           {labs.map((lab, index) => (
-            <div key={index} className="card">
-              <h2>{lab.name}</h2>
+            <div key={index} className="card dashboard-lab-card">
+              <h2>
+                <span style={{ marginRight: "8px" }}>{lab.icon}</span>
+                {lab.name}
+              </h2>
               <p>{lab.desc}</p>
+
               <button
                 onClick={() => navigate(lab.path)}
-                style={{
-                  marginTop: "12px",
-                  background:
-                    "linear-gradient(90deg, var(--primary), var(--secondary))",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "10px",
-                  padding: "10px 16px",
-                  cursor: "pointer",
-                  fontWeight: "500",
-                  transition: "0.3s",
-                }}
-                onMouseOver={(e) => (e.target.style.opacity = "0.85")}
-                onMouseOut={(e) => (e.target.style.opacity = "1")}
+                className="dashboard-lab-btn"
               >
-                Start Experiment
+                Open Lab
               </button>
             </div>
           ))}
-          {/* Only DSA lab and Sorting experiment are available */}
         </section>
       </main>
     </div>
