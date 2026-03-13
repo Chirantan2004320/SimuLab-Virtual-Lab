@@ -17,6 +17,7 @@ import DSDMultiplexer from "./pages/DSDMultiplexer.jsx";
 import DSDFlipFlops from "./pages/DSDFlipFlops.jsx";
 import DSDPropagationDelay from "./pages/DSDPropagationDelay.jsx";
 import DVLSILabIndex from "./pages/DVLSILabIndex.jsx";
+import DVLSIMOSFETCharacteristics from "./pages/DVLSIMOSFETCharacteristics.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
 
@@ -126,6 +127,7 @@ function AppContent() {
         />
         {/* DVLSI Lab index and experiments */}
         <Route path="/labs/dvlsi" element={<ProtectedRoute><DVLSILabIndex /></ProtectedRoute>} />
+        <Route path="/labs/dvlsi/mosfet-characteristics" element={<ProtectedRoute><DVLSIMOSFETCharacteristics /></ProtectedRoute>} />
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
