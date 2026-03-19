@@ -38,6 +38,13 @@ export default function DSALabIndex() {
   desc: "Linear and Binary Search visualization with quiz",
   icon: "🔍",
   color: "#ec4899"
+},
+{
+  name: "Recursion Visualizer",
+  path: "/labs/dsa/recursion",
+  desc: "Visualize factorial and fibonacci recursion with call stack trace",
+  icon: "🌀",
+  color: "#8b5cf6"
 }
 ];
 
