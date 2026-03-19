@@ -4,10 +4,42 @@ import "./Lab.css";
 
 export default function DSALabIndex() {
   const experiments = [
-    { name: "Sorting Experiments", path: "/labs/dsa/sorting", desc: "Visualize and quiz on sorting algorithms", icon: "🔢", color: "#38bdf8" },
-    { name: "Queue", path: "/labs/dsa/queue", desc: "Queue operations (enqueue/dequeue) with quiz", icon: "📋", color: "#10b981" },
-    { name: "Linked List", path: "/labs/dsa/linked-list", desc: "Singly linked list operations and quiz", icon: "🔗", color: "#f59e0b" }
-  ];
+  {
+    name: "Sorting Experiments",
+    path: "/labs/dsa/sorting",
+    desc: "Visualize and quiz on sorting algorithms",
+    icon: "🔢",
+    color: "#38bdf8"
+  },
+  {
+    name: "Queue",
+    path: "/labs/dsa/queue",
+    desc: "Queue operations (enqueue/dequeue) with quiz",
+    icon: "📋",
+    color: "#10b981"
+  },
+  {
+    name: "Linked List",
+    path: "/labs/dsa/linked-list",
+    desc: "Singly linked list operations and quiz",
+    icon: "🔗",
+    color: "#f59e0b"
+  },
+  {
+    name: "Stack",
+    path: "/labs/dsa/stack",
+    desc: "Stack operations (push/pop) with visualization and quiz",
+    icon: "📚",
+    color: "#a78bfa"
+  },
+  {
+  name: "Searching Algorithms",
+  path: "/labs/dsa/searching",
+  desc: "Linear and Binary Search visualization with quiz",
+  icon: "🔍",
+  color: "#ec4899"
+}
+];
 
   return (
     <div className="lab-root">

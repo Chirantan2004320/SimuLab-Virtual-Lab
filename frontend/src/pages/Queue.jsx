@@ -1,27 +1,220 @@
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import "./Lab.css";
 import "./SortingLab.css";
 
-const quizQuestions = [
-  { question: "Which principle does a Queue follow?", options: ["LIFO", "FIFO", "Random", "Priority"], correct: 1 },
-  { question: "What is the time complexity of enqueue in a simple array-based queue (amortized)?", options: ["O(1)", "O(n)", "O(log n)", "O(n²)"], correct: 0 },
-  { question: "What is the operation to remove from a queue?", options: ["push", "pop", "dequeue", "peek"], correct: 2 }
+import QueueOverview from "./labs/queue/QueueOverview";
+import QueueSimulation from "./labs/queue/QueueSimulation";
+import QueueQuiz from "./labs/queue/QueueQuiz";
+import QueueCoding from "./labs/queue/QueueCoding";
+
+const normalQuizQuestions = [
+  {
+    question: "Which principle does a Queue follow?",
+    options: ["LIFO", "FIFO", "Random", "Priority"],
+    correct: 1
+  },
+  {
+    question:
+      "What is the time complexity of enqueue in a simple array-based queue (amortized)?",
+    options: ["O(1)", "O(n)", "O(log n)", "O(n²)"],
+    correct: 0
+  },
+  {
+    question: "What is the operation to remove from a queue?",
+    options: ["push", "pop", "dequeue", "peek"],
+    correct: 2
+  }
+];
+
+const circularQuizQuestions = [
+  {
+    question: "What is the main advantage of a circular queue?",
+    options: [
+      "It sorts data automatically",
+      "It avoids memory wastage",
+      "It behaves like a stack",
+      "It removes the rear element first"
+    ],
+    correct: 1
+  },
+  {
+    question: "In a circular queue, rear is updated using:",
+    options: [
+      "rear + 1",
+      "(rear + 1) / size",
+      "(rear + 1) % size",
+      "rear - 1"
+    ],
+    correct: 2
+  },
+  {
+    question: "A circular queue is full when:",
+    options: [
+      "front === rear",
+      "count === capacity",
+      "rear === 0",
+      "front === -1"
+    ],
+    correct: 1
+  }
 ];
 
 const QUEUE_SIZE = 8;
 
+const codingProblemByType = {
+  normal: {
+    title: "Implement enqueue(arr, value, maxSize)",
+    description:
+      "Write a function enqueue(arr, value, maxSize) that adds value to the end of the queue array if there is space, and returns the updated array. If the queue is full, return the string 'Overflow'."
+  },
+  circular: {
+    title: "Implement circularEnqueue(arr, rear, count, value, maxSize)",
+    description:
+      "Write a function circularEnqueue(arr, rear, count, value, maxSize) that inserts value into a circular queue and returns an object with updated arr, rear, and count. If full, return 'Overflow'."
+  }
+};
+
+const queueCodeTemplates = {
+  normal: {
+    javascript: `function enqueue(arr, value, maxSize) {
+  if (arr.length >= maxSize) return "Overflow";
+  arr.push(value);
+  return arr;
+}`,
+    python: `def enqueue(arr, value, max_size):
+    if len(arr) >= max_size:
+        return "Overflow"
+    arr.append(value)
+    return arr`,
+    cpp: `#include <vector>
+#include <string>
+using namespace std;
+
+vector<int> enqueue(vector<int> arr, int value, int maxSize) {
+    if ((int)arr.size() >= maxSize) return {};
+    arr.push_back(value);
+    return arr;
+}`,
+    c: `#include <stdio.h>
+
+int enqueue(int arr[], int *size, int value, int maxSize) {
+    if (*size >= maxSize) return -1;
+    arr[*size] = value;
+    (*size)++;
+    return 0;
+}`,
+    java: `import java.util.*;
+
+public class Main {
+    public static Object enqueue(List<Integer> arr, int value, int maxSize) {
+        if (arr.size() >= maxSize) return "Overflow";
+        arr.add(value);
+        return arr;
+    }
+}`
+  },
+  circular: {
+    javascript: `function circularEnqueue(arr, rear, count, value, maxSize) {
+  if (count >= maxSize) return "Overflow";
+  rear = (rear + 1) % maxSize;
+  arr[rear] = value;
+  count++;
+  return { arr, rear, count };
+}`,
+    python: `def circular_enqueue(arr, rear, count, value, max_size):
+    if count >= max_size:
+        return "Overflow"
+    rear = (rear + 1) % max_size
+    arr[rear] = value
+    count += 1
+    return {"arr": arr, "rear": rear, "count": count}`,
+    cpp: `#include <vector>
+using namespace std;
+
+struct Result {
+    vector<int> arr;
+    int rear;
+    int count;
+};
+
+Result circularEnqueue(vector<int> arr, int rear, int count, int value, int maxSize) {
+    rear = (rear + 1) % maxSize;
+    arr[rear] = value;
+    count++;
+    return {arr, rear, count};
+}`,
+    c: `#include <stdio.h>
+
+int circularEnqueue(int arr[], int *rear, int *count, int value, int maxSize) {
+    if (*count >= maxSize) return -1;
+    *rear = (*rear + 1) % maxSize;
+    arr[*rear] = value;
+    (*count)++;
+    return 0;
+}`,
+    java: `import java.util.*;
+
+public class Main {
+    public static Object circularEnqueue(List<Integer> arr, int rear, int count, int value, int maxSize) {
+        if (count >= maxSize) return "Overflow";
+        rear = (rear + 1) % maxSize;
+        arr.set(rear, value);
+        count++;
+        Map<String, Object> result = new HashMap<>();
+        result.put("arr", arr);
+        result.put("rear", rear);
+        result.put("count", count);
+        return result;
+    }
+}`
+  }
+};
+
 export default function QueueLab() {
+  const [queueType, setQueueType] = useState("normal");
+
   const [queue, setQueue] = useState([]);
+  const [circularQueue, setCircularQueue] = useState(
+    new Array(QUEUE_SIZE).fill(null)
+  );
+  const [front, setFront] = useState(-1);
+  const [rear, setRear] = useState(-1);
+  const [count, setCount] = useState(0);
+
   const [input, setInput] = useState("");
   const [log, setLog] = useState(["Queue initialized."]);
-  const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
+  const [quizAnswers, setQuizAnswers] = useState([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
   const [experimentRun, setExperimentRun] = useState(false);
   const [warning, setWarning] = useState("");
   const [animating, setAnimating] = useState(false);
   const [animDuration, setAnimDuration] = useState(400);
+  const [activeSection, setActiveSection] = useState("overview");
+  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
+  const [code, setCode] = useState(queueCodeTemplates.normal.javascript);
+  const [codeResult, setCodeResult] = useState("");
+
   const inputRef = useRef();
+
+  const quizQuestions =
+    queueType === "circular" ? circularQuizQuestions : normalQuizQuestions;
+
+  const codingProblem =
+    queueType === "circular"
+      ? codingProblemByType.circular
+      : codingProblemByType.normal;
+
+  React.useEffect(() => {
+    setCode(queueCodeTemplates[queueType][selectedLanguage]);
+    setCodeResult("");
+  }, [selectedLanguage, queueType]);
+
+  React.useEffect(() => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+  }, [queueType,selectedLanguage, quizQuestions.length]);
 
   const enqueue = () => {
     if (!input.trim()) {
@@ -29,43 +222,137 @@ export default function QueueLab() {
       setTimeout(() => setWarning(""), 2000);
       return;
     }
-    if (queue.length >= QUEUE_SIZE) {
-      setWarning("Queue Overflow! Cannot add more elements.");
-      setTimeout(() => setWarning(""), 2000);
-      return;
+
+    if (queueType === "normal") {
+      if (queue.length >= QUEUE_SIZE) {
+        setWarning("Queue Overflow! Cannot add more elements.");
+        setTimeout(() => setWarning(""), 2000);
+        return;
+      }
+
+      setAnimating(true);
+      setTimeout(() => {
+        setQueue((prev) => [...prev, input]);
+        setLog((prev) => [`ENQUEUE: ${input} added to queue`, ...prev].slice(0, 10));
+        setInput("");
+        setExperimentRun(true);
+        setAnimating(false);
+        if (inputRef.current) inputRef.current.focus();
+      }, animDuration);
+    } else {
+      if (count >= QUEUE_SIZE) {
+        setWarning("Circular Queue Overflow!");
+        setTimeout(() => setWarning(""), 2000);
+        return;
+      }
+
+      setAnimating(true);
+      setTimeout(() => {
+        const updated = [...circularQueue];
+        let newFront = front;
+        let newRear = rear;
+
+        if (count === 0) {
+          newFront = 0;
+          newRear = 0;
+        } else {
+          newRear = (rear + 1) % QUEUE_SIZE;
+        }
+
+        updated[newRear] = input;
+
+        setCircularQueue(updated);
+        setFront(newFront);
+        setRear(newRear);
+        setCount((prev) => prev + 1);
+        setLog((prev) => [`CIRCULAR ENQUEUE: ${input} inserted at index ${newRear}`, ...prev].slice(0, 10));
+        setInput("");
+        setExperimentRun(true);
+        setAnimating(false);
+        if (inputRef.current) inputRef.current.focus();
+      }, animDuration);
     }
-    setAnimating(true);
-    setTimeout(() => {
-      setQueue(prev => [...prev, input]);
-      setLog(prev => [`ENQUEUE: ${input} added to queue`, ...prev].slice(0, 10));
-      setInput("");
-      setExperimentRun(true);
-      setAnimating(false);
-      inputRef.current && inputRef.current.focus();
-      localStorage.setItem('vlab_last_experiment', JSON.stringify({ name: 'queue', time: Date.now() }));
-    }, animDuration);
   };
 
   const dequeue = () => {
-    if (queue.length === 0) {
-      setWarning("Queue Underflow! Cannot remove from empty queue.");
-      setLog(prev => [`DEQUEUE failed: Queue empty`, ...prev].slice(0, 10));
-      setTimeout(() => setWarning(""), 2000);
-      return;
+    if (queueType === "normal") {
+      if (queue.length === 0) {
+        setWarning("Queue Underflow! Cannot remove from empty queue.");
+        setLog((prev) => [`DEQUEUE failed: Queue empty`, ...prev].slice(0, 10));
+        setTimeout(() => setWarning(""), 2000);
+        return;
+      }
+
+      setAnimating(true);
+      setTimeout(() => {
+        const val = queue[0];
+        setQueue((prev) => prev.slice(1));
+        setLog((prev) => [`DEQUEUE: ${val} removed from queue`, ...prev].slice(0, 10));
+        setExperimentRun(true);
+        setAnimating(false);
+      }, animDuration);
+    } else {
+      if (count === 0 || front === -1) {
+        setWarning("Circular Queue Underflow!");
+        setLog((prev) => [`DEQUEUE failed: Circular Queue empty`, ...prev].slice(0, 10));
+        setTimeout(() => setWarning(""), 2000);
+        return;
+      }
+
+      setAnimating(true);
+      setTimeout(() => {
+        const updated = [...circularQueue];
+        const removedValue = updated[front];
+        updated[front] = null;
+
+        if (count === 1) {
+          setFront(-1);
+          setRear(-1);
+        } else {
+          setFront((prev) => (prev + 1) % QUEUE_SIZE);
+        }
+
+        setCircularQueue(updated);
+        setCount((prev) => prev - 1);
+        setLog((prev) => [`CIRCULAR DEQUEUE: ${removedValue} removed from index ${front}`, ...prev].slice(0, 10));
+        setExperimentRun(true);
+        setAnimating(false);
+      }, animDuration);
     }
-    setAnimating(true);
-    setTimeout(() => {
-      const val = queue[0];
-      setQueue(prev => prev.slice(1));
-      setLog(prev => [`DEQUEUE: ${val} removed from queue`, ...prev].slice(0, 10));
-      setExperimentRun(true);
-      setAnimating(false);
-      localStorage.setItem('vlab_last_experiment', JSON.stringify({ name: 'queue', time: Date.now() }));
-    }, animDuration);
+  };
+
+  const peekFront = () => {
+    if (queueType === "normal") {
+      if (queue.length === 0) {
+        setWarning("Queue is empty. Nothing to peek.");
+        setTimeout(() => setWarning(""), 2000);
+        return;
+      }
+
+      setLog((prev) => [`PEEK: Front element is ${queue[0]}`, ...prev].slice(0, 10));
+    } else {
+      if (count === 0 || front === -1) {
+        setWarning("Circular Queue is empty. Nothing to peek.");
+        setTimeout(() => setWarning(""), 2000);
+        return;
+      }
+
+      setLog((prev) => [`CIRCULAR PEEK: Front element is ${circularQueue[front]} at index ${front}`, ...prev].slice(0, 10));
+    }
+
+    setExperimentRun(true);
+  };
+
+  const clearLog = () => {
+    setLog(["Log cleared."]);
   };
 
   const reset = () => {
     setQueue([]);
+    setCircularQueue(new Array(QUEUE_SIZE).fill(null));
+    setFront(-1);
+    setRear(-1);
+    setCount(0);
     setInput("");
     setLog(["Queue initialized."]);
     setWarning("");
@@ -76,183 +363,194 @@ export default function QueueLab() {
     setAnimDuration(Number(e.target.value));
   };
 
-  function handleQuizAnswer(i, v) {
-    const a = [...quizAnswers];
-    a[i] = v;
-    setQuizAnswers(a);
-  }
+  const handleQuizAnswer = (i, v) => {
+    const updated = [...quizAnswers];
+    updated[i] = v;
+    setQuizAnswers(updated);
+  };
 
-  function submitQuiz() {
-    let s = 0;
+  const submitQuiz = () => {
+    let score = 0;
     quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) s++;
+      if (quizAnswers[i] === q.correct) score++;
     });
-    setQuizScore(s);
+
+    setQuizScore(score);
     setQuizSubmitted(true);
-    const scores = JSON.parse(localStorage.getItem('vlab_scores') || '[]');
-    scores.push({ subject: 'DSA', experiment: 'queue', correct: s, total: quizQuestions.length, time: Date.now() });
-    localStorage.setItem('vlab_scores', JSON.stringify(scores));
-  }
+
+    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
+    scores.push({
+      subject: "DSA",
+      experiment: queueType === "circular" ? "circular-queue" : "queue",
+      correct: score,
+      total: quizQuestions.length,
+      time: Date.now()
+    });
+    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+  };
+
+  const runCode = () => {
+    if (selectedLanguage !== "javascript") {
+      setCodeResult(
+        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+      );
+      return;
+    }
+
+    try {
+      let result;
+
+      if (queueType === "normal") {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(
+          "arr",
+          "value",
+          "maxSize",
+          `${code}; return enqueue(arr, value, maxSize);`
+        );
+        result = fn([10, 20], 30, 5);
+      } else {
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(
+          "arr",
+          "rear",
+          "count",
+          "value",
+          "maxSize",
+          `${code}; return circularEnqueue(arr, rear, count, value, maxSize);`
+        );
+        result = fn([10, 20, null, null, null], 1, 2, 30, 5);
+      }
+
+      setCodeResult(`Output: ${JSON.stringify(result)}`);
+    } catch (error) {
+      setCodeResult(`Error: ${error.message}`);
+    }
+  };
+
+  const displayQueue =
+    queueType === "normal"
+      ? queue.map((value, i) => ({
+          value,
+          isFront: i === 0,
+          isRear: i === queue.length - 1
+        }))
+      : circularQueue.map((value, i) => ({
+          value,
+          isFront: count > 0 && i === front,
+          isRear: count > 0 && i === rear
+        }));
 
   return (
     <div className="lab-page">
       <h1>SimuLab: Virtual Lab – Queue Data Structure</h1>
 
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To understand and visualize Queue operations (ENQUEUE and DEQUEUE) using an array-based implementation and study FIFO principle.
-        </p>
+      <section className="card" style={{ marginBottom: "20px" }}>
+        <h2>Queue Type</h2>
+        <select
+          value={queueType}
+          onChange={(e) => setQueueType(e.target.value)}
+          className="lab-select"
+          style={{ minWidth: "220px" }}
+        >
+          <option value="normal">Normal Queue</option>
+          <option value="circular">Circular Queue</option>
+        </select>
       </section>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          A Queue is a linear data structure that follows the FIFO (First In First Out) principle. Elements are added at the rear and removed from the front.
-        </p>
-        <p>
-          <strong>Operations:</strong>
-        </p>
-        <ul>
-          <li><strong>ENQUEUE:</strong> Add an element to the rear of the queue</li>
-          <li><strong>DEQUEUE:</strong> Remove an element from the front of the queue</li>
-          <li><strong>PEEK:</strong> View the front element without removing it</li>
-          <li><strong>isEmpty:</strong> Check if the queue is empty</li>
-          <li><strong>isFull:</strong> Check if the queue is full</li>
-        </ul>
-        <p>
-          <strong>Time Complexity:</strong> All operations are O(1) for a circular queue
-        </p>
-        <p>
-          <strong>Space Complexity:</strong> O(n) where n is the maximum queue size
-        </p>
-        <p>
-          <strong>Real-World Applications:</strong> CPU scheduling, Print queue, Breadth-First Search, Customer service lines
-        </p>
-      </section>
+      <div className="sorting-lab-layout">
+        <aside className="sorting-sidebar">
+          <button
+            className={`sorting-sidebar-item ${
+              activeSection === "overview" ? "active" : ""
+            }`}
+            onClick={() => setActiveSection("overview")}
+          >
+            Overview
+          </button>
 
-      <section className="card experiment">
-        <h2>Experiment - Interactive Simulation</h2>
-        <form className="stack-form" autoComplete="off" onSubmit={e => e.preventDefault()}>
-          <label htmlFor="queue-input" className="stack-label">Enter Value:</label>
-          <input
-            id="queue-input"
-            className="stack-input"
-            type="text"
-            placeholder="Enter a value to enqueue"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && enqueue()}
-            ref={inputRef}
-            disabled={animating}
-          />
-          <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-            <button type="button" className="stack-btn push-btn" onClick={enqueue} disabled={queue.length >= QUEUE_SIZE || animating}>
-              ENQUEUE
-            </button>
-            <button type="button" className="stack-btn pop-btn" onClick={dequeue} disabled={queue.length === 0 || animating}>
-              DEQUEUE
-            </button>
-            <button type="button" className="stack-btn reset-btn" onClick={reset} disabled={animating}>
-              RESET
-            </button>
-          </div>
-        </form>
+          <button
+            className={`sorting-sidebar-item ${
+              activeSection === "simulation" ? "active" : ""
+            }`}
+            onClick={() => setActiveSection("simulation")}
+          >
+            Simulation
+          </button>
 
-        <div className="stack-speed-panel">
-          <label htmlFor="queue-speed-slider" className="stack-label">Animation Speed:</label>
-          <input
-            id="queue-speed-slider"
-            type="range"
-            min="100"
-            max="1000"
-            value={animDuration}
-            step="50"
-            onChange={handleSpeedChange}
-          />
-          <span id="queue-speed-value">{animDuration}ms</span>
-        </div>
+          <button
+            className={`sorting-sidebar-item ${
+              activeSection === "quiz" ? "active" : ""
+            }`}
+            onClick={() => setActiveSection("quiz")}
+          >
+            Quiz
+          </button>
 
-        <div className="stack-edu-panel">
-          <div className="stack-info">
-            <span id="queue-size-info">Queue Size: {queue.length} / {QUEUE_SIZE}</span>
-            <span id="queue-front-info">Front: {queue.length > 0 ? queue[0] : "Empty"}</span>
-            <span id="queue-rear-info">Rear: {queue.length > 0 ? queue[queue.length - 1] : "Empty"}</span>
-          </div>
-          <div className="top-pointer">{queue.length === 0 ? "Queue is empty" : `Queue has ${queue.length} element(s)`}</div>
-          {warning && <div className="stack-warning show">{warning}</div>}
-          
-          <section className="queue-container" aria-label="Queue Visualization">
-            <div className="queue-label-front">FRONT</div>
-            {queue.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af', fontSize: '1.1rem' }}>Queue is empty</div>
-            ) : (
-              <div className="queue-visualization">
-                {queue.map((val, i) => (
-                  <div
-                    key={i}
-                    className={`queue-block ${i === 0 ? 'front' : ''} ${i === queue.length - 1 ? 'rear' : ''}`}
-                    style={{ transitionDuration: animDuration + "ms" }}
-                  >
-                    <div className="queue-value">{val}</div>
-                    <div className="queue-index">Index {i}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="queue-label-rear">REAR</div>
-          </section>
+          <button
+            className={`sorting-sidebar-item ${
+              activeSection === "coding" ? "active" : ""
+            }`}
+            onClick={() => setActiveSection("coding")}
+          >
+            Coding
+          </button>
+        </aside>
 
-          <div className="stack-log-panel">
-            <div className="stack-log-title">Operation Log</div>
-            <ul id="queue-log-list" className="stack-log-list">
-              {log.map((msg, idx) => (
-                <li key={idx} style={{ fontSize: '0.95rem' }}>{msg}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
+        <main className="sorting-content">
+          {activeSection === "overview" && <QueueOverview queueType={queueType} />}
 
-      <section className="card">
-        <h2>Quiz</h2>
-        {!experimentRun ? (
-          <p style={{ color: '#d1d5db' }}>Please run the experiment at least once before attempting the quiz.</p>
-        ) : (
-          <div>
-            {quizQuestions.map((q, i) => (
-              <div key={i} style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-                <div style={{ marginBottom: 10 }}>
-                  <strong style={{ color: '#e5e7eb', fontSize: '1.05rem' }}>{i + 1}. {q.question}</strong>
-                </div>
-                <div style={{ marginLeft: 20 }}>
-                  {q.options.map((opt, j) => (
-                    <label key={j} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, cursor: 'pointer', color: '#d1d5db' }}>
-                      <input
-                        type="radio"
-                        name={`q${i}`}
-                        checked={quizAnswers[i] === j}
-                        onChange={() => handleQuizAnswer(i, j)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      {opt}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-            {!quizSubmitted ? (
-              <button className="btn primary" onClick={submitQuiz} style={{ marginTop: 16, padding: '0.8rem 1.6rem', fontSize: '1rem' }}>
-                Submit Quiz
-              </button>
-            ) : (
-              <div style={{ marginTop: 16, padding: '1rem', background: 'rgba(56,189,248,0.1)', borderRadius: 8, borderLeft: '4px solid #38bdf8' }}>
-                <strong style={{ color: '#38bdf8', fontSize: '1.1rem' }}>Quiz Score: {quizScore} / {quizQuestions.length}</strong>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+          {activeSection === "simulation" && (
+            <QueueSimulation
+              queueType={queueType}
+              queue={queueType === "normal" ? queue : circularQueue}
+              displayQueue={displayQueue}
+              front={front}
+              rear={rear}
+              count={count}
+              input={input}
+              setInput={setInput}
+              log={log}
+              warning={warning}
+              animating={animating}
+              animDuration={animDuration}
+              handleSpeedChange={handleSpeedChange}
+              enqueue={enqueue}
+              dequeue={dequeue}
+              peekFront={peekFront}
+              clearLog={clearLog}
+              reset={reset}
+              QUEUE_SIZE={QUEUE_SIZE}
+              inputRef={inputRef}
+            />
+          )}
+
+          {activeSection === "quiz" && (
+            <QueueQuiz
+              queueType={queueType}
+              quizQuestions={quizQuestions}
+              quizAnswers={quizAnswers}
+              quizSubmitted={quizSubmitted}
+              quizScore={quizScore}
+              experimentRun={experimentRun}
+              handleQuizAnswer={handleQuizAnswer}
+              submitQuiz={submitQuiz}
+            />
+          )}
+
+          {activeSection === "coding" && (
+            <QueueCoding
+              codingProblem={codingProblem}
+              selectedLanguage={selectedLanguage}
+              setSelectedLanguage={setSelectedLanguage}
+              code={code}
+              setCode={setCode}
+              codeResult={codeResult}
+              runCode={runCode}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

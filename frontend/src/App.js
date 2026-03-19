@@ -1,8 +1,10 @@
 import StackArray from "./pages/StackArray.jsx";
 import SortingLab from "./pages/SortingLab.jsx";
 import DSALabIndex from "./pages/DSALabIndex.jsx";
+import StackLab from "./pages/StackLab.jsx";
 import QueueLab from "./pages/Queue.jsx";
 import LinkedListLab from "./pages/LinkedList.jsx";
+import SearchingLab from "./pages/labs/searching/SearchingLab.jsx";
 import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
 import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
 import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
@@ -94,6 +96,8 @@ function AppContent() {
         <Route path="/labs/dsa/sorting" element={<ProtectedRoute><SortingLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/queue" element={<ProtectedRoute><QueueLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/linked-list" element={<ProtectedRoute><LinkedListLab /></ProtectedRoute>} />
+        <Route path="/labs/dsa/stack" element={<ProtectedRoute><StackLab /></ProtectedRoute>} />
+        <Route path="/labs/dsa/searching" element={<ProtectedRoute><SearchingLab /></ProtectedRoute>} />
         {/* DTSP Lab index and experiments (frontend-only for now) */}
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
         <Route path="/labs/dtsp/pole-zero-analysis" element={<ProtectedRoute><DTSPPoleZeroAnalysis /></ProtectedRoute>} />
