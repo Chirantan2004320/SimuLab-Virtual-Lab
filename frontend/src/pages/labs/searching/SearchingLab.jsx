@@ -174,12 +174,17 @@ export default function SearchingLab() {
   const [message, setMessage] = useState("Searching lab initialized.");
   const [experimentRun, setExperimentRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [animationSpeed, setAnimationSpeed] = useState(700);
+  const [stepHistory, setStepHistory] = useState([]);
 
   const [currentIndex, setCurrentIndex] = useState(null);
   const [foundIndex, setFoundIndex] = useState(null);
   const [lowIndex, setLowIndex] = useState(null);
   const [highIndex, setHighIndex] = useState(null);
   const [midIndex, setMidIndex] = useState(null);
+
+  const stopRequestedRef = useRef(false);
+  const targetRef = useRef(null);
 
   const quizQuestions = useMemo(
     () => (searchType === "binary" ? binaryQuizQuestions : linearQuizQuestions),
@@ -194,14 +199,14 @@ export default function SearchingLab() {
   const [code, setCode] = useState(searchingCodeTemplates.linear.javascript);
   const [codeResult, setCodeResult] = useState("");
 
-  const targetRef = useRef(null);
-
   useEffect(() => {
+    stopRequestedRef.current = false;
     setArray([]);
     setTarget("");
     setMessage("Searching lab initialized.");
     setExperimentRun(false);
     setIsRunning(false);
+    setStepHistory([]);
     setCurrentIndex(null);
     setFoundIndex(null);
     setLowIndex(null);
@@ -218,6 +223,10 @@ export default function SearchingLab() {
     setCodeResult("");
   }, [searchType, selectedLanguage]);
 
+  const addStep = (text) => {
+    setStepHistory((prev) => [...prev, text]);
+  };
+
   const loadSample = () => {
     if (isRunning) return;
 
@@ -225,10 +234,12 @@ export default function SearchingLab() {
       setArrayInput("15, 8, 23, 4, 42, 16, 9");
       setTarget("42");
       setMessage("Loaded sample array for Linear Search.");
+      setStepHistory(["Sample loaded for Linear Search."]);
     } else {
       setArrayInput("5, 10, 15, 20, 25, 30, 35");
       setTarget("25");
       setMessage("Loaded sample array for Binary Search.");
+      setStepHistory(["Sample loaded for Binary Search."]);
     }
 
     setArray([]);
@@ -237,6 +248,12 @@ export default function SearchingLab() {
     setLowIndex(null);
     setHighIndex(null);
     setMidIndex(null);
+  };
+
+  const stopSearch = () => {
+    stopRequestedRef.current = true;
+    setMessage("Stopping search...");
+    addStep("Stop requested by user.");
   };
 
   const runSearch = async () => {
@@ -256,11 +273,13 @@ export default function SearchingLab() {
 
     const targetValue = Number(target);
 
+    stopRequestedRef.current = false;
     setCurrentIndex(null);
     setFoundIndex(null);
     setLowIndex(null);
     setHighIndex(null);
     setMidIndex(null);
+    setStepHistory([]);
     setIsRunning(true);
     setExperimentRun(true);
 
@@ -268,38 +287,61 @@ export default function SearchingLab() {
       if (searchType === "linear") {
         setArray(parsed);
         setMessage(`Starting Linear Search for ${targetValue}...`);
-        await sleep(600);
+        addStep(`Starting Linear Search for target ${targetValue}.`);
+        await sleep(animationSpeed);
 
         let found = -1;
 
         for (let i = 0; i < parsed.length; i++) {
+          if (stopRequestedRef.current) {
+            setCurrentIndex(null);
+            setMessage("Linear Search stopped.");
+            addStep("Linear Search stopped before completion.");
+            return;
+          }
+
           setCurrentIndex(i);
           setMessage(`Checking index ${i} (value = ${parsed[i]})...`);
-          await sleep(700);
+          addStep(`Step ${i + 1}: Checking index ${i}, value = ${parsed[i]}.`);
+          await sleep(animationSpeed);
 
           if (parsed[i] === targetValue) {
             found = i;
             setFoundIndex(i);
             setMessage(`Linear Search: Found ${targetValue} at index ${i}.`);
+            addStep(`Found target ${targetValue} at index ${i}.`);
             break;
           }
         }
 
-        if (found === -1) {
+        if (found === -1 && !stopRequestedRef.current) {
           setCurrentIndex(null);
           setMessage(`Linear Search: ${targetValue} not found in the array.`);
+          addStep(`Target ${targetValue} was not found after checking all elements.`);
         }
       } else {
         const sorted = [...parsed].sort((a, b) => a - b);
         setArray(sorted);
         setMessage(`Starting Binary Search for ${targetValue}... Array sorted automatically.`);
-        await sleep(700);
+        addStep(`Starting Binary Search for target ${targetValue}.`);
+        addStep(`Input array sorted automatically: [${sorted.join(", ")}].`);
+        await sleep(animationSpeed);
 
         let low = 0;
         let high = sorted.length - 1;
         let found = -1;
+        let stepCount = 1;
 
         while (low <= high) {
+          if (stopRequestedRef.current) {
+            setLowIndex(null);
+            setHighIndex(null);
+            setMidIndex(null);
+            setMessage("Binary Search stopped.");
+            addStep("Binary Search stopped before completion.");
+            return;
+          }
+
           const mid = Math.floor((low + high) / 2);
 
           setLowIndex(low);
@@ -309,12 +351,16 @@ export default function SearchingLab() {
           setMessage(
             `Checking mid index ${mid} (value = ${sorted[mid]}) with low = ${low}, high = ${high}.`
           );
-          await sleep(900);
+          addStep(
+            `Step ${stepCount}: low = ${low}, high = ${high}, mid = ${mid}, value = ${sorted[mid]}.`
+          );
+          await sleep(animationSpeed + 150);
 
           if (sorted[mid] === targetValue) {
             found = mid;
             setFoundIndex(mid);
             setMessage(`Binary Search: Found ${targetValue} at index ${mid}.`);
+            addStep(`Found target ${targetValue} at index ${mid}.`);
             break;
           }
 
@@ -322,22 +368,31 @@ export default function SearchingLab() {
             setMessage(
               `${sorted[mid]} is less than ${targetValue}. Searching in the right half.`
             );
-            await sleep(800);
+            addStep(
+              `${sorted[mid]} < ${targetValue}, so move right: new low becomes ${mid + 1}.`
+            );
+            await sleep(animationSpeed);
             low = mid + 1;
           } else {
             setMessage(
               `${sorted[mid]} is greater than ${targetValue}. Searching in the left half.`
             );
-            await sleep(800);
+            addStep(
+              `${sorted[mid]} > ${targetValue}, so move left: new high becomes ${mid - 1}.`
+            );
+            await sleep(animationSpeed);
             high = mid - 1;
           }
+
+          stepCount++;
         }
 
-        if (found === -1) {
+        if (found === -1 && !stopRequestedRef.current) {
           setLowIndex(null);
           setHighIndex(null);
           setMidIndex(null);
           setMessage(`Binary Search: ${targetValue} not found.`);
+          addStep(`Target ${targetValue} was not found in the sorted array.`);
         }
       }
 
@@ -347,12 +402,14 @@ export default function SearchingLab() {
       );
     } finally {
       setIsRunning(false);
+      stopRequestedRef.current = false;
     }
   };
 
   const reset = () => {
     if (isRunning) return;
 
+    stopRequestedRef.current = false;
     setArray([]);
     setArrayInput("");
     setTarget("");
@@ -361,6 +418,7 @@ export default function SearchingLab() {
     setLowIndex(null);
     setHighIndex(null);
     setMidIndex(null);
+    setStepHistory([]);
     setMessage("Searching lab reset.");
     setExperimentRun(false);
   };
@@ -427,16 +485,45 @@ export default function SearchingLab() {
 
       <section className="card" style={{ marginBottom: "20px" }}>
         <h2>Search Type</h2>
-        <select
-          value={searchType}
-          onChange={(e) => setSearchType(e.target.value)}
-          className="lab-select"
-          style={{ minWidth: "240px" }}
-          disabled={isRunning}
-        >
-          <option value="linear">Linear Search</option>
-          <option value="binary">Binary Search</option>
-        </select>
+
+        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
+          <div>
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="lab-select"
+              style={{ minWidth: "240px" }}
+              disabled={isRunning}
+            >
+              <option value="linear">Linear Search</option>
+              <option value="binary">Binary Search</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: 6,
+                color: "#e5e7eb",
+                fontWeight: 600
+              }}
+            >
+              Animation Speed
+            </label>
+            <select
+              value={animationSpeed}
+              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+              className="lab-select"
+              style={{ minWidth: "180px" }}
+              disabled={isRunning}
+            >
+              <option value={1100}>Slow</option>
+              <option value={700}>Normal</option>
+              <option value={350}>Fast</option>
+            </select>
+          </div>
+        </div>
       </section>
 
       <div className="sorting-lab-layout">
@@ -481,6 +568,7 @@ export default function SearchingLab() {
               target={target}
               setTarget={setTarget}
               runSearch={runSearch}
+              stopSearch={stopSearch}
               reset={reset}
               loadSample={loadSample}
               message={message}
@@ -492,6 +580,7 @@ export default function SearchingLab() {
               midIndex={midIndex}
               targetRef={targetRef}
               isRunning={isRunning}
+              stepHistory={stepHistory}
             />
           )}
 

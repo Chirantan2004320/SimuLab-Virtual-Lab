@@ -8,15 +8,17 @@ function ArrayBlock({
   isLow,
   isHigh,
   isMid,
-  searchType
+  searchType,
+  lowIndex,
+  highIndex
 }) {
   let border = "2px solid #38bdf8";
   let background = "linear-gradient(135deg, rgba(56,189,248,0.2), rgba(129,140,248,0.2))";
   let boxShadow = "0 4px 12px rgba(56,189,248,0.15)";
   let opacity = 1;
 
-  if (searchType === "binary" && isLow !== null && isHigh !== null) {
-    if (index < isLow || index > isHigh) {
+  if (searchType === "binary" && lowIndex !== null && highIndex !== null) {
+    if (index < lowIndex || index > highIndex) {
       opacity = 0.35;
     }
   }
@@ -106,6 +108,47 @@ function ArrayBlock({
   );
 }
 
+function StepHistoryPanel({ stepHistory }) {
+  return (
+    <section className="card" style={{ marginTop: 20 }}>
+      <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Step History</h3>
+
+      {stepHistory.length === 0 ? (
+        <p style={{ color: "#9ca3af" }}>Search steps will appear here.</p>
+      ) : (
+        <div
+          style={{
+            maxHeight: 260,
+            overflowY: "auto",
+            border: "1px solid rgba(148,163,184,0.25)",
+            borderRadius: 12,
+            padding: 12,
+            background: "rgba(15,23,42,0.35)"
+          }}
+        >
+          {stepHistory.map((step, index) => (
+            <div
+              key={index}
+              style={{
+                padding: "10px 12px",
+                borderBottom:
+                  index !== stepHistory.length - 1
+                    ? "1px solid rgba(148,163,184,0.15)"
+                    : "none",
+                color: "#d1d5db",
+                lineHeight: 1.6,
+                fontSize: "0.96rem"
+              }}
+            >
+              <strong style={{ color: "#38bdf8" }}>{index + 1}.</strong> {step}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function SearchingSimulation({
   searchType,
   arrayInput,
@@ -113,6 +156,7 @@ export default function SearchingSimulation({
   target,
   setTarget,
   runSearch,
+  stopSearch,
   reset,
   loadSample,
   message,
@@ -123,88 +167,101 @@ export default function SearchingSimulation({
   highIndex,
   midIndex,
   targetRef,
-  isRunning
+  isRunning,
+  stepHistory
 }) {
   return (
-    <section className="card experiment">
-      <h2>
-        Simulation{" "}
-        <span style={{ color: "#38bdf8" }}>
-          ({searchType === "binary" ? "Binary Search" : "Linear Search"})
-        </span>
-      </h2>
+    <>
+      <section className="card experiment">
+        <h2>
+          Simulation{" "}
+          <span style={{ color: "#38bdf8" }}>
+            ({searchType === "binary" ? "Binary Search" : "Linear Search"})
+          </span>
+        </h2>
 
-      <div className="controls">
-        <div style={{ width: "100%" }}>
-          <label>Array Values</label>
-          <input
-            value={arrayInput}
-            onChange={(e) => setArrayInput(e.target.value)}
-            placeholder="Enter values like 10, 20, 30, 40"
-            style={{ color: "#ffffff", width: "100%" }}
-            disabled={isRunning}
-          />
-        </div>
-
-        <div>
-          <label>Target Value</label>
-          <input
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-            ref={targetRef}
-            placeholder="Enter target"
-            style={{ color: "#ffffff" }}
-            disabled={isRunning}
-          />
-        </div>
-
-        <div className="buttons">
-          <button className="btn primary" onClick={runSearch} disabled={isRunning}>
-            {isRunning ? "Running..." : "Run Search"}
-          </button>
-          <button className="btn info" onClick={loadSample} disabled={isRunning}>
-            Load Sample
-          </button>
-          <button className="btn secondary" onClick={reset} disabled={isRunning}>
-            Reset
-          </button>
-        </div>
-      </div>
-
-      <div className="info-box">{message || "Run a search to begin."}</div>
-
-      <div className="workspace" style={{ flexWrap: "wrap", minHeight: 160 }}>
-        {array.length === 0 ? (
-          <div style={{ color: "#9ca3af", fontSize: "1.05rem" }}>
-            Parsed array will appear here
+        <div className="controls">
+          <div style={{ width: "100%" }}>
+            <label>Array Values</label>
+            <input
+              value={arrayInput}
+              onChange={(e) => setArrayInput(e.target.value)}
+              placeholder="Enter values like 10, 20, 30, 40"
+              style={{ color: "#ffffff", width: "100%" }}
+              disabled={isRunning}
+            />
           </div>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              gap: 12,
-              flexWrap: "wrap",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: "18px 10px 24px"
-            }}
-          >
-            {array.map((value, index) => (
-              <ArrayBlock
-                key={`${value}-${index}`}
-                value={value}
-                index={index}
-                isCurrent={index === currentIndex}
-                isFound={index === foundIndex}
-                isLow={index === lowIndex}
-                isHigh={index === highIndex}
-                isMid={index === midIndex}
-                searchType={searchType}
-              />
-            ))}
+
+          <div>
+            <label>Target Value</label>
+            <input
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              ref={targetRef}
+              placeholder="Enter target"
+              style={{ color: "#ffffff" }}
+              disabled={isRunning}
+            />
           </div>
-        )}
-      </div>
-    </section>
+
+          <div className="buttons">
+            <button className="btn primary" onClick={runSearch} disabled={isRunning}>
+              {isRunning ? "Running..." : "Run Search"}
+            </button>
+
+            <button className="btn danger" onClick={stopSearch} disabled={!isRunning}>
+              Stop
+            </button>
+
+            <button className="btn info" onClick={loadSample} disabled={isRunning}>
+              Load Sample
+            </button>
+
+            <button className="btn secondary" onClick={reset} disabled={isRunning}>
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div className="info-box">{message || "Run a search to begin."}</div>
+
+        <div className="workspace" style={{ flexWrap: "wrap", minHeight: 160 }}>
+          {array.length === 0 ? (
+            <div style={{ color: "#9ca3af", fontSize: "1.05rem" }}>
+              Parsed array will appear here
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                flexWrap: "wrap",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: "18px 10px 24px"
+              }}
+            >
+              {array.map((value, index) => (
+                <ArrayBlock
+                  key={`${value}-${index}`}
+                  value={value}
+                  index={index}
+                  isCurrent={index === currentIndex}
+                  isFound={index === foundIndex}
+                  isLow={index === lowIndex}
+                  isHigh={index === highIndex}
+                  isMid={index === midIndex}
+                  searchType={searchType}
+                  lowIndex={lowIndex}
+                  highIndex={highIndex}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <StepHistoryPanel stepHistory={stepHistory} />
+    </>
   );
 }
