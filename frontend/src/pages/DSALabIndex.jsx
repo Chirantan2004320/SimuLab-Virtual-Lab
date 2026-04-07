@@ -45,6 +45,34 @@ export default function DSALabIndex() {
   desc: "Visualize factorial and fibonacci recursion with call stack trace",
   icon: "🌀",
   color: "#8b5cf6"
+},
+{
+  name: "Binary Tree",
+  path: "/labs/dsa/tree",
+  desc: "Insert nodes and visualize inorder, preorder, and postorder traversals",
+  icon: "🌳",
+  color: "#22c55e"
+},
+{
+  name: "Heap / Priority Queue",
+  path: "/labs/dsa/heap",
+  desc: "Visualize Max Heap insert, extract max, and heapify operations",
+  icon: "📦",
+  color: "#06b6d4"
+},
+{
+  name: "Graph Traversal",
+  path: "/labs/dsa/graph",
+  desc: "Build a graph and visualize BFS and DFS traversals",
+  icon: "🕸️",
+  color: "#f43f5e"
+},
+{
+  name: "Hash Table",
+  path: "/labs/dsa/hash-table",
+  desc: "Visualize hashing, collisions, and operations like insert, search, and delete",
+  icon: "🗂️",
+  color: "#8b5cf6"
 }
 ];
 
