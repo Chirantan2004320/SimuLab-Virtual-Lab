@@ -6,6 +6,25 @@ import QueueLab from "./pages/Queue.jsx";
 import LinkedListLab from "./pages/LinkedList.jsx";
 import SearchingLab from "./pages/labs/searching/SearchingLab.jsx";
 import RecursionLab from "./pages/labs/Recursion/RecursionLab.jsx";
+import TreeLab from "./pages/labs/Tree/TreeLab.jsx";
+import HeapLab from "./pages/labs/heap/HeapLab.jsx";
+import GraphLab from "./pages/labs/graph/GraphLab.jsx";
+import HashTableLab from "./pages/labs/hash-table/HashTableLab.jsx";
+import DBMSLabIndex from "./pages/DBMSLabIndex.jsx";
+import DBMSSQLBasicsLab from "./pages/labs/DBMS/sql-basics/DBMSSQLBasics.jsx";
+import DBMSJoinsLab from "./pages/labs/DBMS/sqljoins/DBMSJoinsLab.jsx";
+import DBMSNormalizationLab from "./pages/labs/DBMS/normalization/DBMSNormalizationLab.jsx";
+import DBMSTransactionsLab from "./pages/labs/DBMS/transactions/DBMSTransactionsLab.jsx";
+import DBMSIndexingLab from "./pages/labs/DBMS/indexing/DBMSIndexingLab.jsx";
+import DBMSConcurrencyLab from "./pages/labs/DBMS/concurrency/DBMSConcurrencyLab.jsx";
+import DBMSERModelingLab from "./pages/labs/DBMS/ERModelling/DBMSERModelingLab.jsx";
+import DBMSQueryOptimizationLab from "./pages/labs/DBMS/QueryOptimization/DBMSQueryOptimizationLab.jsx";
+import OSLabIndex from "./pages/OSLabIndex.jsx";
+import CPUSchedulingLab from "./pages/labs/OS/cpu-schedulling/CPUSchedulingLab.jsx";
+import ProcessSynchronizationLab from "./pages/labs/OS/processsyncronization/ProcessSynchronizationLab.jsx";
+import DeadlockLab from "./pages/labs/OS/deadlock/DeadlockLab.jsx";
+import PageReplacementLab from "./pages/labs/OS/pagereplacement/PageReplacementLab.jsx";
+import DiskSchedulingLab from "./pages/labs/OS/diskscheduling/DiskSchedulingLab.jsx";
 import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
 import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
 import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
@@ -71,6 +90,9 @@ function AppContent() {
     if (path.includes('/labs/dvlsi')) {
       return { page: 'labs/dvlsi', algorithm: null };
     }
+    if (path.includes("/labs/dbms")) {
+      return { page: "labs/dbms", algorithm: null };
+    }
     if (path === '/') {
       return { page: 'home', algorithm: null };
     }
@@ -100,6 +122,31 @@ function AppContent() {
         <Route path="/labs/dsa/stack" element={<ProtectedRoute><StackLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/searching" element={<ProtectedRoute><SearchingLab /></ProtectedRoute>} />
         <Route path="/labs/dsa/recursion" element={<ProtectedRoute><RecursionLab /></ProtectedRoute>} />
+        <Route path="/labs/dsa/tree" element={<ProtectedRoute><TreeLab /></ProtectedRoute>} />
+        <Route path="/labs/dsa/heap" element={<ProtectedRoute><HeapLab /></ProtectedRoute>} />
+        <Route path="/labs/dsa/graph" element={<ProtectedRoute><GraphLab /></ProtectedRoute>} />
+        <Route path="/labs/dsa/hash-table" element={<ProtectedRoute><HashTableLab /></ProtectedRoute>} />
+
+        {/* DBMS Lab index and experiments (frontend-only for now) */}
+        <Route path="/labs/dbms" element={<ProtectedRoute><DBMSLabIndex /></ProtectedRoute>} />
+        <Route path="/labs/dbms/sql-basics" element={<ProtectedRoute><DBMSSQLBasicsLab /></ProtectedRoute>} />
+        <Route path="/labs/dbms/joins" element={<ProtectedRoute><DBMSJoinsLab /></ProtectedRoute>} />
+        <Route path="/labs/dbms/normalization" element={<ProtectedRoute><DBMSNormalizationLab /></ProtectedRoute>} />
+        <Route path="/labs/dbms/transactions" element={<ProtectedRoute><DBMSTransactionsLab /></ProtectedRoute>} />
+        <Route path="/labs/dbms/indexing" element={<ProtectedRoute><DBMSIndexingLab /></ProtectedRoute>} />
+        <Route path="/labs/dbms/concurrency" element={<ProtectedRoute><DBMSConcurrencyLab /></ProtectedRoute>} />
+        <Route path="/labs/dbms/er-modeling" element={<ProtectedRoute><DBMSERModelingLab /></ProtectedRoute>} />
+        <Route path="/labs/dbms/query-optimization" element={<ProtectedRoute><DBMSQueryOptimizationLab /></ProtectedRoute>} />
+
+        {/* OS Lab index and experiments */}
+        <Route path="/labs/os" element={<ProtectedRoute><OSLabIndex /></ProtectedRoute>} />
+        <Route path="/labs/os/cpu-scheduling" element={<ProtectedRoute><CPUSchedulingLab /></ProtectedRoute>} />  
+        <Route path="/labs/os/process-synchronization" element={<ProtectedRoute><ProcessSynchronizationLab /></ProtectedRoute>} />
+        <Route path="/labs/os/deadlock" element={<ProtectedRoute><DeadlockLab /></ProtectedRoute>} />
+        <Route path="/labs/os/page-replacement" element={<ProtectedRoute><PageReplacementLab /></ProtectedRoute>} />
+        <Route path="/labs/os/disk-scheduling" element={<ProtectedRoute><DiskSchedulingLab /></ProtectedRoute>} />
+
+
         {/* DTSP Lab index and experiments (frontend-only for now) */}
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
         <Route path="/labs/dtsp/pole-zero-analysis" element={<ProtectedRoute><DTSPPoleZeroAnalysis /></ProtectedRoute>} />
