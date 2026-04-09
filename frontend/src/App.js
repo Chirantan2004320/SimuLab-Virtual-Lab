@@ -26,11 +26,14 @@ import DeadlockLab from "./pages/labs/OS/deadlock/DeadlockLab.jsx";
 import PageReplacementLab from "./pages/labs/OS/pagereplacement/PageReplacementLab.jsx";
 import DiskSchedulingLab from "./pages/labs/OS/diskscheduling/DiskSchedulingLab.jsx";
 import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
-import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
-import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
-import DTSPLinearCircularConvolution from "./pages/DTSPLinearCircularConvolution.jsx";
-import DTSPPoleZeroAnalysis from "./pages/DTSPPoleZeroAnalysis.jsx";
-import DTSPLinearPhaseFIRAnalysis from "./pages/DTSPLinearPhaseFIRAnalysis.jsx";
+import DTSPDFTIDFT from "./pages/labs/DTSP/DFTIDFT/DTSPDFTIDFTLab.jsx";
+import DTSPDFTPropertiesLab from "./pages/labs/DTSP/DFTProperties/DTSPDFTPropertiesLab.jsx";
+import DTSPLinearCircularConvolutionLab from "./pages/labs/DTSP/DTSPLinearCircularConvolution/DTSPLinearCircularConvolutionLab.jsx";
+import DTSPPoleZeroAnalysisLab from "./pages/labs/DTSP/PoleZeroAnalysis/DTSPPoleZeroAnalysisLab.jsx";
+import DTSPLinearPhaseFIRLab from "./pages/labs/DTSP/LinearPhaseFIR/DTSPLinearPhaseFIRLab.jsx";
+import DTSPAliasingLab from "./pages/labs/DTSP/SamplingAliasing/DTSPAliasingLab.jsx";
+import DTSPFFTvsDFTLab from "./pages/labs/DTSP/FFTvsDFT/DTSPFFTvsDFTLab.jsx";
+import DTSPFilterDesignLab from "./pages/labs/DTSP/DTSPFilterDesign/DTSPFilterDesignLab.jsx";
 import DSDLabIndex from "./pages/DSDLabIndex.jsx";
 import DSDLogicGates from "./pages/DSDLogicGates.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
@@ -61,10 +64,11 @@ import Dashboard from "./pages/Dashboard.jsx";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
-  return user ? children : <Navigate to="/login" />;
-};
 
+  if (loading) return <div>Loading...</div>;
+
+  return user ? children : <Navigate to="/login" replace />;
+};
 
 
 function AppContent() {
@@ -149,17 +153,56 @@ function AppContent() {
 
         {/* DTSP Lab index and experiments (frontend-only for now) */}
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
-        <Route path="/labs/dtsp/pole-zero-analysis" element={<ProtectedRoute><DTSPPoleZeroAnalysis /></ProtectedRoute>} />
+        <Route
+          path="/labs/dtsp/pole-zero-analysis"
+          element={
+          <ProtectedRoute>
+          <DTSPPoleZeroAnalysisLab />
+          </ProtectedRoute>
+       }
+      />
         <Route path="/labs/dtsp/dft-idft" element={<ProtectedRoute><DTSPDFTIDFT /></ProtectedRoute>} />
-        <Route path="/labs/dtsp/dft-properties" element={<ProtectedRoute><DTSPDFTProperties /></ProtectedRoute>} />
+        <Route
+         path="/labs/dtsp/dft-properties"
+        element={
+        <ProtectedRoute>
+        <DTSPDFTPropertiesLab />
+        </ProtectedRoute>
+        }
+      />
         <Route
           path="/labs/dtsp/linear-convolution-using-circular-convolution"
-          element={<ProtectedRoute><DTSPLinearCircularConvolution /></ProtectedRoute>}
+          element={<ProtectedRoute><DTSPLinearCircularConvolutionLab /></ProtectedRoute>}
         />
         <Route
           path="/labs/dtsp/linear-phase-fir-analysis"
-          element={<ProtectedRoute><DTSPLinearPhaseFIRAnalysis /></ProtectedRoute>}
+          element={
+          <ProtectedRoute>
+          <DTSPLinearPhaseFIRLab />
+          </ProtectedRoute>
+          }
         />
+
+        <Route
+  path="/labs/dtsp/sampling-aliasing"
+  element={
+    <ProtectedRoute>
+      <DTSPAliasingLab />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/labs/dtsp/fft-vs-dft"
+  element={
+    <ProtectedRoute>
+      <DTSPFFTvsDFTLab />
+    </ProtectedRoute>
+  }
+/>
+
+<Route path="/labs/dtsp/filter-design" element={<ProtectedRoute><DTSPFilterDesignLab /></ProtectedRoute>} />
+
         {/* DSD Lab index (frontend-only for now) */}
         <Route path="/labs/dsd" element={<ProtectedRoute><DSDLabIndex /></ProtectedRoute>} />
         <Route

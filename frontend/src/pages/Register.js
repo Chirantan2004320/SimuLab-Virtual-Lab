@@ -1,42 +1,59 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from "../context/AuthContext";
 import "./Auth.css";
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Optionally disable registration via environment flag
-    const registrationDisabled = process.env.REACT_APP_DISABLE_REGISTRATION === 'true';
+    const registrationDisabled =
+      process.env.REACT_APP_DISABLE_REGISTRATION === "true";
+
     if (registrationDisabled) {
-      setError('Registration has been disabled by the administrator. Please contact your instructor.');
+      setError(
+        "Registration has been disabled by the administrator. Please contact your instructor."
+      );
       return;
     }
 
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Please fill all fields.");
+      return;
+    }
+
+    setSubmitting(true);
+
     const result = await register(name, email, password);
+
     if (result.success) {
       navigate("/dashboard");
     } else {
-      setError(result.message);
+      setError(result.message || "Registration failed");
     }
+
+    setSubmitting(false);
   };
 
   return (
     <div className="auth-container">
       <div className="auth-box">
         <h2 className="auth-title">Create Account 🚀</h2>
-        <p className="auth-subtitle">Join SimuLab: Virtual Lab and start experimenting</p>
+        <p className="auth-subtitle">
+          Join SimuLab: Virtual Lab and start experimenting
+        </p>
 
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <p style={{ color: "red", marginBottom: "10px" }}>{error}</p>}
 
         <form onSubmit={handleRegister} className="auth-form">
           <input
@@ -66,7 +83,9 @@ const Register = () => {
             required
           />
 
-          <button type="submit" className="auth-button">Sign Up</button>
+          <button type="submit" className="auth-button" disabled={submitting}>
+            {submitting ? "Creating Account..." : "Sign Up"}
+          </button>
         </form>
 
         <p className="auth-link">
