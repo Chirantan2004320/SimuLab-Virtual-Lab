@@ -280,6 +280,7 @@ export default function StackArray() {
           result = func([...test.input[0]], test.input[1]);
         } else {
           // pop, isEmpty, peek, reverseStack: stack
+          // eslint-disable-next-line no-new-func
           const func = new Function('stack', code + '; return ' + funcName + '(stack);');
           result = func([...test.input[0]]);
         }
