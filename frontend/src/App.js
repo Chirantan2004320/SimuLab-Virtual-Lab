@@ -1,102 +1,51 @@
-import StackArray from "./pages/StackArray.jsx";
-import SortingLab from "./pages/SortingLab.jsx";
-import DSALabIndex from "./pages/DSALabIndex.jsx";
-import StackLab from "./pages/StackLab.jsx";
-import QueueLab from "./pages/Queue.jsx";
-import LinkedListLab from "./pages/LinkedList.jsx";
-import SearchingLab from "./pages/labs/searching/SearchingLab.jsx";
-import RecursionLab from "./pages/labs/Recursion/RecursionLab.jsx";
-import TreeLab from "./pages/labs/Tree/TreeLab.jsx";
-import HeapLab from "./pages/labs/heap/HeapLab.jsx";
-import GraphLab from "./pages/labs/graph/GraphLab.jsx";
-import HashTableLab from "./pages/labs/hash-table/HashTableLab.jsx";
-import DBMSLabIndex from "./pages/DBMSLabIndex.jsx";
-import DBMSSQLBasicsLab from "./pages/labs/DBMS/sql-basics/DBMSSQLBasics.jsx";
-import DBMSJoinsLab from "./pages/labs/DBMS/sqljoins/DBMSJoinsLab.jsx";
-import DBMSNormalizationLab from "./pages/labs/DBMS/normalization/DBMSNormalizationLab.jsx";
-import DBMSTransactionsLab from "./pages/labs/DBMS/transactions/DBMSTransactionsLab.jsx";
-import DBMSIndexingLab from "./pages/labs/DBMS/indexing/DBMSIndexingLab.jsx";
-import DBMSConcurrencyLab from "./pages/labs/DBMS/concurrency/DBMSConcurrencyLab.jsx";
-import DBMSERModelingLab from "./pages/labs/DBMS/ERModelling/DBMSERModelingLab.jsx";
-import DBMSQueryOptimizationLab from "./pages/labs/DBMS/QueryOptimization/DBMSQueryOptimizationLab.jsx";
-import OSLabIndex from "./pages/OSLabIndex.jsx";
-import CPUSchedulingLab from "./pages/labs/OS/cpu-schedulling/CPUSchedulingLab.jsx";
-import ProcessSynchronizationLab from "./pages/labs/OS/processsyncronization/ProcessSynchronizationLab.jsx";
-import DeadlockLab from "./pages/labs/OS/deadlock/DeadlockLab.jsx";
-import PageReplacementLab from "./pages/labs/OS/pagereplacement/PageReplacementLab.jsx";
-import DiskSchedulingLab from "./pages/labs/OS/diskscheduling/DiskSchedulingLab.jsx";
-import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
-import DTSPDFTIDFT from "./pages/DTSPDFTIDFT.jsx";
-import DTSPDFTProperties from "./pages/DTSPDFTProperties.jsx";
-import DTSPLinearCircularConvolution from "./pages/DTSPLinearCircularConvolution.jsx";
-import DTSPPoleZeroAnalysis from "./pages/DTSPPoleZeroAnalysis.jsx";
-import DTSPLinearPhaseFIRAnalysis from "./pages/DTSPLinearPhaseFIRAnalysis.jsx";
-import DSDLabIndex from "./pages/DSDLabIndex.jsx";
-import DSDLogicGates from "./pages/DSDLogicGates.jsx";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+
+import { publicRoutes } from "./routes/publicRoutes";
+import { protectedRoutes } from "./routes/protectedRoutes";
+import { labRoutes } from "./routes/labRoutes";
+
 import AIAssistant from "./components/AIAssistant.jsx";
-import DSDAdders from "./pages/DSDAdders.jsx";
-import DSDMultiplexer from "./pages/DSDMultiplexer.jsx";
-import DSDFlipFlops from "./pages/DSDFlipFlops.jsx";
-import DSDPropagationDelay from "./pages/DSDPropagationDelay.jsx";
-import DVLSILabIndex from "./pages/DVLSILabIndex.jsx";
-import DVLSIMOSFETCharacteristics from "./pages/DVLSIMOSFETCharacteristics.jsx";
-import DVLSILambdaRulesMicrowind from "./pages/DVLSILambdaRulesMicrowind.jsx";
-import DVLSICMOSInverterSimulation from "./pages/DVLSICMOSInverterSimulation.jsx";
-import DVLSICMOSInverterLayout from "./pages/DVLSICMOSInverterLayout.jsx";
-import DVLSICMOSNORGate from "./pages/DVLSICMOSNORGate.jsx";
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { useAuth } from './context/AuthContext';
 
-// Public Pages
-import Home from "./pages/Home.jsx";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-
-// Protected Pages
-import Dashboard from "./pages/Dashboard.jsx";
-
-
-// Lab Pages
-// ...existing code...
-
+// 🔐 Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+
   if (loading) return <div>Loading...</div>;
-  return user ? children : <Navigate to="/login" />;
+  const isTokenValid = () => {
+    try {
+      const data = JSON.parse(localStorage.getItem("token"));
+      return data && Date.now() < data.expiry;
+    } catch {
+      return false;
+    }
+  };
+
+  return user && isTokenValid()
+    ? children
+    : <Navigate to="/login" replace />;
 };
-
-
 
 function AppContent() {
   const location = useLocation();
-  // Read Institute Mode from environment variable
-  const instituteMode = process.env.REACT_APP_INSTITUTE_MODE === 'true';
 
-  // Extract current page and algorithm from URL/path
+  // 🌐 Institute Mode
+  const instituteMode = process.env.REACT_APP_INSTITUTE_MODE === "true";
+
+  // 🧠 Context Detection (same as your logic)
   const getCurrentContext = () => {
     const path = location.pathname;
-    if (path.includes('/labs/dsa')) {
-      return { page: 'labs/dsa', algorithm: null }; // Will be determined by component state
-    }
-    if (path.includes('/labs/stack')) {
-      return { page: 'labs/stack', algorithm: null };
-    }
-    if (path.includes('/labs/dtsp')) {
-      return { page: 'labs/dtsp', algorithm: null };
-    }
-    if (path.includes('/labs/dsd')) {
-      return { page: 'labs/dsd', algorithm: null };
-    }
-    if (path.includes('/labs/dvlsi')) {
-      return { page: 'labs/dvlsi', algorithm: null };
-    }
-    if (path.includes("/labs/dbms")) {
-      return { page: "labs/dbms", algorithm: null };
-    }
-    if (path === '/') {
-      return { page: 'home', algorithm: null };
-    }
-    return { page: path.substring(1), algorithm: null };
+
+    if (path.includes("/labs/dsa")) return { page: "labs/dsa" };
+    if (path.includes("/labs/stack")) return { page: "labs/stack" };
+    if (path.includes("/labs/dtsp")) return { page: "labs/dtsp" };
+    if (path.includes("/labs/dsd")) return { page: "labs/dsd" };
+    if (path.includes("/labs/dvlsi")) return { page: "labs/dvlsi" };
+    if (path.includes("/labs/dbms")) return { page: "labs/dbms" };
+    if (path === "/") return { page: "home" };
+
+    return { page: path.substring(1) };
   };
 
   const { page } = getCurrentContext();
@@ -105,107 +54,66 @@ function AppContent() {
     <>
       <Routes>
         {/* 🌐 Public Routes */}
-        <Route path="/" element={<Home instituteMode={instituteMode} />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {publicRoutes.map((route, index) => (
+          <Route
+            key={index}
+            path={route.path}
+            element={
+              route.path === "/"
+                ? React.cloneElement(route.element, { instituteMode })
+                : route.element
+            }
+          />
+        ))}
+
         {/* 🔒 Protected Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard instituteMode={instituteMode} /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><div /></ProtectedRoute>} />
+        {protectedRoutes.map((route, index) => (
+          <Route
+            key={index}
+            path={route.path}
+            element={
+              <ProtectedRoute>
+                {React.cloneElement(route.element, { instituteMode })}
+              </ProtectedRoute>
+            }
+          />
+        ))}
 
-        {/* Stack Array Lab Route */}
-        <Route path="/labs/stack" element={<ProtectedRoute><StackArray /></ProtectedRoute>} />
-        {/* DSA Lab index and experiments */}
-        <Route path="/labs/dsa" element={<ProtectedRoute><DSALabIndex /></ProtectedRoute>} />
-        <Route path="/labs/dsa/sorting" element={<ProtectedRoute><SortingLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/queue" element={<ProtectedRoute><QueueLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/linked-list" element={<ProtectedRoute><LinkedListLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/stack" element={<ProtectedRoute><StackLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/searching" element={<ProtectedRoute><SearchingLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/recursion" element={<ProtectedRoute><RecursionLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/tree" element={<ProtectedRoute><TreeLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/heap" element={<ProtectedRoute><HeapLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/graph" element={<ProtectedRoute><GraphLab /></ProtectedRoute>} />
-        <Route path="/labs/dsa/hash-table" element={<ProtectedRoute><HashTableLab /></ProtectedRoute>} />
+        {/* 🧪 Lab Routes */}
+        {labRoutes.map((route, index) => (
+          <Route
+            key={index}
+            path={route.path}
+            element={
+              <ProtectedRoute>
+                {route.element}
+              </ProtectedRoute>
+            }
+          />
+        ))}
 
-        {/* DBMS Lab index and experiments (frontend-only for now) */}
-        <Route path="/labs/dbms" element={<ProtectedRoute><DBMSLabIndex /></ProtectedRoute>} />
-        <Route path="/labs/dbms/sql-basics" element={<ProtectedRoute><DBMSSQLBasicsLab /></ProtectedRoute>} />
-        <Route path="/labs/dbms/joins" element={<ProtectedRoute><DBMSJoinsLab /></ProtectedRoute>} />
-        <Route path="/labs/dbms/normalization" element={<ProtectedRoute><DBMSNormalizationLab /></ProtectedRoute>} />
-        <Route path="/labs/dbms/transactions" element={<ProtectedRoute><DBMSTransactionsLab /></ProtectedRoute>} />
-        <Route path="/labs/dbms/indexing" element={<ProtectedRoute><DBMSIndexingLab /></ProtectedRoute>} />
-        <Route path="/labs/dbms/concurrency" element={<ProtectedRoute><DBMSConcurrencyLab /></ProtectedRoute>} />
-        <Route path="/labs/dbms/er-modeling" element={<ProtectedRoute><DBMSERModelingLab /></ProtectedRoute>} />
-        <Route path="/labs/dbms/query-optimization" element={<ProtectedRoute><DBMSQueryOptimizationLab /></ProtectedRoute>} />
-
-        {/* OS Lab index and experiments */}
-        <Route path="/labs/os" element={<ProtectedRoute><OSLabIndex /></ProtectedRoute>} />
-        <Route path="/labs/os/cpu-scheduling" element={<ProtectedRoute><CPUSchedulingLab /></ProtectedRoute>} />  
-        <Route path="/labs/os/process-synchronization" element={<ProtectedRoute><ProcessSynchronizationLab /></ProtectedRoute>} />
-        <Route path="/labs/os/deadlock" element={<ProtectedRoute><DeadlockLab /></ProtectedRoute>} />
-        <Route path="/labs/os/page-replacement" element={<ProtectedRoute><PageReplacementLab /></ProtectedRoute>} />
-        <Route path="/labs/os/disk-scheduling" element={<ProtectedRoute><DiskSchedulingLab /></ProtectedRoute>} />
-
-
-        {/* DTSP Lab index and experiments (frontend-only for now) */}
-        <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
-        <Route path="/labs/dtsp/pole-zero-analysis" element={<ProtectedRoute><DTSPPoleZeroAnalysis /></ProtectedRoute>} />
-        <Route path="/labs/dtsp/dft-idft" element={<ProtectedRoute><DTSPDFTIDFT /></ProtectedRoute>} />
-        <Route path="/labs/dtsp/dft-properties" element={<ProtectedRoute><DTSPDFTProperties /></ProtectedRoute>} />
+        {/* 🚫 404 */}
         <Route
-          path="/labs/dtsp/linear-convolution-using-circular-convolution"
-          element={<ProtectedRoute><DTSPLinearCircularConvolution /></ProtectedRoute>}
+          path="*"
+          element={
+            <h2 style={{ textAlign: "center", marginTop: "50px" }}>
+              404 - Page Not Found
+            </h2>
+          }
         />
-        <Route
-          path="/labs/dtsp/linear-phase-fir-analysis"
-          element={<ProtectedRoute><DTSPLinearPhaseFIRAnalysis /></ProtectedRoute>}
-        />
-        {/* DSD Lab index (frontend-only for now) */}
-        <Route path="/labs/dsd" element={<ProtectedRoute><DSDLabIndex /></ProtectedRoute>} />
-        <Route
-          path="/labs/dsd/logic-gates"
-          element={<ProtectedRoute><DSDLogicGates /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/adders"
-          element={<ProtectedRoute><DSDAdders /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/multiplexer"
-          element={<ProtectedRoute><DSDMultiplexer /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/flip-flops"
-          element={<ProtectedRoute><DSDFlipFlops /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/propagation-delay"
-          element={<ProtectedRoute><DSDPropagationDelay /></ProtectedRoute>}
-        />
-        {/* DVLSI Lab index and experiments */}
-        <Route path="/labs/dvlsi" element={<ProtectedRoute><DVLSILabIndex /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/mosfet-characteristics" element={<ProtectedRoute><DVLSIMOSFETCharacteristics /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/lambda-rules-microwind" element={<ProtectedRoute><DVLSILambdaRulesMicrowind /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/cmos-inverter-simulation" element={<ProtectedRoute><DVLSICMOSInverterSimulation /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/cmos-inverter-layout" element={<ProtectedRoute><DVLSICMOSInverterLayout /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/cmos-nor-gate" element={<ProtectedRoute><DVLSICMOSNORGate /></ProtectedRoute>} />
-        {/* 🚫 Fallback Route (optional) */}
-        <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>
 
-
-      {/* AI Assistant - Available on all pages */}
+      {/* 🤖 AI Assistant */}
       <AIAssistant currentPage={page} instituteMode={instituteMode} />
     </>
   );
 }
 
-function App() {
+// 🚀 Main App
+export default function App() {
   return (
     <Router>
       <AppContent />
     </Router>
   );
 }
-
-export default App;

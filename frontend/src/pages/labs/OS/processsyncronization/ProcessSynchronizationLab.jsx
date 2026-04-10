@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
-import "../../../SortingLab.css";
+import "../../../../styles/Lab.css";
+
 import ProcessSynchronizationOverview from "./ProcessSynchronizationOverview.jsx";
 import ProcessSynchronizationQuiz from "./ProcessSynchronizationQuiz.jsx";
 import ProcessSynchronizationCoding from "./ProcessSynchronizationCoding.jsx";

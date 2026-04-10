@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
-import "../../../SortingLab.css";
+import "../../../../styles/Lab.css";
+
 import DeadlockOverview from "./DeadlockOverview.jsx";
 import DeadlockQuiz from "./DeadlockQuiz.jsx";
 import DeadlockCodingSafe from "./DeadlockCodingSafe.jsx";

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
-import "../../../SortingLab.css";
+import "../../../../styles/Lab.css";
+
 import PageReplacementOverview from "./PageReplacementOverview.jsx";
 import PageReplacementQuiz from "./PageReplacementQuiz.jsx";
 import PageReplacementCoding from "./PageReplacementCoding.jsx";

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
-import "../../../SortingLab.css";
+import "../../../../styles/Lab.css";
+
 import CPUSchedulingOverview from "./CPUSchedulingOverview.jsx";
 import CPUSchedulingQuiz from "./CPUSchedulingQuiz.jsx";
 import CPUSchedulingCoding from "./CPUSchedulingCoding.jsx";
