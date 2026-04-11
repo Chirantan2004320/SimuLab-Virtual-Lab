@@ -42,11 +42,15 @@ import DSDMultiplexer from "./pages/DSDMultiplexer.jsx";
 import DSDFlipFlops from "./pages/DSDFlipFlops.jsx";
 import DSDPropagationDelay from "./pages/DSDPropagationDelay.jsx";
 import DVLSILabIndex from "./pages/DVLSILabIndex.jsx";
-import DVLSIMOSFETCharacteristics from "./pages/DVLSIMOSFETCharacteristics.jsx";
-import DVLSILambdaRulesMicrowind from "./pages/DVLSILambdaRulesMicrowind.jsx";
-import DVLSICMOSInverterSimulation from "./pages/DVLSICMOSInverterSimulation.jsx";
-import DVLSICMOSInverterLayout from "./pages/DVLSICMOSInverterLayout.jsx";
-import DVLSICMOSNORGate from "./pages/DVLSICMOSNORGate.jsx";
+import DVLSIMOSFETLab from "./pages/labs/DVLSI/MOSFETCharacteristics/DVLSIMOSFETLab.jsx";
+import DVLSILambdaRulesMicrowindLab from "./pages/labs/DVLSI/LambdaRulesMicrowind/DVLSILambdaRulesMicrowindLab.jsx";
+import DVLSICMOSInverterSimulationLab from "./pages/labs/DVLSI/CMOSInverterSimulation/DVLSICMOSInverterSimulationLab.jsx";
+import DVLSICMOSInverterLayoutLab from "./pages/labs/DVLSI/CMOSInverterLayout/DVLSICMOSInverterLayoutLab.jsx";
+import DVLSICMOSNORGateLab from "./pages/labs/DVLSI/CMOSNORGate/DVLSICMOSNORGateLab.jsx";
+import DVLSICMOSNANDGateLab from "./pages/labs/DVLSI/CMOSNANDGate/DVLSICMOSNANDGateLab.jsx";
+import DVLSITransmissionGateLab from "./pages/labs/DVLSI/TransmissionGate/DVLSITransmissionGateLab.jsx";
+import DVLSIRingOscillatorLab from "./pages/labs/DVLSI/RingOscillator/DVLSIRingOscillatorLab.jsx";
+import DVLSISRAMCellLab from "./pages/labs/DVLSI/SRAMCell/DVLSISRAMCellLab.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
 
@@ -227,11 +231,16 @@ function AppContent() {
         />
         {/* DVLSI Lab index and experiments */}
         <Route path="/labs/dvlsi" element={<ProtectedRoute><DVLSILabIndex /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/mosfet-characteristics" element={<ProtectedRoute><DVLSIMOSFETCharacteristics /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/lambda-rules-microwind" element={<ProtectedRoute><DVLSILambdaRulesMicrowind /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/cmos-inverter-simulation" element={<ProtectedRoute><DVLSICMOSInverterSimulation /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/cmos-inverter-layout" element={<ProtectedRoute><DVLSICMOSInverterLayout /></ProtectedRoute>} />
-        <Route path="/labs/dvlsi/cmos-nor-gate" element={<ProtectedRoute><DVLSICMOSNORGate /></ProtectedRoute>} />
+        <Route path="/labs/dvlsi/mosfet-characteristics" element={<ProtectedRoute><DVLSIMOSFETLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/lambda-rules-microwind" element={<ProtectedRoute><DVLSILambdaRulesMicrowindLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/cmos-inverter-simulation" element={<ProtectedRoute><DVLSICMOSInverterSimulationLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/cmos-inverter-layout" element={<ProtectedRoute><DVLSICMOSInverterLayoutLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/cmos-nor-gate" element={<ProtectedRoute><DVLSICMOSNORGateLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/cmos-nand-gate" element={<ProtectedRoute><DVLSICMOSNANDGateLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/transmission-gate" element={<ProtectedRoute><DVLSITransmissionGateLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/ring-oscillator" element={<ProtectedRoute><DVLSIRingOscillatorLab /></ProtectedRoute>}/>
+        <Route path="/labs/dvlsi/sram-cell" element={<ProtectedRoute><DVLSISRAMCellLab /></ProtectedRoute>}/>
+        
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
       </Routes>

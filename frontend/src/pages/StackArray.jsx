@@ -276,6 +276,7 @@ export default function StackArray() {
         let result;
         if (test.input.length === 2) {
           // push: stack, value
+          // eslint-disable-next-line no-new-func
           const func = new Function('stack', 'value', code + '; return ' + funcName + '(stack, value);');
           result = func([...test.input[0]], test.input[1]);
         } else {
