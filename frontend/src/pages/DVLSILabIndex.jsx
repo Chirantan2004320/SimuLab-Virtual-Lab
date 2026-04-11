@@ -38,7 +38,35 @@ export default function DVLSILabIndex() {
       desc: "Study the circuit structure and logic behavior of a 2-input CMOS NOR gate for different input combinations.",
       icon: "🔲",
       color: "#ec4899"
-    }
+    },
+    {
+  name: "CMOS NAND Gate",
+  path: "/labs/dvlsi/cmos-nand-gate",
+  desc: "Study a 2-input CMOS NAND gate and observe its behavior for different input combinations.",
+  icon: "🟩",
+  color: "#14b8a6",
+},
+{
+  name: "Transmission Gate / Pass Transistor Logic",
+  path: "/labs/dvlsi/transmission-gate",
+  desc: "Study how transmission gates and pass transistors transmit signals and compare their switching behavior.",
+  icon: "🔀",
+  color: "#f59e0b",
+},
+{
+  name: "Ring Oscillator",
+  path: "/labs/dvlsi/ring-oscillator",
+  desc: "Study how an odd-number inverter loop creates oscillation through propagation delay and feedback.",
+  icon: "🔄",
+  color: "#8b5cf6",
+},
+{
+  name: "SRAM Cell Basics",
+  path: "/labs/dvlsi/sram-cell",
+  desc: "Study how a basic SRAM cell stores, holds, reads, and writes one bit using cross-coupled inverters.",
+  icon: "🧠",
+  color: "#06b6d4",
+}
   ];
 
   return (
