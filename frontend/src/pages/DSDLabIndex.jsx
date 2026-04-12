@@ -38,7 +38,28 @@ export default function DSDLabIndex() {
       desc: "Demonstrate the concept of signal delay through digital logic gates.",
       icon: "⏲️",
       color: "#ec4899"
-    }
+    },
+    {
+  name: "Decoder and Encoder",
+  path: "/labs/dsd/decoder-encoder",
+  desc: "Study 2-to-4 decoder and 4-to-2 encoder circuits with interactive signal flow, truth tables, and circuit visualization.",
+  icon: "🔠",
+  color: "#06b6d4"
+},
+{
+  name: "Comparator",
+  path: "/labs/dsd/comparator",
+  desc: "Compare two binary inputs and observe whether A is greater than, equal to, or less than B using interactive logic visualization.",
+  icon: "⚖️",
+  color: "#14b8a6"
+},
+{
+  name: "Counter",
+  path: "/labs/dsd/counter",
+  desc: "Study a 2-bit binary counter and observe how its state changes with each clock pulse in a sequential counting sequence.",
+  icon: "🔢",
+  color: "#8b5cf6"
+}
   ];
 
   return (

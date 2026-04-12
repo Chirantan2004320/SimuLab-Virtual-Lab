@@ -624,3 +624,27 @@
   border-left: 4px solid #38bdf8;
   color: #e5e7eb;
 }
+
+/* SIGNAL FLOW ANIMATION */
+@keyframes flow {
+  0% {
+    stroke-dashoffset: 40;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.signal-flow {
+  stroke-dasharray: 10 10;
+  animation: flow 1s linear infinite;
+}
+
+/* GLOW EFFECT */
+.glow-green {
+  filter: drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 12px #22c55e);
+}
+
+.glow-red {
+  filter: drop-shadow(0 0 6px #ef4444);
+}
