@@ -35,12 +35,15 @@ import DTSPAliasingLab from "./pages/labs/DTSP/SamplingAliasing/DTSPAliasingLab.
 import DTSPFFTvsDFTLab from "./pages/labs/DTSP/FFTvsDFT/DTSPFFTvsDFTLab.jsx";
 import DTSPFilterDesignLab from "./pages/labs/DTSP/DTSPFilterDesign/DTSPFilterDesignLab.jsx";
 import DSDLabIndex from "./pages/DSDLabIndex.jsx";
-import DSDLogicGates from "./pages/DSDLogicGates.jsx";
+import DSDLogicGatesLab from "./pages/labs/DSD/LogicGates/DSDLogicGatesLab.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
-import DSDAdders from "./pages/DSDAdders.jsx";
-import DSDMultiplexer from "./pages/DSDMultiplexer.jsx";
-import DSDFlipFlops from "./pages/DSDFlipFlops.jsx";
-import DSDPropagationDelay from "./pages/DSDPropagationDelay.jsx";
+import DSDAddersLab from "./pages/labs/DSD/Adders/DSDAddersLab.jsx";
+import DSDMultiplexerLab from "./pages/labs/DSD/Multiplexer/DSDMultiplexerLab.jsx";
+import DSDFlipFlopsLab from "./pages/labs/DSD/FlipFlops/DSDFlipFlopsLab.jsx";
+import DSDPropagationDelayLab from "./pages/labs/DSD/PropagationDelay/DSDPropagationDelayLab.jsx";
+import DSDDecoderEncoderLab from "./pages/labs/DSD/DecoderEncoder/DSDDecoderEncoderLab.jsx";
+import DSDComparatorLab from "./pages/labs/DSD/Comparator/DSDComparatorLab.jsx";
+import DSDCounterLab from "./pages/labs/DSD/Counter/DSDCounterLab.jsx";
 import DVLSILabIndex from "./pages/DVLSILabIndex.jsx";
 import DVLSIMOSFETLab from "./pages/labs/DVLSI/MOSFETCharacteristics/DVLSIMOSFETLab.jsx";
 import DVLSILambdaRulesMicrowindLab from "./pages/labs/DVLSI/LambdaRulesMicrowind/DVLSILambdaRulesMicrowindLab.jsx";
@@ -209,26 +212,16 @@ function AppContent() {
 
         {/* DSD Lab index (frontend-only for now) */}
         <Route path="/labs/dsd" element={<ProtectedRoute><DSDLabIndex /></ProtectedRoute>} />
-        <Route
-          path="/labs/dsd/logic-gates"
-          element={<ProtectedRoute><DSDLogicGates /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/adders"
-          element={<ProtectedRoute><DSDAdders /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/multiplexer"
-          element={<ProtectedRoute><DSDMultiplexer /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/flip-flops"
-          element={<ProtectedRoute><DSDFlipFlops /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dsd/propagation-delay"
-          element={<ProtectedRoute><DSDPropagationDelay /></ProtectedRoute>}
-        />
+        <Route path="/labs/dsd/logic-gates" element={<ProtectedRoute><DSDLogicGatesLab /></ProtectedRoute>}/>        
+        <Route path="/labs/dsd/adders" element={<ProtectedRoute><DSDAddersLab /></ProtectedRoute>}/>       
+         <Route path="/labs/dsd/multiplexer" element={<ProtectedRoute><DSDMultiplexerLab /></ProtectedRoute>}/>
+        <Route path="/labs/dsd/flip-flops" element={<ProtectedRoute><DSDFlipFlopsLab /></ProtectedRoute>}/>        
+        <Route path="/labs/dsd/propagation-delay" element={<ProtectedRoute><DSDPropagationDelayLab /></ProtectedRoute>}/>
+        <Route path="/labs/dsd/decoder-encoder" element={<ProtectedRoute><DSDDecoderEncoderLab /></ProtectedRoute>}/>
+        <Route path="/labs/dsd/comparator" element={<ProtectedRoute><DSDComparatorLab /></ProtectedRoute>}/>
+        <Route path="/labs/dsd/counter" element={<ProtectedRoute><DSDCounterLab /></ProtectedRoute>}/>
+
+
         {/* DVLSI Lab index and experiments */}
         <Route path="/labs/dvlsi" element={<ProtectedRoute><DVLSILabIndex /></ProtectedRoute>} />
         <Route path="/labs/dvlsi/mosfet-characteristics" element={<ProtectedRoute><DVLSIMOSFETLab /></ProtectedRoute>}/>
