@@ -1,20 +1,21 @@
 import React, { useState } from "react";
+import { Brain, Lock, CheckCircle2, RotateCcw } from "lucide-react";
 
 const questions = [
   {
     q: "Which gate passes the input unchanged to the output?",
     options: ["NOT", "BUFFER", "XOR", "NOR"],
-    correct: 1
+    correct: 1,
   },
   {
     q: "Which gate inverts a single input?",
     options: ["AND", "OR", "NOT", "XNOR"],
-    correct: 2
+    correct: 2,
   },
   {
     q: "Which gate gives output 1 only when both inputs are 1?",
     options: ["OR", "AND", "XOR", "NOR"],
-    correct: 1
+    correct: 1,
   },
   {
     q: "XOR gate gives output 1 when:",
@@ -22,9 +23,9 @@ const questions = [
       "Both inputs are 0",
       "Inputs are different",
       "Inputs are equal",
-      "Both inputs are 1"
+      "Both inputs are 1",
     ],
-    correct: 1
+    correct: 1,
   },
   {
     q: "XNOR gate gives output 1 when:",
@@ -32,10 +33,10 @@ const questions = [
       "Inputs are different",
       "Inputs are equal",
       "Only A is 1",
-      "Only B is 1"
+      "Only B is 1",
     ],
-    correct: 1
-  }
+    correct: 1,
+  },
 ];
 
 export default function DSDLogicGatesQuiz({ experimentRun }) {
@@ -65,63 +66,110 @@ export default function DSDLogicGatesQuiz({ experimentRun }) {
   };
 
   return (
-    <section className="card">
-      <h2>Quiz</h2>
+    <section className="quiz-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Brain size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Quiz</h2>
+          <p className="sorting-sim-subtitle">
+            Test your understanding of digital logic gate behavior and truth tables.
+          </p>
+        </div>
+      </div>
 
       {!experimentRun ? (
-        <p>Please interact with the logic gate simulation before attempting the quiz.</p>
+        <div className="quiz-locked-box">
+          <Lock size={18} />
+          <span>Please interact with the logic gate simulation before attempting the quiz.</span>
+        </div>
       ) : (
-        <div>
-          {questions.map((q, i) => (
-            <div key={i} className="quiz-question">
-              <p>
-                <strong>{i + 1}. {q.q}</strong>
-              </p>
-
-              {q.options.map((opt, j) => (
-                <label
-                  key={j}
-                  className={`quiz-option ${
-                    submitted
-                      ? j === q.correct
-                        ? "correct"
-                        : answers[i] === j
-                        ? "wrong"
-                        : ""
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q${i}`}
-                    value={j}
-                    checked={answers[i] === j}
-                    onChange={() => handleAnswer(i, j)}
-                    disabled={submitted}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          ))}
-
+        <>
           {!submitted ? (
-            <button
-              className="btn primary"
-              onClick={submitQuiz}
-              disabled={answers.includes(null)}
-            >
-              Submit Quiz
-            </button>
-          ) : (
-            <div>
-              <p>Score: {score} / {questions.length}</p>
-              <button className="btn secondary" onClick={redoQuiz}>
-                Redo Quiz
+            <div className="quiz-list">
+              {questions.map((q, i) => (
+                <div key={i} className="quiz-card-upgraded">
+                  <div className="quiz-question-title">
+                    {i + 1}. {q.q}
+                  </div>
+
+                  <div className="quiz-options-grid">
+                    {q.options.map((opt, j) => (
+                      <label
+                        key={j}
+                        className={`quiz-option-card ${answers[i] === j ? "selected" : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`q${i}`}
+                          checked={answers[i] === j}
+                          onChange={() => handleAnswer(i, j)}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <button
+                className="sim-btn sim-btn-primary"
+                onClick={submitQuiz}
+                disabled={answers.includes(null)}
+              >
+                Submit Quiz
               </button>
             </div>
+          ) : (
+            <div className="quiz-result-shell">
+              <div className="quiz-score-box">
+                <CheckCircle2 size={22} />
+                <div>
+                  <h3>Quiz Completed</h3>
+                  <p>
+                    You scored {score} / {questions.length}
+                  </p>
+                </div>
+              </div>
+
+              <div className="quiz-list">
+                {questions.map((q, i) => (
+                  <div key={i} className="quiz-card-upgraded">
+                    <div className="quiz-question-title">
+                      {i + 1}. {q.q}
+                    </div>
+
+                    <div className="quiz-options-grid">
+                      {q.options.map((opt, j) => {
+                        const isCorrect = j === q.correct;
+                        const isWrong = answers[i] === j && j !== q.correct;
+
+                        return (
+                          <div
+                            key={j}
+                            className={`quiz-option-card result-mode ${
+                              isCorrect ? "correct" : isWrong ? "wrong" : ""
+                            }`}
+                          >
+                            <span>{opt}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="quiz-actions-row">
+                <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+                  <RotateCcw size={16} />
+                  Redo Quiz
+                </button>
+              </div>
+            </div>
           )}
-        </div>
+        </>
       )}
     </section>
   );

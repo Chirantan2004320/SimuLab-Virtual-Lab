@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
 import "../../../SortingLab.css";
+import { FlaskConical } from "lucide-react";
+
 import DBMSNormalizationOverview from "./DBMSNormalizationOverview";
 import DBMSNormalizationSimulation from "./DBMSNormalizationSimulation";
+import DBMSNormalizationComparison from "./DBMSNormalizationComparison";
 import DBMSNormalizationQuiz from "./DBMSNormalizationQuiz";
 import DBMSNormalizationCoding from "./DBMSNormalizationCoding";
 
@@ -93,108 +95,6 @@ const normalizationQuizQuestionsByStage = {
       correct: 2
     }
   ]
-};
-
-const codingProblemByStage = {
-  "1nf": {
-    title: "Convert a table to 1NF",
-    description:
-      "Write the transformed 1NF design for a table where one row stores multiple subjects in the same cell."
-  },
-  "2nf": {
-    title: "Convert a table to 2NF",
-    description:
-      "Write how you would split a table to remove partial dependency from a composite key."
-  },
-  "3nf": {
-    title: "Convert a table to 3NF",
-    description:
-      "Write how you would split a table to remove transitive dependency so non-key attributes depend only on the key."
-  }
-};
-
-const normalizationCodeTemplates = {
-  "1nf": {
-    javascript: `// Example answer for 1NF
-const answer = {
-  originalProblem: "Subjects stored as comma-separated values in one cell",
-  fix: [
-    "Create one row per subject",
-    "Keep atomic values in each column"
-  ]
-};`,
-    python: `# Example answer for 1NF
-answer = {
-    "original_problem": "Subjects stored as comma-separated values in one cell",
-    "fix": [
-        "Create one row per subject",
-        "Keep atomic values in each column"
-    ]
-}`,
-    cpp: `// Example answer outline for 1NF
-string answer =
-"Split repeating groups into separate rows and keep atomic values.";`,
-    c: `/* Example answer outline for 1NF
-   Split repeating groups into separate rows and keep atomic values.
-*/`,
-    java: `// Example answer outline for 1NF
-String answer =
-"Split repeating groups into separate rows and keep atomic values.";`
-  },
-  "2nf": {
-    javascript: `// Example answer for 2NF
-const answer = {
-  problem: "InstructorName depends only on CourseID, not full composite key",
-  fix: [
-    "Create StudentCourse(StudentID, CourseID)",
-    "Create Course(CourseID, CourseName, InstructorName)"
-  ]
-};`,
-    python: `# Example answer for 2NF
-answer = {
-    "problem": "InstructorName depends only on CourseID, not full composite key",
-    "fix": [
-        "Create StudentCourse(StudentID, CourseID)",
-        "Create Course(CourseID, CourseName, InstructorName)"
-    ]
-}`,
-    cpp: `// Example answer outline for 2NF
-string answer =
-"Separate attributes that depend on only part of the composite key into another table.";`,
-    c: `/* Example answer outline for 2NF
-   Separate attributes that depend on only part of the composite key into another table.
-*/`,
-    java: `// Example answer outline for 2NF
-String answer =
-"Separate attributes that depend on only part of the composite key into another table.";`
-  },
-  "3nf": {
-    javascript: `// Example answer for 3NF
-const answer = {
-  problem: "DepartmentOffice depends on DepartmentName, not directly on StudentID",
-  fix: [
-    "Create Student(StudentID, StudentName, DepartmentName)",
-    "Create Department(DepartmentName, DepartmentOffice)"
-  ]
-};`,
-    python: `# Example answer for 3NF
-answer = {
-    "problem": "DepartmentOffice depends on DepartmentName, not directly on StudentID",
-    "fix": [
-        "Create Student(StudentID, StudentName, DepartmentName)",
-        "Create Department(DepartmentName, DepartmentOffice)"
-    ]
-}`,
-    cpp: `// Example answer outline for 3NF
-string answer =
-"Move attributes with transitive dependency into a separate table.";`,
-    c: `/* Example answer outline for 3NF
-   Move attributes with transitive dependency into a separate table.
-*/`,
-    java: `// Example answer outline for 3NF
-String answer =
-"Move attributes with transitive dependency into a separate table.";`
-  }
 };
 
 const unfTable = [
@@ -309,10 +209,6 @@ export default function DBMSNormalizationLab() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(normalizationCodeTemplates["1nf"].javascript);
-  const [codeResult, setCodeResult] = useState("");
-
   useEffect(() => {
     setStepHistory([]);
     setCurrentStage("");
@@ -325,13 +221,7 @@ export default function DBMSNormalizationLab() {
     setQuizAnswers(Array(normalizationQuizQuestionsByStage[normalForm].length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-    setCodeResult("");
   }, [normalForm]);
-
-  useEffect(() => {
-    setCode(normalizationCodeTemplates[normalForm][selectedLanguage]);
-    setCodeResult("");
-  }, [normalForm, selectedLanguage]);
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
@@ -548,152 +438,162 @@ export default function DBMSNormalizationLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
-      return;
-    }
-
-    try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(`${code}; return answer;`);
-      const result = fn();
-      setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
-  };
-
-  const codingProblem = codingProblemByStage[normalForm];
-
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Normalization</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Normal Form</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={normalForm}
-              onChange={(e) => setNormalForm(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-              disabled={isRunning}
-            >
-              <option value="1nf">1NF</option>
-              <option value="2nf">2NF</option>
-              <option value="3nf">3NF</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Normalization Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            Normalization
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Explore 1NF, 2NF, and 3NF visually through decomposition, comparison, quiz, and normalization design practice.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Normalization Configuration</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 16
+            }}
           >
-            Overview
-          </button>
+            <div>
+              <label className="sorting-label">Normal Form</label>
+              <select
+                value={normalForm}
+                onChange={(e) => setNormalForm(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="1nf">1NF</option>
+                <option value="2nf">2NF</option>
+                <option value="3nf">3NF</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DBMSNormalizationOverview normalForm={normalForm} unfTable={unfTable} />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
+              onClick={() => setActiveSection("comparison")}
+            >
+              Comparison
+            </button>
 
-          {activeSection === "simulation" && (
-            <DBMSNormalizationSimulation
-              normalForm={normalForm}
-              runSimulation={runSimulation}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              displayTables={displayTables}
-              stepHistory={stepHistory}
-              currentStage={currentStage}
-              highlightedColumns={highlightedColumns}
-              dependencyText={dependencyText}
-              isRunning={isRunning}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "quiz" && (
-            <DBMSNormalizationQuiz
-              normalForm={normalForm}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "coding" && (
-            <DBMSNormalizationCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              normalForm={normalForm}
-            />
-          )}
-        </main>
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && (
+                <DBMSNormalizationOverview normalForm={normalForm} unfTable={unfTable} />
+              )}
+
+              {activeSection === "simulation" && (
+                <DBMSNormalizationSimulation
+                  normalForm={normalForm}
+                  runSimulation={runSimulation}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  displayTables={displayTables}
+                  stepHistory={stepHistory}
+                  currentStage={currentStage}
+                  highlightedColumns={highlightedColumns}
+                  dependencyText={dependencyText}
+                  isRunning={isRunning}
+                />
+              )}
+
+              {activeSection === "comparison" && (
+                <DBMSNormalizationComparison
+                  normalForm={normalForm}
+                  unfTable={unfTable}
+                  firstNFTable={firstNFTable}
+                  secondNFStudentCourse={secondNFStudentCourse}
+                  secondNFCourse={secondNFCourse}
+                  secondNFStudent={secondNFStudent}
+                  thirdNFStudent={thirdNFStudent}
+                  thirdNFDepartment={thirdNFDepartment}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <DBMSNormalizationQuiz
+                  normalForm={normalForm}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <DBMSNormalizationCoding normalForm={normalForm} />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

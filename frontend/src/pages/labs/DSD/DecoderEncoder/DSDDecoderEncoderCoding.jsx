@@ -1,153 +1,168 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { FileCode2, CheckCircle2, Lightbulb, RefreshCcw } from "lucide-react";
 
 const problemBank = [
   {
     id: 1,
-    title: "2-to-4 Decoder",
+    title: "Decoder Output Prediction",
     description:
-      "Write a function decoder2to4(a, b) that returns an array [Y0, Y1, Y2, Y3] with one active output."
+      "For a 2-to-4 decoder, if A = 1 and B = 0, which output line becomes active?",
+    answer: "Y2",
+    placeholder: "Write the active output line here..."
   },
   {
     id: 2,
-    title: "4-to-2 Encoder",
+    title: "Encoder Code Prediction",
     description:
-      "Write a function encoder4to2(inputs) that returns the binary code of the active input."
+      "For a 4-to-2 encoder, if input I3 is active, what binary output is produced?",
+    answer: "11",
+    placeholder: "Write the binary output here..."
   },
   {
     id: 3,
-    title: "Decoder Selected Output",
+    title: "Conceptual Explanation",
     description:
-      "Write a function selectedOutput(a, b) that returns the output index selected by the binary input."
+      "Explain briefly how an encoder is the reverse operation of a decoder.",
+    answer:
+      "An encoder is the reverse of a decoder because it converts one active input line into a binary code, while a decoder converts a binary input code into one active output line.",
+    placeholder: "Write your explanation here..."
   }
 ];
 
-export default function DSDDecoderEncoderCoding() {
-  const [currentProblems, setCurrentProblems] = useState([]);
-  const [codes, setCodes] = useState({});
-  const [results, setResults] = useState({});
+function normalizeText(value) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
 
-  const generateProblems = () => {
-    setCurrentProblems(problemBank);
+export default function DSDDecoderEncoderCoding({
+  mode,
+  a,
+  b,
+  inputs,
+  analysis
+}) {
+  const [responses, setResponses] = useState(() =>
+    problemBank.reduce((acc, item) => {
+      acc[item.id] = "";
+      return acc;
+    }, {})
+  );
 
-    const initialCodes = {};
-    problemBank.forEach((p) => {
-      initialCodes[p.id] = getStarterCode(p.id);
-    });
+  const [feedback, setFeedback] = useState({});
 
-    setCodes(initialCodes);
-    setResults({});
+  const currentInsight = useMemo(() => {
+    return mode === "decoder"
+      ? `Current decoder state: A=${a}, B=${b}, active output = Y${analysis.index}.`
+      : analysis.index === -1
+      ? "Current encoder state: no valid active input line."
+      : `Current encoder state: active input = I${analysis.index}, binary output = ${analysis.binary}.`;
+  }, [mode, a, b, inputs, analysis]);
+
+  const handleChange = (id, value) => {
+    setResponses((prev) => ({ ...prev, [id]: value }));
   };
 
-  const getStarterCode = (id) => {
-    if (id === 1) {
-      return `function decoder2to4(a, b) {
-  const index = a * 2 + b;
-  const outputs = [0, 0, 0, 0];
-  outputs[index] = 1;
-  return outputs;
-}`;
+  const checkAnswer = (problem) => {
+    const userValue = normalizeText(responses[problem.id] || "");
+    const correctValue = normalizeText(problem.answer);
+
+    let result = "";
+    if (!userValue) {
+      result = "Please write your answer first.";
+    } else if (
+      userValue === correctValue ||
+      userValue.includes(correctValue) ||
+      correctValue.includes(userValue)
+    ) {
+      result = "Correct. Your design answer matches the expected logic concept.";
+    } else {
+      result = "Partially correct or incorrect. Review the mapping and try again.";
     }
 
-    if (id === 2) {
-      return `function encoder4to2(inputs) {
-  const index = inputs.findIndex(v => v === 1);
-  return index === -1 ? "--" : index.toString(2).padStart(2, "0");
-}`;
-    }
-
-    return `function selectedOutput(a, b) {
-  return a * 2 + b;
-}`;
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: result
+    }));
   };
 
-  const handleCodeChange = (problemId, code) => {
-    setCodes((prev) => ({ ...prev, [problemId]: code }));
+  const showModelAnswer = (problem) => {
+    setResponses((prev) => ({
+      ...prev,
+      [problem.id]: problem.answer
+    }));
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: "Model answer loaded."
+    }));
   };
 
-  const runCode = (problemId) => {
-    const code = codes[problemId];
-
-    if (!code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code first."
-      }));
-      return;
-    }
-
-    try {
-      let resultText = "";
-
-      if (problemId === 1) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return decoder2to4;`)();
-        const output = fn(1, 0);
-        resultText = `Function ran successfully. Example decoder2to4(1,0) = [${output.join(", ")}]`;
-      } else if (problemId === 2) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return encoder4to2;`)();
-        const output = fn([0, 0, 1, 0]);
-        resultText = `Function ran successfully. Example encoder4to2([0,0,1,0]) = ${output}`;
-      } else if (problemId === 3) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return selectedOutput;`)();
-        const output = fn(1, 1);
-        resultText = `Function ran successfully. Example selectedOutput(1,1) = ${output}`;
-      }
-
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: resultText
-      }));
-    } catch (error) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Error: ${error.message}`
-      }));
-    }
+  const clearAll = () => {
+    setResponses(
+      problemBank.reduce((acc, item) => {
+        acc[item.id] = "";
+        return acc;
+      }, {})
+    );
+    setFeedback({});
   };
 
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Practice implementing decoder and encoder logic using JavaScript functions.
-      </p>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <FileCode2 size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Design Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Practice decoder and encoder logic through signal prediction, mapping, and concept-based reasoning.
+          </p>
+        </div>
+      </div>
 
-      <button className="btn primary" onClick={generateProblems}>
-        Generate Problems
-      </button>
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Live Hint:</strong> {currentInsight}
+      </div>
 
-      {currentProblems.map((problem, index) => (
-        <div key={problem.id} className="coding-problem">
-          <h3>
-            Problem {index + 1}: {problem.title}
-          </h3>
-          <p>{problem.description}</p>
+      <div className="coding-actions-upgraded" style={{ marginBottom: 18 }}>
+        <button className="sim-btn sim-btn-muted" onClick={clearAll}>
+          <RefreshCcw size={16} />
+          Reset Practice
+        </button>
+      </div>
+
+      {problemBank.map((problem, index) => (
+        <div key={problem.id} className="coding-card-upgraded">
+          <div className="coding-card-header">
+            <div>
+              <h3>
+                Task {index + 1}: {problem.title}
+              </h3>
+              <p>{problem.description}</p>
+            </div>
+          </div>
 
           <textarea
-            value={codes[problem.id] || ""}
-            onChange={(e) => handleCodeChange(problem.id, e.target.value)}
-            rows={12}
-            placeholder="Write your code here..."
-            style={{
-              width: "100%",
-              fontFamily: "monospace",
-              color: "#000",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "10px"
-            }}
+            className="coding-textarea-upgraded"
+            value={responses[problem.id]}
+            onChange={(e) => handleChange(problem.id, e.target.value)}
+            rows={7}
+            placeholder={problem.placeholder}
           />
 
-          <button className="btn secondary" onClick={() => runCode(problem.id)}>
-            Run Code
-          </button>
+          <div className="coding-actions-upgraded">
+            <button className="sim-btn sim-btn-primary" onClick={() => checkAnswer(problem)}>
+              <CheckCircle2 size={16} />
+              Check Answer
+            </button>
 
-          {results[problem.id] && (
-            <p className="result" style={{ marginTop: "10px" }}>
-              {results[problem.id]}
-            </p>
+            <button className="sim-btn sim-btn-muted" onClick={() => showModelAnswer(problem)}>
+              <Lightbulb size={16} />
+              Show Model Answer
+            </button>
+          </div>
+
+          {feedback[problem.id] && (
+            <div className="coding-result-box">{feedback[problem.id]}</div>
           )}
         </div>
       ))}

@@ -1,4 +1,5 @@
 import React from "react";
+import { Table2 } from "lucide-react";
 
 function getOutput(gate, A, B) {
   if (gate === "BUFFER") return A;
@@ -19,21 +20,33 @@ export default function DSDLogicGatesTruthTable({ selectedGate, analysis }) {
     { A: 0, B: 0 },
     { A: 0, B: 1 },
     { A: 1, B: 0 },
-    { A: 1, B: 1 }
+    { A: 1, B: 1 },
   ];
 
   const rows = analysis.isSingleInput ? singleInputRows : doubleInputRows;
 
   return (
-    <section className="card experiment">
-      <h2>Truth Table</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Table2 size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Truth Table</h2>
+            <p className="sorting-sim-subtitle">
+              Verify how the selected gate behaves for every possible input combination.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        The table below shows how the selected logic gate responds to every possible input combination.
+      <div className="sorting-info-box">
+        The highlighted row corresponds to the current input combination used in the simulation.
       </div>
 
       <div className="card">
-        <h3>{selectedGate} Truth Table</h3>
+        <h3 style={{ color: "#f8fafc" }}>{selectedGate} Truth Table</h3>
         <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
           <thead>
             <tr>
@@ -64,7 +77,7 @@ export default function DSDLogicGatesTruthTable({ selectedGate, analysis }) {
       </div>
 
       <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Comparison Across All Gates</h3>
+        <h3 style={{ color: "#f8fafc" }}>Comparison Across All Gates</h3>
         <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
           <thead>
             <tr>
@@ -89,7 +102,7 @@ export default function DSDLogicGatesTruthTable({ selectedGate, analysis }) {
                         key={gate}
                         style={{
                           color: y === 1 ? "#22c55e" : "#ef4444",
-                          fontWeight: selectedGate === gate ? "bold" : "normal"
+                          fontWeight: selectedGate === gate ? "bold" : "normal",
                         }}
                       >
                         {y}
@@ -101,17 +114,6 @@ export default function DSDLogicGatesTruthTable({ selectedGate, analysis }) {
             })}
           </tbody>
         </table>
-      </div>
-
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Current Input Observation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          The highlighted row corresponds to the current input combination.
-        </p>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          For the selected gate <strong>{selectedGate}</strong>, the output is
-          <strong> {analysis.selected.output}</strong>.
-        </p>
       </div>
     </section>
   );

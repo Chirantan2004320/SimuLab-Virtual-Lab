@@ -1,56 +1,34 @@
 import React from "react";
+import {
+  Activity,
+  Play,
+  RotateCcw,
+  Database,
+  Sparkles,
+  ArrowRightLeft,
+  TimerReset,
+  Table2
+} from "lucide-react";
 import SimpleTable from "../../../../components/dbms/SimpleTable.jsx";
 import StepHistoryPanel from "../../../../components/dbms/StepHistoryPanel.jsx";
 import InfoStatCard from "../../../../components/dbms/InfoStatCard.jsx";
 import ObservationBox from "../../../../components/dbms/ObservationBox.jsx";
 
 function EntityCard({ entity, isHighlighted }) {
-  let border = "2px solid #38bdf8";
-  let background =
-    "linear-gradient(135deg, rgba(56,189,248,0.2), rgba(129,140,248,0.2))";
-  let boxShadow = "0 4px 12px rgba(56,189,248,0.15)";
-
-  if (isHighlighted) {
-    border = "2px solid #facc15";
-    background =
-      "linear-gradient(135deg, rgba(250,204,21,0.25), rgba(234,179,8,0.18))";
-    boxShadow = "0 0 18px rgba(250,204,21,0.25)";
-  }
-
   return (
-    <div
-      style={{
-        minWidth: 220,
-        padding: "18px 16px",
-        borderRadius: 12,
-        background,
-        border,
-        color: "#ffffff",
-        boxShadow,
-        transition: "all 0.25s ease"
-      }}
-    >
-      <div style={{ fontSize: "1.15rem", fontWeight: 800, marginBottom: 12 }}>
-        {entity.name}
+    <div className={`er-sim-entity-card ${isHighlighted ? "active" : ""}`}>
+      <div className="er-sim-entity-head">
+        <span className="er-sim-entity-badge">Entity</span>
+        <h3>{entity.name}</h3>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div className="er-sim-attr-list">
         {entity.attributes.map((attribute) => (
           <div
             key={attribute.name}
-            style={{
-              padding: "8px 10px",
-              borderRadius: 8,
-              background: attribute.primary
-                ? "rgba(34,197,94,0.18)"
-                : "rgba(15,23,42,0.35)",
-              border: attribute.primary
-                ? "1px solid rgba(34,197,94,0.4)"
-                : "1px solid rgba(148,163,184,0.18)"
-            }}
+            className={`er-sim-attr-item ${attribute.primary ? "primary" : ""}`}
           >
-            {attribute.name}
-            {attribute.primary ? " (PK)" : ""}
+            {attribute.name} {attribute.primary ? "(PK)" : ""}
           </div>
         ))}
       </div>
@@ -58,51 +36,12 @@ function EntityCard({ entity, isHighlighted }) {
   );
 }
 
-function RelationshipPanel({ highlightedRelationship }) {
-  const relationshipRows = [
-    {
-      name: "Student ENROLLS_IN Course",
-      cardinality: "Many-to-Many",
-      key: "enrolls"
-    },
-    {
-      name: "Instructor TEACHES Course",
-      cardinality: "One-to-Many",
-      key: "teaches"
-    }
-  ];
-
+function RelationshipCard({ title, cardinality, active }) {
   return (
-    <section className="card" style={{ marginBottom: 20 }}>
-      <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Relationships</h3>
-
-      <div style={{ display: "grid", gap: 12 }}>
-        {relationshipRows.map((row) => {
-          const isHighlighted = highlightedRelationship === row.key;
-
-          return (
-            <div
-              key={row.key}
-              style={{
-                padding: "14px 16px",
-                borderRadius: 10,
-                background: isHighlighted
-                  ? "rgba(250,204,21,0.18)"
-                  : "rgba(15,23,42,0.35)",
-                border: isHighlighted
-                  ? "1px solid rgba(250,204,21,0.4)"
-                  : "1px solid rgba(56,189,248,0.22)",
-                color: "#e5e7eb",
-                transition: "0.25s ease"
-              }}
-            >
-              <strong style={{ color: "#38bdf8" }}>{row.name}</strong>
-              <div style={{ marginTop: 8 }}>{row.cardinality}</div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
+    <div className={`er-relationship-card ${active ? "active" : ""}`}>
+      <div className="er-relationship-title">{title}</div>
+      <div className="er-relationship-sub">{cardinality}</div>
+    </div>
   );
 }
 
@@ -129,65 +68,91 @@ export default function DBMSERModelingSimulation({
       ? "Relationships connect entities and define how they interact, such as one-to-many or many-to-many."
       : "ER to Relational Mapping converts entities and relationships into relational tables, preserving keys and constraints.";
 
+  const relationshipRows = [
+    {
+      title: "Student ENROLLS_IN Course",
+      cardinality: "Many-to-Many",
+      key: "enrolls"
+    },
+    {
+      title: "Instructor TEACHES Course",
+      cardinality: "One-to-Many",
+      key: "teaches"
+    }
+  ];
+
   const entityCount = erEntities.length;
   const relationshipCount = 2;
   const mappedTableCount =
-    mode === "mapping" ? (mappingRows.length > 0 ? mappingRows.length : 0) : relationalTables.length;
+    mode === "mapping"
+      ? (mappingRows.length > 0 ? mappingRows.length : 0)
+      : relationalTables.length;
 
   return (
     <>
-      <section className="card experiment">
-        <h2>
-          Simulation{" "}
-          <span style={{ color: "#38bdf8" }}>
-            ({mode.toUpperCase()})
-          </span>
-        </h2>
+      <section className="sorting-sim-card">
+        <div className="sorting-sim-header">
+          <div className="sorting-sim-title-wrap">
+            <div className="sorting-sim-icon">
+              <Activity size={18} />
+            </div>
+            <div>
+              <h2 className="sorting-sim-title">Simulation</h2>
+              <p className="sorting-sim-subtitle">
+                Visualize how ER concepts are discovered and transformed step by step.
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <div className="buttons" style={{ marginBottom: 14 }}>
-          <button className="btn primary" onClick={runSimulation} disabled={isRunning}>
+        <div className="sorting-btn-group" style={{ marginBottom: 18 }}>
+          <button className="sim-btn sim-btn-primary" onClick={runSimulation} disabled={isRunning}>
+            <Play size={16} />
             {isRunning ? "Running..." : "Run Demo"}
           </button>
 
-          <button className="btn info" onClick={loadSample} disabled={isRunning}>
+          <button className="sim-btn sim-btn-muted" onClick={loadSample} disabled={isRunning}>
+            <Database size={16} />
             Load Sample
           </button>
 
-          <button className="btn secondary" onClick={reset} disabled={isRunning}>
+          <button className="sim-btn sim-btn-danger" onClick={reset} disabled={isRunning}>
+            <RotateCcw size={16} />
             Reset
           </button>
         </div>
 
-        <div className="info-box">
-          {message || "Run the ER modelling simulation to begin."}
-        </div>
+        <div className="sorting-info-box">{message || "Run the ER modelling simulation to begin."}</div>
 
         {currentStage && (
-          <div
-            style={{
-              marginTop: 14,
-              color: "#facc15",
-              fontWeight: 700,
-              fontSize: "1rem"
-            }}
-          >
-            Current Stage: {currentStage}
+          <div className="er-current-stage">
+            <TimerReset size={16} />
+            <span>Current Stage: {currentStage}</span>
           </div>
         )}
 
         <div
+          className="sorting-stats-grid"
           style={{
-            marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16
+            marginTop: 18,
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))"
           }}
         >
           <InfoStatCard label="Entities" value={entityCount} />
           <InfoStatCard label="Relationships" value={relationshipCount} />
           <InfoStatCard
-            label={mode === "mapping" ? "Mapped Tables" : "Available Tables"}
+            label={mode === "mapping" ? "Mapped Tables" : "Schema Items"}
             value={mappedTableCount}
+          />
+          <InfoStatCard
+            label="Focus"
+            value={
+              mode === "entities"
+                ? "Attributes"
+                : mode === "relationships"
+                ? "Cardinality"
+                : "Mapping"
+            }
           />
         </div>
 
@@ -195,35 +160,66 @@ export default function DBMSERModelingSimulation({
         <ObservationBox text={observationText} />
       </section>
 
-      <section className="card" style={{ marginBottom: 20 }}>
-        <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Entities</h3>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 18,
-            flexWrap: "wrap",
-            justifyContent: "center"
-          }}
-        >
-          {erEntities.map((entity) => (
-            <EntityCard
-              key={entity.key}
-              entity={entity}
-              isHighlighted={highlightedEntity === entity.key}
-            />
-          ))}
+      <section className="sorting-sim-card" style={{ marginTop: 22 }}>
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            {mode === "mapping" ? <Table2 size={18} /> : <Sparkles size={18} />}
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">
+              {mode === "entities"
+                ? "Entity Explorer"
+                : mode === "relationships"
+                ? "Relationship Explorer"
+                : "Mapping Explorer"}
+            </h2>
+            <p className="sorting-sim-subtitle">
+              {mode === "entities"
+                ? "See how each entity and its attributes are organized."
+                : mode === "relationships"
+                ? "Understand how entities are connected using relationship rules."
+                : "Watch how conceptual design becomes relational schema."}
+            </p>
+          </div>
         </div>
+
+        {mode === "entities" && (
+          <div className="er-sim-entity-grid">
+            {erEntities.map((entity) => (
+              <EntityCard
+                key={entity.key}
+                entity={entity}
+                isHighlighted={highlightedEntity === entity.key}
+              />
+            ))}
+          </div>
+        )}
+
+        {mode === "relationships" && (
+          <div style={{ display: "grid", gap: 14 }}>
+            {relationshipRows.map((row) => (
+              <RelationshipCard
+                key={row.key}
+                title={row.title}
+                cardinality={row.cardinality}
+                active={highlightedRelationship === row.key}
+              />
+            ))}
+
+            <div className="er-sim-hint">
+              <ArrowRightLeft size={18} />
+              Entity interactions are represented here visually
+            </div>
+          </div>
+        )}
+
+        {mode === "mapping" && (
+          <SimpleTable
+            title="Relational Mapping"
+            rows={mappingRows.length > 0 ? mappingRows : []}
+          />
+        )}
       </section>
-
-      <RelationshipPanel highlightedRelationship={highlightedRelationship} />
-
-      {mode === "mapping" && (
-        <SimpleTable
-          title="Relational Mapping"
-          rows={mappingRows.length > 0 ? mappingRows : relationalTables.slice(0, 0)}
-        />
-      )}
 
       <StepHistoryPanel steps={stepHistory} />
     </>

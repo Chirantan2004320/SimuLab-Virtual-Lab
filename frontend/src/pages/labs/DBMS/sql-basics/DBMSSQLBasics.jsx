@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
 import "../../../SortingLab.css";
+import { FlaskConical } from "lucide-react";
+
 import DBMSSQLBasicsOverview from "./SQLBasicsOverview.jsx";
 import DBMSSQLBasicsSimulation from "./SQLBasicsSimulation.jsx";
 import DBMSSQLBasicsQuiz from "./SQLBasicsQuiz.jsx";
@@ -19,12 +20,7 @@ const sqlQuizQuestions = [
   },
   {
     question: "What does ORDER BY do?",
-    options: [
-      "Deletes rows",
-      "Filters rows",
-      "Sorts rows",
-      "Adds new rows"
-    ],
+    options: ["Deletes rows", "Filters rows", "Sorts rows", "Adds new rows"],
     correct: 2
   },
   {
@@ -144,8 +140,7 @@ export default function DBMSSQLBasicsLab() {
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const buildSQLQuery = () => {
-    const selectClause =
-      selectedColumns.length > 0 ? selectedColumns.join(", ") : "*";
+    const selectClause = selectedColumns.length > 0 ? selectedColumns.join(", ") : "*";
 
     const isNumericColumn =
       whereColumn === "id" || whereColumn === "age" || whereColumn === "marks";
@@ -239,9 +234,7 @@ export default function DBMSSQLBasicsLab() {
         );
 
         setHighlightedRowIds(matchedRows.map((row) => row.id));
-        setMessage(
-          `Applying WHERE ${whereColumn} ${whereOperator} ${whereValue}...`
-        );
+        setMessage(`Applying WHERE ${whereColumn} ${whereOperator} ${whereValue}...`);
         addStep(
           `Applied WHERE condition: ${whereColumn} ${whereOperator} ${whereValue}. Matching rows were selected.`
         );
@@ -270,9 +263,7 @@ export default function DBMSSQLBasicsLab() {
         rows = sortedRows;
         setDisplayRows(rows);
         setHighlightedRowIds(rows.map((row) => row.id));
-        setMessage(
-          `Applying ORDER BY ${orderByColumn} ${orderDirection.toUpperCase()}...`
-        );
+        setMessage(`Applying ORDER BY ${orderByColumn} ${orderDirection.toUpperCase()}...`);
         addStep(
           `Applied ORDER BY on column ${orderByColumn} in ${orderDirection.toUpperCase()} order.`
         );
@@ -372,6 +363,13 @@ export default function DBMSSQLBasicsLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
+  const redoQuiz = () => {
+  setQuizAnswers(Array(quizQuestions.length).fill(null));
+  setQuizSubmitted(false);
+  setQuizScore(0);
+};
+
+
   const runCode = () => {
     if (selectedLanguage !== "javascript") {
       setCodeResult(
@@ -391,142 +389,164 @@ export default function DBMSSQLBasicsLab() {
   };
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – SQL Basics</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Query Type</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={queryType}
-              onChange={(e) => setQueryType(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "280px" }}
-              disabled={isRunning}
-            >
-              <option value="select-where-order-limit">SELECT + WHERE + ORDER BY + LIMIT</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive SQL Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            SQL Basics
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Explore SQL visually through query simulation, quiz, and coding practice.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Query Mode</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 16
+            }}
           >
-            Overview
-          </button>
+            <div>
+              <label className="sorting-label">Query Type</label>
+              <select
+                value={queryType}
+                onChange={(e) => setQueryType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="select-where-order-limit">
+                  SELECT + WHERE + ORDER BY + LIMIT
+                </option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DBMSSQLBasicsOverview sampleTable={sampleTable} />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "simulation" && (
-            <DBMSSQLBasicsSimulation
-              sampleTable={sampleTable}
-              allColumns={allColumns}
-              selectedColumns={selectedColumns}
-              setSelectedColumns={setSelectedColumns}
-              whereColumn={whereColumn}
-              setWhereColumn={setWhereColumn}
-              whereOperator={whereOperator}
-              setWhereOperator={setWhereOperator}
-              whereValue={whereValue}
-              setWhereValue={setWhereValue}
-              orderByColumn={orderByColumn}
-              setOrderByColumn={setOrderByColumn}
-              orderDirection={orderDirection}
-              setOrderDirection={setOrderDirection}
-              limitValue={limitValue}
-              setLimitValue={setLimitValue}
-              runSimulation={runSimulation}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              displayRows={displayRows}
-              highlightedRowIds={highlightedRowIds}
-              stepHistory={stepHistory}
-              selectedStep={selectedStep}
-              generatedSQL={generatedSQL}
-              isRunning={isRunning}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "quiz" && (
-            <DBMSSQLBasicsQuiz
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && (
+                <DBMSSQLBasicsOverview sampleTable={sampleTable} />
+              )}
 
-          {activeSection === "coding" && (
-            <DBMSSQLBasicsCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-            />
-          )}
-        </main>
+              {activeSection === "simulation" && (
+                <DBMSSQLBasicsSimulation
+                  sampleTable={sampleTable}
+                  allColumns={allColumns}
+                  selectedColumns={selectedColumns}
+                  setSelectedColumns={setSelectedColumns}
+                  whereColumn={whereColumn}
+                  setWhereColumn={setWhereColumn}
+                  whereOperator={whereOperator}
+                  setWhereOperator={setWhereOperator}
+                  whereValue={whereValue}
+                  setWhereValue={setWhereValue}
+                  orderByColumn={orderByColumn}
+                  setOrderByColumn={setOrderByColumn}
+                  orderDirection={orderDirection}
+                  setOrderDirection={setOrderDirection}
+                  limitValue={limitValue}
+                  setLimitValue={setLimitValue}
+                  runSimulation={runSimulation}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  displayRows={displayRows}
+                  highlightedRowIds={highlightedRowIds}
+                  stepHistory={stepHistory}
+                  selectedStep={selectedStep}
+                  generatedSQL={generatedSQL}
+                  isRunning={isRunning}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <DBMSSQLBasicsQuiz
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                  redoQuiz={redoQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <DBMSSQLBasicsCoding
+                  codingProblem={codingProblem}
+                  selectedLanguage={selectedLanguage}
+                  setSelectedLanguage={setSelectedLanguage}
+                  code={code}
+                  setCode={setCode}
+                  codeResult={codeResult}
+                  runCode={runCode}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

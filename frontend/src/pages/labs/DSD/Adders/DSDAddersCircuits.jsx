@@ -1,191 +1,467 @@
 import React from "react";
+import { CircuitBoard, Info, Sigma, Cpu, Sparkles } from "lucide-react";
+
+function signalColor(v) {
+  return v === 1 ? "#38bdf8" : "#64748b";
+}
+
+function signalGlow(v) {
+  return v === 1 ? "drop-shadow(0 0 8px rgba(56,189,248,0.6))" : "none";
+}
+
+function outColor(v) {
+  return v === 1 ? "#22c55e" : "#ef4444";
+}
 
 export default function DSDAddersCircuits({ selectedAdder, analysis }) {
+  const isHalf = selectedAdder === "half";
+
   return (
-    <section className="card experiment">
-      <h2>Circuits</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        This section shows a symbolic circuit-level representation of the selected adder.
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <CircuitBoard size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Circuits</h2>
+            <p className="sorting-sim-subtitle">
+              Study the symbolic circuit representation of the selected adder.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px",
-          marginBottom: "1rem"
-        }}
-      >
-        <div className="stat-card">
-          <strong>Circuit</strong>
-          <div>{analysis.selected.title}</div>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Circuit</span>
+          <span className="sorting-stat-value">{analysis.selected.title}</span>
         </div>
 
-        <div className="stat-card">
-          <strong>Sum</strong>
-          <div style={{ color: analysis.selected.sum === 1 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Sum</span>
+          <span
+            className="sorting-stat-value"
+            style={{ color: outColor(analysis.selected.sum) }}
+          >
             {analysis.selected.sum}
-          </div>
+          </span>
         </div>
 
-        <div className="stat-card">
-          <strong>Carry</strong>
-          <div style={{ color: analysis.selected.carry === 1 ? "#22c55e" : "#ef4444", fontWeight: "bold" }}>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Carry</span>
+          <span
+            className="sorting-stat-value"
+            style={{ color: outColor(analysis.selected.carry) }}
+          >
             {analysis.selected.carry}
-          </div>
+          </span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Design Style</span>
+          <span className="sorting-stat-value">{isHalf ? "XOR + AND" : "2 XOR + 2 AND + OR"}</span>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem", background: "#0f172a", padding: "20px" }}>
-        <h3 style={{ marginBottom: "1rem" }}>
-          {selectedAdder === "half" ? "Half Adder Circuit View" : "Full Adder Circuit View"}
-        </h3>
+      <div className="card dsd-circuit-panel">
+        <div className="dsd-circuit-panel-head">
+          <h3 style={{ margin: 0, color: "#f8fafc" }}>
+            {isHalf ? "Half Adder Circuit Diagram" : "Full Adder Circuit Diagram"}
+          </h3>
 
-        <div
-          style={{
-            position: "relative",
-            height: selectedAdder === "half" ? "340px" : "420px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.2)",
-            background: "linear-gradient(180deg, #111827, #0b1220)",
-            overflow: "hidden"
-          }}
-        >
+          <div className="dsd-circuit-badge">
+            <Sparkles size={16} />
+            Blueprint View
+          </div>
+        </div>
+
+        <div className="dsd-circuit-canvas" style={{ height: isHalf ? 430 : 500 }}>
           <svg
             width="100%"
             height="100%"
-            viewBox={selectedAdder === "half" ? "0 0 760 340" : "0 0 760 420"}
+            viewBox={isHalf ? "0 0 1100 430" : "0 0 1200 500"}
             preserveAspectRatio="xMidYMid meet"
           >
-            {/* Input lines */}
-            <line x1="60" y1="100" x2="230" y2="100" stroke="#c084fc" strokeWidth="4" />
-            <line x1="60" y1="220" x2="230" y2="220" stroke="#c084fc" strokeWidth="4" />
-
-            <text x="20" y="105" fill="#d8b4fe" fontSize="22" fontWeight="bold">
-              A = {analysis.A}
-            </text>
-            <text x="20" y="225" fill="#d8b4fe" fontSize="22" fontWeight="bold">
-              B = {analysis.B}
-            </text>
-
-            {/* XOR block */}
-            <rect
-              x="230"
-              y="60"
-              width="140"
-              height="80"
-              rx="14"
-              fill="rgba(59,130,246,0.14)"
-              stroke="#60a5fa"
-              strokeWidth="3"
-            />
-            <text x="300" y="107" textAnchor="middle" fill="#e5e7eb" fontSize="24" fontWeight="bold">
-              XOR
-            </text>
-
-            {/* AND block */}
-            <rect
-              x="230"
-              y="180"
-              width="140"
-              height="80"
-              rx="14"
-              fill="rgba(34,197,94,0.14)"
-              stroke="#22c55e"
-              strokeWidth="3"
-            />
-            <text x="300" y="227" textAnchor="middle" fill="#e5e7eb" fontSize="24" fontWeight="bold">
-              AND
-            </text>
-
-            {/* Outputs for half adder */}
-            {selectedAdder === "half" && (
+            {isHalf ? (
               <>
-                <line x1="370" y1="100" x2="620" y2="100" stroke="#fbbf24" strokeWidth="4" />
-                <line x1="370" y1="220" x2="620" y2="220" stroke="#fbbf24" strokeWidth="4" />
-
-                <text x="635" y="105" fill="#fcd34d" fontSize="22" fontWeight="bold">
-                  Sum = {analysis.selected.sum}
+                {/* Inputs */}
+                <text x="70" y="120" fill="#d8b4fe" fontSize="28" fontWeight="800">
+                  A = {analysis.A}
                 </text>
-                <text x="635" y="225" fill="#fcd34d" fontSize="22" fontWeight="bold">
-                  Carry = {analysis.selected.carry}
-                </text>
-              </>
-            )}
-
-            {/* Full adder extra blocks */}
-            {selectedAdder === "full" && (
-              <>
-                <line x1="60" y1="340" x2="180" y2="340" stroke="#f472b6" strokeWidth="4" />
-                <text x="10" y="345" fill="#f9a8d4" fontSize="22" fontWeight="bold">
-                  Cin = {analysis.Cin}
+                <text x="70" y="280" fill="#d8b4fe" fontSize="28" fontWeight="800">
+                  B = {analysis.B}
                 </text>
 
-                <rect
-                  x="430"
-                  y="60"
-                  width="140"
-                  height="80"
-                  rx="14"
-                  fill="rgba(59,130,246,0.14)"
-                  stroke="#60a5fa"
-                  strokeWidth="3"
+                <line
+                  x1="180"
+                  y1="110"
+                  x2="330"
+                  y2="110"
+                  stroke={signalColor(analysis.A)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.A === 1 ? "url(#adderGlow)" : undefined}
                 />
-                <text x="500" y="107" textAnchor="middle" fill="#e5e7eb" fontSize="24" fontWeight="bold">
+                <line
+                  x1="180"
+                  y1="270"
+                  x2="330"
+                  y2="270"
+                  stroke={signalColor(analysis.B)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.B === 1 ? "url(#adderGlow)" : undefined}
+                />
+
+                {/* XOR */}
+                <rect
+                  x="330"
+                  y="70"
+                  width="150"
+                  height="90"
+                  rx="18"
+                  fill="rgba(59,130,246,0.10)"
+                  stroke="#60a5fa"
+                  strokeWidth="4"
+                />
+                <text x="405" y="124" textAnchor="middle" fill="#f8fafc" fontSize="30" fontWeight="800">
                   XOR
                 </text>
 
-                <line x1="370" y1="100" x2="430" y2="100" stroke="#93c5fd" strokeWidth="4" />
-                <line x1="180" y1="340" x2="430" y2="340" stroke="#f472b6" strokeWidth="4" />
-                <line x1="430" y1="340" x2="430" y2="100" stroke="#f472b6" strokeWidth="4" />
-
-                <line x1="570" y1="100" x2="670" y2="100" stroke="#fbbf24" strokeWidth="4" />
-                <text x="680" y="105" fill="#fcd34d" fontSize="22" fontWeight="bold">
-                  Sum = {analysis.selected.sum}
+                {/* AND */}
+                <rect
+                  x="330"
+                  y="230"
+                  width="150"
+                  height="90"
+                  rx="18"
+                  fill="rgba(34,197,94,0.10)"
+                  stroke="#22c55e"
+                  strokeWidth="4"
+                />
+                <text x="405" y="284" textAnchor="middle" fill="#f8fafc" fontSize="30" fontWeight="800">
+                  AND
                 </text>
 
-                <rect
-                  x="430"
-                  y="180"
-                  width="120"
-                  height="70"
-                  rx="14"
-                  fill="rgba(34,197,94,0.14)"
-                  stroke="#22c55e"
-                  strokeWidth="3"
+                {/* Outputs */}
+                <line
+                  x1="480"
+                  y1="115"
+                  x2="820"
+                  y2="115"
+                  stroke={analysis.selected.sum === 1 ? "#facc15" : "#64748b"}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.selected.sum === 1 ? "url(#adderGlow)" : undefined}
                 />
-                <text x="490" y="223" textAnchor="middle" fill="#e5e7eb" fontSize="22" fontWeight="bold">
+                <line
+                  x1="480"
+                  y1="275"
+                  x2="820"
+                  y2="275"
+                  stroke={analysis.selected.carry === 1 ? "#facc15" : "#64748b"}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.selected.carry === 1 ? "url(#adderGlow)" : undefined}
+                />
+
+                <circle cx="825" cy="115" r="10" fill={analysis.selected.sum === 1 ? "#22c55e" : "#ef4444"} />
+                <circle cx="825" cy="275" r="10" fill={analysis.selected.carry === 1 ? "#22c55e" : "#ef4444"} />
+
+                <text x="850" y="122" fill={outColor(analysis.selected.sum)} fontSize="28" fontWeight="800">
+                  Sum = {analysis.selected.sum}
+                </text>
+                <text x="850" y="282" fill={outColor(analysis.selected.carry)} fontSize="28" fontWeight="800">
+                  Carry = {analysis.selected.carry}
+                </text>
+
+                <text x="405" y="385" textAnchor="middle" fill="#7dd3fc" fontSize="30" fontWeight="800">
+                  HALF ADDER
+                </text>
+              </>
+            ) : (
+              <>
+                {/* Inputs */}
+                <text x="50" y="95" fill="#d8b4fe" fontSize="26" fontWeight="800">
+                  A = {analysis.A}
+                </text>
+                <text x="50" y="210" fill="#d8b4fe" fontSize="26" fontWeight="800">
+                  B = {analysis.B}
+                </text>
+                <text x="30" y="410" fill="#f9a8d4" fontSize="26" fontWeight="800">
+                  Cin = {analysis.Cin}
+                </text>
+
+                {/* Main input lines */}
+                <line
+                  x1="150"
+                  y1="85"
+                  x2="300"
+                  y2="85"
+                  stroke={signalColor(analysis.A)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.A === 1 ? "url(#adderGlow)" : undefined}
+                />
+                <line
+                  x1="150"
+                  y1="200"
+                  x2="300"
+                  y2="200"
+                  stroke={signalColor(analysis.B)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.B === 1 ? "url(#adderGlow)" : undefined}
+                />
+                <line
+                  x1="170"
+                  y1="400"
+                  x2="510"
+                  y2="400"
+                  stroke={signalColor(analysis.Cin)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.Cin === 1 ? "url(#adderGlow)" : undefined}
+                />
+
+                {/* XOR1 */}
+                <rect
+                  x="300"
+                  y="45"
+                  width="140"
+                  height="90"
+                  rx="18"
+                  fill="rgba(59,130,246,0.10)"
+                  stroke="#60a5fa"
+                  strokeWidth="4"
+                />
+                <text x="370" y="100" textAnchor="middle" fill="#f8fafc" fontSize="28" fontWeight="800">
+                  XOR
+                </text>
+
+                {/* XOR2 */}
+                <rect
+                  x="560"
+                  y="45"
+                  width="140"
+                  height="90"
+                  rx="18"
+                  fill="rgba(59,130,246,0.10)"
+                  stroke="#60a5fa"
+                  strokeWidth="4"
+                />
+                <text x="630" y="100" textAnchor="middle" fill="#f8fafc" fontSize="28" fontWeight="800">
+                  XOR
+                </text>
+
+                {/* AND1 */}
+                <rect
+                  x="300"
+                  y="180"
+                  width="140"
+                  height="90"
+                  rx="18"
+                  fill="rgba(34,197,94,0.10)"
+                  stroke="#22c55e"
+                  strokeWidth="4"
+                />
+                <text x="370" y="235" textAnchor="middle" fill="#f8fafc" fontSize="28" fontWeight="800">
+                  AND
+                </text>
+
+                {/* AND2 */}
+                <rect
+                  x="560"
+                  y="180"
+                  width="140"
+                  height="90"
+                  rx="18"
+                  fill="rgba(34,197,94,0.10)"
+                  stroke="#22c55e"
+                  strokeWidth="4"
+                />
+                <text x="630" y="235" textAnchor="middle" fill="#f8fafc" fontSize="28" fontWeight="800">
+                  AND
+                </text>
+
+                {/* OR */}
+                <rect
+                  x="820"
+                  y="180"
+                  width="140"
+                  height="90"
+                  rx="18"
+                  fill="rgba(250,204,21,0.10)"
+                  stroke="#facc15"
+                  strokeWidth="4"
+                />
+                <text x="890" y="235" textAnchor="middle" fill="#f8fafc" fontSize="28" fontWeight="800">
                   OR
                 </text>
 
-                <line x1="370" y1="220" x2="430" y2="220" stroke="#86efac" strokeWidth="4" />
-                <line x1="180" y1="340" x2="300" y2="340" stroke="#f472b6" strokeWidth="4" />
-                <line x1="300" y1="340" x2="300" y2="260" stroke="#f472b6" strokeWidth="4" />
-                <line x1="300" y1="260" x2="430" y2="260" stroke="#f472b6" strokeWidth="4" />
-                <line x1="430" y1="260" x2="430" y2="220" stroke="#f472b6" strokeWidth="4" />
+                {/* Connections */}
+                <line
+                  x1="440"
+                  y1="90"
+                  x2="560"
+                  y2="90"
+                  stroke={signalColor(analysis.A ^ analysis.B)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={(analysis.A ^ analysis.B) === 1 ? "url(#adderGlow)" : undefined}
+                />
+                <line
+                  x1="510"
+                  y1="400"
+                  x2="510"
+                  y2="90"
+                  stroke={signalColor(analysis.Cin)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.Cin === 1 ? "url(#adderGlow)" : undefined}
+                />
+                <line
+                  x1="510"
+                  y1="90"
+                  x2="560"
+                  y2="90"
+                  stroke={signalColor(analysis.Cin)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.Cin === 1 ? "url(#adderGlow)" : undefined}
+                />
 
-                <line x1="550" y1="215" x2="670" y2="215" stroke="#fbbf24" strokeWidth="4" />
-                <text x="680" y="220" fill="#fcd34d" fontSize="22" fontWeight="bold">
+                <line
+                  x1="440"
+                  y1="220"
+                  x2="820"
+                  y2="220"
+                  stroke={signalColor(analysis.A & analysis.B)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={(analysis.A & analysis.B) === 1 ? "url(#adderGlow)" : undefined}
+                />
+
+                <line
+                  x1="510"
+                  y1="400"
+                  x2="510"
+                  y2="250"
+                  stroke={signalColor(analysis.Cin)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.Cin === 1 ? "url(#adderGlow)" : undefined}
+                />
+                <line
+                  x1="510"
+                  y1="250"
+                  x2="560"
+                  y2="250"
+                  stroke={signalColor(analysis.Cin)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.Cin === 1 ? "url(#adderGlow)" : undefined}
+                />
+
+                <line
+                  x1="700"
+                  y1="225"
+                  x2="820"
+                  y2="225"
+                  stroke={signalColor((analysis.A ^ analysis.B) & analysis.Cin)}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={((analysis.A ^ analysis.B) & analysis.Cin) === 1 ? "url(#adderGlow)" : undefined}
+                />
+
+                {/* Outputs */}
+                <line
+                  x1="700"
+                  y1="90"
+                  x2="1030"
+                  y2="90"
+                  stroke={analysis.selected.sum === 1 ? "#facc15" : "#64748b"}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.selected.sum === 1 ? "url(#adderGlow)" : undefined}
+                />
+                <line
+                  x1="960"
+                  y1="225"
+                  x2="1030"
+                  y2="225"
+                  stroke={analysis.selected.carry === 1 ? "#facc15" : "#64748b"}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  filter={analysis.selected.carry === 1 ? "url(#adderGlow)" : undefined}
+                />
+
+                <circle cx="1035" cy="90" r="10" fill={analysis.selected.sum === 1 ? "#22c55e" : "#ef4444"} />
+                <circle cx="1035" cy="225" r="10" fill={analysis.selected.carry === 1 ? "#22c55e" : "#ef4444"} />
+
+                <text x="1060" y="97" fill={outColor(analysis.selected.sum)} fontSize="26" fontWeight="800">
+                  Sum = {analysis.selected.sum}
+                </text>
+                <text x="1060" y="232" fill={outColor(analysis.selected.carry)} fontSize="26" fontWeight="800">
                   Carry = {analysis.selected.carry}
+                </text>
+
+                <text x="620" y="470" textAnchor="middle" fill="#7dd3fc" fontSize="30" fontWeight="800">
+                  FULL ADDER
                 </text>
               </>
             )}
+
+            <defs>
+              <filter id="adderGlow">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
           </svg>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Circuit Interpretation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          {selectedAdder === "half"
-            ? "The Half Adder uses one XOR gate for Sum and one AND gate for Carry."
-            : "The Full Adder combines XOR, AND, and OR logic to add A, B, and Carry-in."}
-        </p>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          For the current inputs, the circuit gives <strong>Sum = {analysis.selected.sum}</strong> and{" "}
-          <strong>Carry = {analysis.selected.carry}</strong>.
-        </p>
+      <div className="dsd-circuit-note-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Info size={18} />
+            <h4>Circuit Interpretation</h4>
+          </div>
+          <p>
+            {isHalf
+              ? "The Half Adder uses one XOR gate for Sum and one AND gate for Carry."
+              : "The Full Adder combines XOR, AND, and OR logic to add A, B, and Carry-in."}
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>Current Result</h4>
+          </div>
+          <p>
+            Sum = <strong>{analysis.selected.sum}</strong>
+            <br />
+            Carry = <strong>{analysis.selected.carry}</strong>
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Sigma size={18} />
+            <h4>Design Note</h4>
+          </div>
+          <p>
+            {isHalf
+              ? "Half Adder is suitable for single-bit addition without carry input."
+              : "Full Adder is suitable for cascading into multi-bit binary adders."}
+          </p>
+        </div>
       </div>
     </section>
   );

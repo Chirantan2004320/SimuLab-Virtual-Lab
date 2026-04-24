@@ -1,4 +1,5 @@
 import React from "react";
+import { Table2, CheckCircle2 } from "lucide-react";
 
 function renderBitCell(value, active = false) {
   return (
@@ -38,18 +39,30 @@ export default function DSDDecoderEncoderTruthTable({
   ];
 
   return (
-    <section className="card experiment">
-      <h2>Truth Table</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Table2 size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Truth Table</h2>
+            <p className="sorting-sim-subtitle">
+              Verify the active output line for decoder mode or the binary output code for encoder mode.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
+      <div className="sorting-info-box">
         The highlighted row corresponds to the currently active input combination.
       </div>
 
       {mode === "decoder" && (
         <>
-          <div className="card">
-            <h3>2-to-4 Decoder Truth Table</h3>
-            <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
+          <div className="sorting-sim-card" style={{ marginTop: 18, padding: 18 }}>
+            <h3 style={{ color: "#f8fafc", marginBottom: 14 }}>2-to-4 Decoder Truth Table</h3>
+            <table className="dbms-table" style={{ width: "100%" }}>
               <thead>
                 <tr>
                   <th>A</th>
@@ -78,20 +91,25 @@ export default function DSDDecoderEncoderTruthTable({
             </table>
           </div>
 
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Current Observation</h3>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              Input combination <strong>{a}{b}</strong> activates only <strong>Y{analysis.index}</strong>.
-            </p>
+          <div className="overview-grid" style={{ marginTop: 18 }}>
+            <div className="overview-card">
+              <div className="overview-card-head">
+                <CheckCircle2 size={18} />
+                <h4>Current Observation</h4>
+              </div>
+              <p>
+                Input combination <strong>{a}{b}</strong> activates only <strong>Y{analysis.index}</strong>.
+              </p>
+            </div>
           </div>
         </>
       )}
 
       {mode === "encoder" && (
         <>
-          <div className="card">
-            <h3>4-to-2 Encoder Truth Table</h3>
-            <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
+          <div className="sorting-sim-card" style={{ marginTop: 18, padding: 18 }}>
+            <h3 style={{ color: "#f8fafc", marginBottom: 14 }}>4-to-2 Encoder Truth Table</h3>
+            <table className="dbms-table" style={{ width: "100%" }}>
               <thead>
                 <tr>
                   <th>Active Input</th>
@@ -118,14 +136,19 @@ export default function DSDDecoderEncoderTruthTable({
             </table>
           </div>
 
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Current Observation</h3>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              The active input is <strong>{analysis.index === -1 ? "none" : `I${analysis.index}`}</strong>.
-            </p>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              The corresponding binary output is <strong>{analysis.binary}</strong>.
-            </p>
+          <div className="overview-grid" style={{ marginTop: 18 }}>
+            <div className="overview-card">
+              <div className="overview-card-head">
+                <CheckCircle2 size={18} />
+                <h4>Current Observation</h4>
+              </div>
+              <p>
+                The active input is <strong>{analysis.index === -1 ? "none" : `I${analysis.index}`}</strong>.
+              </p>
+              <p style={{ marginTop: 10 }}>
+                The corresponding binary output is <strong>{analysis.binary}</strong>.
+              </p>
+            </div>
           </div>
         </>
       )}

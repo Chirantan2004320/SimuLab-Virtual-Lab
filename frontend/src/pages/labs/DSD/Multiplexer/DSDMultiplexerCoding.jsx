@@ -1,146 +1,155 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { FileCode2, CheckCircle2, Lightbulb, RefreshCcw } from "lucide-react";
 
 const problemBank = [
   {
     id: 1,
-    title: "2-to-1 Multiplexer",
+    title: "Predict the selected input",
     description:
-      "Write a function mux2to1(i0, i1, s) that returns i0 when s = 0 and i1 when s = 1."
+      "For a 4-to-1 multiplexer, if S1 = 1 and S0 = 0, which input reaches the output?",
+    answer: "I2",
+    placeholder: "Write the selected input name here...",
   },
   {
     id: 2,
-    title: "4-to-1 Multiplexer Output",
+    title: "Write the Boolean output expression",
     description:
-      "Write a function mux4to1(i0, i1, i2, i3, s1, s0) that returns the selected input."
+      "Write the standard Boolean expression of a 4-to-1 multiplexer output Y using inputs I0, I1, I2, I3 and select lines S1, S0.",
+    answer: "Y = I0·S1̅·S0̅ + I1·S1̅·S0 + I2·S1·S0̅ + I3·S1·S0",
+    placeholder: "Write the Boolean expression here...",
   },
   {
     id: 3,
-    title: "Selected Index",
+    title: "Design interpretation",
     description:
-      "Write a function selectedIndex(s1, s0) that returns the decimal index chosen by the select lines."
-  }
+      "Explain briefly why a multiplexer is called a data selector.",
+    answer:
+      "A multiplexer is called a data selector because it selects one input from multiple input lines and routes the selected input to a single output based on select lines.",
+    placeholder: "Write your explanation here...",
+  },
 ];
 
-export default function DSDMultiplexerCoding() {
-  const [currentProblems, setCurrentProblems] = useState([]);
-  const [codes, setCodes] = useState({});
-  const [results, setResults] = useState({});
+function normalizeText(value) {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
 
-  const generateProblems = () => {
-    setCurrentProblems(problemBank);
-    const initialCodes = {};
-    problemBank.forEach((p) => {
-      initialCodes[p.id] = getStarterCode(p.id);
-    });
-    setCodes(initialCodes);
-    setResults({});
+export default function DSDMultiplexerCoding({ analysis }) {
+  const [responses, setResponses] = useState(() =>
+    problemBank.reduce((acc, item) => {
+      acc[item.id] = "";
+      return acc;
+    }, {})
+  );
+
+  const [feedback, setFeedback] = useState({});
+
+  const handleChange = (id, value) => {
+    setResponses((prev) => ({ ...prev, [id]: value }));
   };
 
-  const getStarterCode = (id) => {
-    if (id === 1) {
-      return `function mux2to1(i0, i1, s) {
-  return s === 0 ? i0 : i1;
-}`;
+  const checkAnswer = (problem) => {
+    const userValue = normalizeText(responses[problem.id] || "");
+    const correctValue = normalizeText(problem.answer);
+
+    let result = "";
+    if (!userValue) {
+      result = "Please write your answer first.";
+    } else if (userValue === correctValue || userValue.includes(correctValue) || correctValue.includes(userValue)) {
+      result = "Correct. Your design answer matches the expected concept.";
+    } else {
+      result = "Partially correct or incorrect. Review the logic and try again.";
     }
 
-    if (id === 2) {
-      return `function mux4to1(i0, i1, i2, i3, s1, s0) {
-  const index = s1 * 2 + s0;
-  const inputs = [i0, i1, i2, i3];
-  return inputs[index];
-}`;
-    }
-
-    return `function selectedIndex(s1, s0) {
-  return s1 * 2 + s0;
-}`;
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: result,
+    }));
   };
 
-  const handleCodeChange = (problemId, code) => {
-    setCodes((prev) => ({ ...prev, [problemId]: code }));
+  const showModelAnswer = (problem) => {
+    setResponses((prev) => ({
+      ...prev,
+      [problem.id]: problem.answer,
+    }));
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: "Model answer loaded.",
+    }));
   };
 
-  const runCode = (problemId) => {
-    const code = codes[problemId];
-
-    if (!code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code first."
-      }));
-      return;
-    }
-
-    try {
-      let resultText = "";
-
-      if (problemId === 1) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return mux2to1;`)();
-        const output = fn(0, 1, 1);
-        resultText = `Function ran successfully. Example mux2to1(0,1,1) = ${output}`;
-      } else if (problemId === 2) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return mux4to1;`)();
-        const output = fn(0, 1, 0, 1, 1, 0);
-        resultText = `Function ran successfully. Example mux4to1(0,1,0,1,1,0) = ${output}`;
-      } else if (problemId === 3) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return selectedIndex;`)();
-        const output = fn(1, 1);
-        resultText = `Function ran successfully. Example selectedIndex(1,1) = ${output}`;
-      }
-
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: resultText
-      }));
-    } catch (error) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Error: ${error.message}`
-      }));
-    }
+  const clearAll = () => {
+    setResponses(
+      problemBank.reduce((acc, item) => {
+        acc[item.id] = "";
+        return acc;
+      }, {})
+    );
+    setFeedback({});
   };
+
+  const currentInsight = useMemo(() => {
+    return `Current state: S1S0 = ${analysis.selectCode}, so ${analysis.selectedInputLabel} is selected and Y = ${analysis.output}.`;
+  }, [analysis]);
 
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Practice implementing multiplexer selection logic using JavaScript functions.
-      </p>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <FileCode2 size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Design Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Practice multiplexer logic through reasoning, Boolean expression writing, and design interpretation.
+          </p>
+        </div>
+      </div>
 
-      <button className="btn primary" onClick={generateProblems}>
-        Generate Problems
-      </button>
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Live Hint:</strong> {currentInsight}
+      </div>
 
-      {currentProblems.map((problem, index) => (
-        <div key={problem.id} className="coding-problem">
-          <h3>
-            Problem {index + 1}: {problem.title}
-          </h3>
-          <p>{problem.description}</p>
+      <div className="coding-actions-upgraded" style={{ marginBottom: 18 }}>
+        <button className="sim-btn sim-btn-muted" onClick={clearAll}>
+          <RefreshCcw size={16} />
+          Reset Practice
+        </button>
+      </div>
+
+      {problemBank.map((problem, index) => (
+        <div key={problem.id} className="coding-card-upgraded">
+          <div className="coding-card-header">
+            <div>
+              <h3>
+                Task {index + 1}: {problem.title}
+              </h3>
+              <p>{problem.description}</p>
+            </div>
+          </div>
 
           <textarea
-            value={codes[problem.id] || ""}
-            onChange={(e) => handleCodeChange(problem.id, e.target.value)}
-            placeholder="Write your code here..."
-            rows={12}
-            style={{
-              width: "100%",
-              fontFamily: "monospace",
-              color: "#000000",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "10px"
-            }}
+            className="coding-textarea-upgraded"
+            rows={7}
+            value={responses[problem.id]}
+            onChange={(e) => handleChange(problem.id, e.target.value)}
+            placeholder={problem.placeholder}
           />
 
-          <button className="btn secondary" onClick={() => runCode(problem.id)}>
-            Run Code
-          </button>
+          <div className="coding-actions-upgraded">
+            <button className="sim-btn sim-btn-primary" onClick={() => checkAnswer(problem)}>
+              <CheckCircle2 size={16} />
+              Check Answer
+            </button>
 
-          {results[problem.id] && <p className="result">{results[problem.id]}</p>}
+            <button className="sim-btn sim-btn-muted" onClick={() => showModelAnswer(problem)}>
+              <Lightbulb size={16} />
+              Show Model Answer
+            </button>
+          </div>
+
+          {feedback[problem.id] && (
+            <div className="coding-result-box">{feedback[problem.id]}</div>
+          )}
         </div>
       ))}
     </section>

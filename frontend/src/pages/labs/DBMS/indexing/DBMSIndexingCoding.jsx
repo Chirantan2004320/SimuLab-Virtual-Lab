@@ -1,82 +1,96 @@
 import React from "react";
+import { Code2, Play, Sparkles, Wrench } from "lucide-react";
 
 export default function DBMSIndexingCoding({
-  codingProblem,
-  selectedLanguage,
-  setSelectedLanguage,
-  code,
-  setCode,
-  codeResult,
-  runCode,
-  searchMode
+  searchMode,
+  currentProblems,
+  answers,
+  results,
+  generateProblems,
+  handleAnswerChange,
+  runAnswer,
+  analyzeAnswer,
+  correctAnswer
 }) {
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Practice {searchMode === "linear" ? "search without index" : "indexed search"} logic in your preferred language.
-        JavaScript execution works now. Other languages can be enabled later with Judge0.
-      </p>
-
-      <div className="coding-problem">
-        <h3>{codingProblem.title}</h3>
-        <p>{codingProblem.description}</p>
-
-        <div style={{ marginBottom: 14 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 6,
-              color: "#e5e7eb",
-              fontWeight: 600
-            }}
-          >
-            Select Language
-          </label>
-
-          <select
-            value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
-            className="lab-select"
-            style={{ minWidth: "220px" }}
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="c">C</option>
-            <option value="java">Java</option>
-          </select>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Code2 size={18} />
         </div>
-
-        <textarea
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          rows={14}
-          style={{
-            width: "100%",
-            fontFamily: "monospace",
-            color: "#000000"
-          }}
-        />
-
-        <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-          <button className="btn secondary" onClick={runCode}>
-            Run Code
-          </button>
+        <div>
+          <h2 className="sorting-sim-title">Coding Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Practice {searchMode === "linear" ? "linear scan logic" : "indexed lookup logic"} through answer-based problems.
+          </p>
         </div>
-
-        {selectedLanguage !== "javascript" && (
-          <p style={{ marginTop: 12, color: "#fbbf24", fontWeight: 600 }}>
-            Execution for {selectedLanguage.toUpperCase()} will be enabled later with Judge0.
-          </p>
-        )}
-
-        {codeResult && (
-          <p className="result" style={{ marginTop: 12, whiteSpace: "pre-wrap" }}>
-            {codeResult}
-          </p>
-        )}
       </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <button className="sim-btn sim-btn-primary" onClick={generateProblems}>
+          Generate Problems
+        </button>
+      </div>
+
+      {currentProblems.length === 0 ? (
+        <div className="coding-empty-state">
+          No problems generated yet. Click <b>Generate Problems</b> to begin.
+        </div>
+      ) : null}
+
+      {currentProblems.map((problem, index) => (
+        <div key={problem.id} className="coding-card-upgraded">
+          <div className="coding-card-header">
+            <div>
+              <h3>Problem {index + 1}</h3>
+              <p style={{ fontWeight: 700, color: "#f8fafc", marginBottom: 8 }}>
+                {problem.title}
+              </p>
+              <p>{problem.description}</p>
+            </div>
+          </div>
+
+          <textarea
+            value={answers[problem.id] || ""}
+            onChange={(e) => handleAnswerChange(problem.id, e.target.value)}
+            placeholder="Write your answer here..."
+            rows={14}
+            className="coding-textarea-upgraded"
+          />
+
+          <div className="coding-actions-upgraded">
+            <button
+              className="sim-btn sim-btn-primary"
+              onClick={() => runAnswer(problem.id)}
+            >
+              <Play size={16} />
+              Run Answer
+            </button>
+
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={() => analyzeAnswer(problem.id)}
+            >
+              <Sparkles size={16} />
+              Analyze Answer
+            </button>
+
+            <button
+              className="sim-btn sim-btn-danger"
+              onClick={() => correctAnswer(problem.id)}
+            >
+              <Wrench size={16} />
+              Correct Answer
+            </button>
+          </div>
+
+          {results[problem.id] && (
+            <div className="coding-result-box">
+              {results[problem.id]}
+            </div>
+          )}
+        </div>
+      ))}
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import React from "react";
+import { CircuitBoard, Info, CheckCircle2, Zap } from "lucide-react";
 
 function signalColor(v) {
   return v === 1 ? "#22c55e" : "#ef4444";
@@ -17,258 +18,249 @@ export default function DSDDecoderEncoderCircuits({
       : "--";
 
   return (
-    <section className="card experiment">
-      <h2>Circuits</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        {mode === "decoder"
-          ? "2-to-4 Decoder Circuit Visualization"
-          : "4-to-2 Encoder Circuit Visualization"}
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <CircuitBoard size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Circuits</h2>
+            <p className="sorting-sim-subtitle">
+              Clean symbolic circuit view showing input mapping, logic block, and final output.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div
-        className="card"
-        style={{
-          marginTop: "1rem",
-          background: "#0f172a",
-          padding: "20px"
-        }}
-      >
-        <h3 style={{ marginBottom: "1rem" }}>
-          {mode === "decoder" ? "Decoder Flow" : "Encoder Flow"}
-        </h3>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Mode</span>
+          <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>
+            {mode === "decoder" ? "Decoder" : "Encoder"}
+          </span>
+        </div>
 
-        <div
-          style={{
-            position: "relative",
-            height: "360px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.2)",
-            background: "linear-gradient(180deg, #09101d, #0b1220)",
-            overflow: "hidden"
-          }}
-        >
-          <svg width="100%" height="100%" viewBox="0 0 820 360">
-            {mode === "encoder" && (
-              <>
-                {inputs.map((v, i) => (
-                  <g key={i}>
-                    <line
-                      x1="80"
-                      y1={60 + i * 60}
-                      x2="300"
-                      y2="180"
-                      style={{
-                        stroke: signalColor(v),
-                        strokeWidth: 4,
-                        strokeDasharray: v ? "10 10" : "0",
-                        animation: v ? "flow 1s linear infinite" : "none"
-                      }}
-                    />
-                    <text
-                      x="20"
-                      y={65 + i * 60}
-                      fill={signalColor(v)}
-                      fontSize="20"
-                      fontWeight="bold"
-                    >
-                      I{i} = {v}
-                    </text>
-                  </g>
-                ))}
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Selected Line</span>
+          <span className="sorting-stat-value">
+            {mode === "decoder"
+              ? `Y${analysis.index}`
+              : analysis.index === -1
+              ? "--"
+              : `I${analysis.index}`}
+          </span>
+        </div>
 
-                <rect
-                  x="300"
-                  y="100"
-                  width="180"
-                  height="160"
-                  rx="18"
-                  fill="rgba(59,130,246,0.14)"
-                  stroke="#60a5fa"
-                  strokeWidth="3"
-                />
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Binary</span>
+          <span className="sorting-stat-value">
+            {mode === "decoder" ? `${a}${b}` : binary}
+          </span>
+        </div>
 
-                <text
-                  x="390"
-                  y="160"
-                  textAnchor="middle"
-                  fill="#e5e7eb"
-                  fontSize="26"
-                  fontWeight="bold"
-                >
-                  ENCODER
-                </text>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">State</span>
+          <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>
+            Active Route
+          </span>
+        </div>
+      </div>
 
-                <line
-                  x1="480"
-                  y1="140"
-                  x2="700"
-                  y2="140"
-                  style={{
-                    stroke: "#22c55e",
-                    strokeWidth: 5,
-                    strokeDasharray: "10 10",
-                    animation: "flow 1s linear infinite"
-                  }}
-                />
-                <line
-                  x1="480"
-                  y1="220"
-                  x2="700"
-                  y2="220"
-                  style={{
-                    stroke: "#22c55e",
-                    strokeWidth: 5,
-                    strokeDasharray: "10 10",
-                    animation: "flow 1s linear infinite"
-                  }}
-                />
+      <div className="dsd-circuit-panel">
+        <div className="dsd-circuit-panel-head">
+          <h3 style={{ margin: 0, color: "#f8fafc" }}>
+            {mode === "decoder" ? "2-to-4 Decoder Circuit" : "4-to-2 Encoder Circuit"}
+          </h3>
 
-                <text
-                  x="720"
-                  y="145"
-                  className="glow-green"
-                  fill="#22c55e"
-                  fontSize="20"
-                  fontWeight="bold"
-                >
-                  Y1 = {binary[0]}
-                </text>
+          <div className="dsd-circuit-badge">
+            <Zap size={16} />
+            Symbolic Circuit View
+          </div>
+        </div>
 
-                <text
-                  x="720"
-                  y="225"
-                  className="glow-green"
-                  fill="#22c55e"
-                  fontSize="20"
-                  fontWeight="bold"
-                >
-                  Y0 = {binary[1]}
-                </text>
-
-                {analysis.index >= 0 && (
-                  <text
-                    x="390"
-                    y="300"
-                    textAnchor="middle"
-                    fill="#fbbf24"
-                    fontSize="18"
-                    fontWeight="bold"
-                  >
-                    Active Input → I{analysis.index}
-                  </text>
-                )}
-              </>
-            )}
-
+        <div className="dsd-circuit-canvas" style={{ height: 480 }}>
+          <svg width="100%" height="100%" viewBox="0 0 1120 480" preserveAspectRatio="xMidYMid meet">
             {mode === "decoder" && (
               <>
-                <line
-                  x1="80"
-                  y1="130"
-                  x2="300"
-                  y2="130"
-                  style={{
-                    stroke: signalColor(a),
-                    strokeWidth: 4,
-                    strokeDasharray: a ? "10 10" : "0",
-                    animation: a ? "flow 1s linear infinite" : "none"
-                  }}
-                />
-                <line
-                  x1="80"
-                  y1="220"
-                  x2="300"
-                  y2="220"
-                  style={{
-                    stroke: signalColor(b),
-                    strokeWidth: 4,
-                    strokeDasharray: b ? "10 10" : "0",
-                    animation: b ? "flow 1s linear infinite" : "none"
-                  }}
-                />
-
-                <text x="20" y="135" fill={signalColor(a)} fontSize="20" fontWeight="bold">
+                <text x="90" y="160" fill={signalColor(a)} fontSize="28" fontWeight="800">
                   A = {a}
                 </text>
-                <text x="20" y="225" fill={signalColor(b)} fontSize="20" fontWeight="bold">
+                <text x="90" y="275" fill={signalColor(b)} fontSize="28" fontWeight="800">
                   B = {b}
                 </text>
 
+                <path d="M 190 150 L 440 150" fill="none" stroke={signalColor(a)} strokeWidth="5" strokeLinecap="round" />
+                <path d="M 190 265 L 440 265" fill="none" stroke={signalColor(b)} strokeWidth="5" strokeLinecap="round" />
+
                 <rect
-                  x="300"
-                  y="80"
-                  width="180"
-                  height="200"
-                  rx="18"
-                  fill="rgba(59,130,246,0.14)"
+                  x="440"
+                  y="95"
+                  width="240"
+                  height="245"
+                  rx="24"
+                  fill="rgba(59,130,246,0.12)"
                   stroke="#60a5fa"
                   strokeWidth="3"
                 />
 
-                <text
-                  x="390"
-                  y="170"
-                  textAnchor="middle"
-                  fill="#e5e7eb"
-                  fontSize="26"
-                  fontWeight="bold"
-                >
+                <text x="560" y="205" textAnchor="middle" fill="#e5e7eb" fontSize="36" fontWeight="800">
                   DECODER
+                </text>
+                <text x="560" y="245" textAnchor="middle" fill="#93c5fd" fontSize="20" fontWeight="700">
+                  2 → 4
                 </text>
 
                 {[0, 1, 2, 3].map((i) => {
                   const active = analysis.index === i;
+                  const y = 125 + i * 70;
                   return (
                     <g key={i}>
-                      <line
-                        x1="480"
-                        y1={80 + i * 50}
-                        x2="700"
-                        y2={80 + i * 50}
-                        style={{
-                          stroke: active ? "#22c55e" : "#374151",
-                          strokeWidth: 5,
-                          strokeDasharray: active ? "10 10" : "0",
-                          animation: active ? "flow 1s linear infinite" : "none"
-                        }}
+                      <path
+                        d={`M 680 ${y} L 920 ${y}`}
+                        fill="none"
+                        stroke={active ? "#22c55e" : "#475569"}
+                        strokeWidth="6"
+                        strokeLinecap="round"
+                        strokeDasharray={active ? "12 9" : "0"}
                       />
+                      <circle cx="948" cy={y} r="15" fill={active ? "#22c55e" : "#1f2937"} />
                       <text
-                        x="720"
-                        y={85 + i * 50}
-                        fill={active ? "#22c55e" : "#9ca3af"}
-                        fontSize="18"
-                        fontWeight={active ? "bold" : "normal"}
+                        x="985"
+                        y={y + 8}
+                        fill={active ? "#22c55e" : "#94a3b8"}
+                        fontSize="25"
+                        fontWeight="800"
                       >
-                        Y{i}
+                        Y{i} = {active ? 1 : 0}
                       </text>
                     </g>
                   );
                 })}
 
-                <text
-                  x="390"
-                  y="310"
-                  textAnchor="middle"
-                  fill="#fbbf24"
-                  fontSize="18"
-                  fontWeight="bold"
-                >
-                  Active Output → Y{analysis.index}
+                <rect
+                  x="445"
+                  y="375"
+                  width="245"
+                  height="48"
+                  rx="16"
+                  fill="rgba(15,23,42,0.75)"
+                  stroke="rgba(250,204,21,0.28)"
+                />
+                <text x="568" y="407" textAnchor="middle" fill="#fbbf24" fontSize="20" fontWeight="800">
+                  AB = {a}{b} → Y{analysis.index}
+                </text>
+              </>
+            )}
+
+            {mode === "encoder" && (
+              <>
+                {inputs.map((v, i) => {
+                  const y = 105 + i * 75;
+                  const active = v === 1;
+
+                  return (
+                    <g key={i}>
+                      <text x="90" y={y + 8} fill={signalColor(v)} fontSize="28" fontWeight="800">
+                        I{i} = {v}
+                      </text>
+                      <path
+                        d={`M 200 ${y} L 440 ${y}`}
+                        fill="none"
+                        stroke={active ? "#22c55e" : "#ef4444"}
+                        strokeWidth={active ? "6" : "5"}
+                        strokeLinecap="round"
+                        strokeDasharray={active ? "12 9" : "0"}
+                      />
+                    </g>
+                  );
+                })}
+
+                <rect
+                  x="440"
+                  y="130"
+                  width="240"
+                  height="215"
+                  rx="24"
+                  fill="rgba(59,130,246,0.12)"
+                  stroke="#60a5fa"
+                  strokeWidth="3"
+                />
+
+                <text x="560" y="222" textAnchor="middle" fill="#e5e7eb" fontSize="36" fontWeight="800">
+                  ENCODER
+                </text>
+                <text x="560" y="262" textAnchor="middle" fill="#93c5fd" fontSize="20" fontWeight="700">
+                  4 → 2
+                </text>
+
+                <path
+                  d="M 680 185 L 920 185"
+                  fill="none"
+                  stroke={binary[0] === "1" ? "#22c55e" : "#475569"}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={binary[0] === "1" ? "12 9" : "0"}
+                />
+                <path
+                  d="M 680 285 L 920 285"
+                  fill="none"
+                  stroke={binary[1] === "1" ? "#22c55e" : "#475569"}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={binary[1] === "1" ? "12 9" : "0"}
+                />
+
+                <circle cx="948" cy="185" r="15" fill={binary[0] === "1" ? "#22c55e" : "#1f2937"} />
+                <circle cx="948" cy="285" r="15" fill={binary[1] === "1" ? "#22c55e" : "#1f2937"} />
+
+                <text x="985" y="193" fill={binary[0] === "1" ? "#22c55e" : "#94a3b8"} fontSize="25" fontWeight="800">
+                  Y1 = {binary[0]}
+                </text>
+                <text x="985" y="293" fill={binary[1] === "1" ? "#22c55e" : "#94a3b8"} fontSize="25" fontWeight="800">
+                  Y0 = {binary[1]}
+                </text>
+
+                <rect
+                  x="440"
+                  y="390"
+                  width="245"
+                  height="48"
+                  rx="16"
+                  fill="rgba(15,23,42,0.75)"
+                  stroke="rgba(250,204,21,0.28)"
+                />
+                <text x="562" y="422" textAnchor="middle" fill="#fbbf24" fontSize="20" fontWeight="800">
+                  {analysis.index === -1 ? "No active input" : `I${analysis.index} → ${binary}`}
                 </text>
               </>
             )}
           </svg>
         </div>
-      </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Interpretation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          {mode === "encoder"
-            ? `The encoder converts active input I${analysis.index} into binary output ${binary}.`
-            : `The decoder activates output Y${analysis.index} based on inputs A=${a}, B=${b}.`}
-        </p>
+        <div className="dsd-circuit-note-grid">
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <Info size={18} />
+              <h4>Circuit Interpretation</h4>
+            </div>
+            <p>
+              {mode === "decoder"
+                ? `The binary input ${a}${b} is decoded into one active output line Y${analysis.index}.`
+                : analysis.index === -1
+                ? "A standard encoder expects one valid active input line."
+                : `The active input line I${analysis.index} is converted into binary output ${binary}.`}
+            </p>
+          </div>
+
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <CheckCircle2 size={18} />
+              <h4>Observation</h4>
+            </div>
+            <p>{analysis.note}</p>
+          </div>
+        </div>
       </div>
     </section>
   );

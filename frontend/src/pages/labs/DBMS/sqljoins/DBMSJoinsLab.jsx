@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
 import "../../../SortingLab.css";
+import { FlaskConical } from "lucide-react";
+
 import DBMSJoinsOverview from "./DBMSJoinsOverview";
 import DBMSJoinsSimulation from "./DBMSJoinsSimulation";
 import DBMSJoinsQuiz from "./DBMSJoinsQuiz";
@@ -105,114 +106,6 @@ const joinQuizQuestionsByType = {
   ]
 };
 
-const codingProblemByJoinType = {
-  inner: {
-    title: "Write an INNER JOIN query",
-    description:
-      "Write an SQL query to display student name, department name, and HOD name for only matching department records."
-  },
-  left: {
-    title: "Write a LEFT JOIN query",
-    description:
-      "Write an SQL query to display all students along with department name and HOD, even if some students do not have a matching department."
-  },
-  right: {
-    title: "Write a RIGHT JOIN query",
-    description:
-      "Write an SQL query to display all departments along with student names, even if some departments have no students."
-  }
-};
-
-const joinCodeTemplates = {
-  inner: {
-    javascript: `const query = \`
-SELECT s.name, d.department_name, d.hod
-FROM students s
-INNER JOIN departments d
-ON s.department_id = d.department_id;
-\`;`,
-    python: `query = """
-SELECT s.name, d.department_name, d.hod
-FROM students s
-INNER JOIN departments d
-ON s.department_id = d.department_id;
-"""`,
-    cpp: `string query =
-"SELECT s.name, d.department_name, d.hod "
-"FROM students s "
-"INNER JOIN departments d "
-"ON s.department_id = d.department_id;";`,
-    c: `char query[] =
-"SELECT s.name, d.department_name, d.hod "
-"FROM students s "
-"INNER JOIN departments d "
-"ON s.department_id = d.department_id;";`,
-    java: `String query =
-"SELECT s.name, d.department_name, d.hod " +
-"FROM students s " +
-"INNER JOIN departments d " +
-"ON s.department_id = d.department_id;";`
-  },
-  left: {
-    javascript: `const query = \`
-SELECT s.name, d.department_name, d.hod
-FROM students s
-LEFT JOIN departments d
-ON s.department_id = d.department_id;
-\`;`,
-    python: `query = """
-SELECT s.name, d.department_name, d.hod
-FROM students s
-LEFT JOIN departments d
-ON s.department_id = d.department_id;
-"""`,
-    cpp: `string query =
-"SELECT s.name, d.department_name, d.hod "
-"FROM students s "
-"LEFT JOIN departments d "
-"ON s.department_id = d.department_id;";`,
-    c: `char query[] =
-"SELECT s.name, d.department_name, d.hod "
-"FROM students s "
-"LEFT JOIN departments d "
-"ON s.department_id = d.department_id;";`,
-    java: `String query =
-"SELECT s.name, d.department_name, d.hod " +
-"FROM students s " +
-"LEFT JOIN departments d " +
-"ON s.department_id = d.department_id;";`
-  },
-  right: {
-    javascript: `const query = \`
-SELECT s.name, d.department_name, d.hod
-FROM students s
-RIGHT JOIN departments d
-ON s.department_id = d.department_id;
-\`;`,
-    python: `query = """
-SELECT s.name, d.department_name, d.hod
-FROM students s
-RIGHT JOIN departments d
-ON s.department_id = d.department_id;
-"""`,
-    cpp: `string query =
-"SELECT s.name, d.department_name, d.hod "
-"FROM students s "
-"RIGHT JOIN departments d "
-"ON s.department_id = d.department_id;";`,
-    c: `char query[] =
-"SELECT s.name, d.department_name, d.hod "
-"FROM students s "
-"RIGHT JOIN departments d "
-"ON s.department_id = d.department_id;";`,
-    java: `String query =
-"SELECT s.name, d.department_name, d.hod " +
-"FROM students s " +
-"RIGHT JOIN departments d " +
-"ON s.department_id = d.department_id;";`
-  }
-};
-
 const studentsTable = [
   { id: 1, name: "Aarav", department_id: 101, age: 20 },
   { id: 2, name: "Diya", department_id: 102, age: 21 },
@@ -256,33 +149,22 @@ export default function DBMSJoinsLab() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(joinCodeTemplates.inner.javascript);
-  const [codeResult, setCodeResult] = useState("");
-
   useEffect(() => {
-  setStepHistory([]);
-  setSelectedStudentId(null);
-  setSelectedDepartmentId(null);
-  setMatchedStudentIds([]);
-  setMatchedDepartmentIds([]);
-  setJoinedRows([]);
-  setGeneratedSQL("");
-  setCurrentStage("");
-  setMessage("SQL Joins lab initialized.");
-  setExperimentRun(false);
-  setIsRunning(false);
-  setQuizAnswers(Array(joinQuizQuestionsByType[joinType].length).fill(null));
-  setQuizSubmitted(false);
-  setQuizScore(0);
-  setCodeResult("");
-}, [joinType]);
-
-
-  useEffect(() => {
-    setCode(joinCodeTemplates[joinType][selectedLanguage]);
-    setCodeResult("");
-  }, [joinType, selectedLanguage]);
+    setStepHistory([]);
+    setSelectedStudentId(null);
+    setSelectedDepartmentId(null);
+    setMatchedStudentIds([]);
+    setMatchedDepartmentIds([]);
+    setJoinedRows([]);
+    setGeneratedSQL("");
+    setCurrentStage("");
+    setMessage("SQL Joins lab initialized.");
+    setExperimentRun(false);
+    setIsRunning(false);
+    setQuizAnswers(Array(joinQuizQuestionsByType[joinType].length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+  }, [joinType]);
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
@@ -322,8 +204,6 @@ ON s.department_id = d.department_id;`;
       await sleep(animationSpeed);
 
       const results = [];
-      const matchedLeft = new Set();
-      const matchedRight = new Set();
 
       if (joinType === "inner" || joinType === "left") {
         for (let i = 0; i < studentsTable.length; i++) {
@@ -348,9 +228,7 @@ ON s.department_id = d.department_id;`;
               setMatchedStudentIds((prev) => [...new Set([...prev, student.id])]);
               setMatchedDepartmentIds((prev) => [...new Set([...prev, dept.department_id])]);
               setCurrentStage("Match Found");
-              setMessage(
-                `Match found: ${student.name} ↔ ${dept.department_name}`
-              );
+              setMessage(`Match found: ${student.name} ↔ ${dept.department_name}`);
               addStep(
                 `Match found between student ${student.name} and department ${dept.department_name}.`
               );
@@ -362,9 +240,6 @@ ON s.department_id = d.department_id;`;
                 department_name: dept.department_name,
                 hod: dept.hod
               });
-
-              matchedLeft.add(student.id);
-              matchedRight.add(dept.department_id);
             }
           } else if (joinType === "left") {
             setCurrentStage("No Right Match");
@@ -418,9 +293,7 @@ ON s.department_id = d.department_id;`;
               setMatchedStudentIds((prev) => [...new Set([...prev, student.id])]);
               setMatchedDepartmentIds((prev) => [...new Set([...prev, dept.department_id])]);
               setCurrentStage("Match Found");
-              setMessage(
-                `Match found: ${student.name} ↔ ${dept.department_name}`
-              );
+              setMessage(`Match found: ${student.name} ↔ ${dept.department_name}`);
               addStep(
                 `Match found between department ${dept.department_name} and student ${student.name}.`
               );
@@ -432,9 +305,6 @@ ON s.department_id = d.department_id;`;
                 department_name: dept.department_name,
                 hod: dept.hod
               });
-
-              matchedLeft.add(student.id);
-              matchedRight.add(dept.department_id);
             }
           } else {
             setCurrentStage("No Left Match");
@@ -528,157 +398,151 @@ ON s.department_id = d.department_id;`;
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
-      return;
-    }
-
-    try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(`${code}; return query;`);
-      const result = fn();
-      setCodeResult(`Output:\n${result}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
-  };
-
-  const codingProblem = codingProblemByJoinType[joinType];
-
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – SQL Joins</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Join Type</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={joinType}
-              onChange={(e) => setJoinType(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-              disabled={isRunning}
-            >
-              <option value="inner">INNER JOIN</option>
-              <option value="left">LEFT JOIN</option>
-              <option value="right">RIGHT JOIN</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive SQL Joins Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            SQL Joins
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Explore INNER, LEFT, and RIGHT joins visually through simulation, quiz, and SQL query practice.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Join Configuration</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 16
+            }}
           >
-            Overview
-          </button>
+            <div>
+              <label className="sorting-label">Join Type</label>
+              <select
+                value={joinType}
+                onChange={(e) => setJoinType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="inner">INNER JOIN</option>
+                <option value="left">LEFT JOIN</option>
+                <option value="right">RIGHT JOIN</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DBMSJoinsOverview joinType={joinType} studentsTable={studentsTable} departmentsTable={departmentsTable} />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "simulation" && (
-            <DBMSJoinsSimulation
-              joinType={joinType}
-              studentsTable={studentsTable}
-              departmentsTable={departmentsTable}
-              runSimulation={runSimulation}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              selectedStudentId={selectedStudentId}
-              selectedDepartmentId={selectedDepartmentId}
-              matchedStudentIds={matchedStudentIds}
-              matchedDepartmentIds={matchedDepartmentIds}
-              joinedRows={joinedRows}
-              stepHistory={stepHistory}
-              generatedSQL={generatedSQL}
-              currentStage={currentStage}
-              isRunning={isRunning}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "quiz" && (
-            <DBMSJoinsQuiz
-              joinType={joinType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && (
+                <DBMSJoinsOverview
+                  joinType={joinType}
+                  studentsTable={studentsTable}
+                  departmentsTable={departmentsTable}
+                />
+              )}
 
-          {activeSection === "coding" && (
-            <DBMSJoinsCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              joinType={joinType}
-            />
-          )}
-        </main>
+              {activeSection === "simulation" && (
+                <DBMSJoinsSimulation
+                  joinType={joinType}
+                  studentsTable={studentsTable}
+                  departmentsTable={departmentsTable}
+                  runSimulation={runSimulation}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  selectedStudentId={selectedStudentId}
+                  selectedDepartmentId={selectedDepartmentId}
+                  matchedStudentIds={matchedStudentIds}
+                  matchedDepartmentIds={matchedDepartmentIds}
+                  joinedRows={joinedRows}
+                  stepHistory={stepHistory}
+                  generatedSQL={generatedSQL}
+                  currentStage={currentStage}
+                  isRunning={isRunning}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <DBMSJoinsQuiz
+                  joinType={joinType}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <DBMSJoinsCoding joinType={joinType} />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

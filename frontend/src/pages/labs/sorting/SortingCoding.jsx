@@ -1,4 +1,5 @@
 import React from "react";
+import { Code2, Play, Wrench, Sparkles } from "lucide-react";
 
 const LANGUAGES = [
   { value: "javascript", label: "JavaScript" },
@@ -20,54 +21,57 @@ const SortingCoding = ({
   generateProblems
 }) => {
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Test your understanding by implementing sorting algorithms. Choose a language,
-        write your solution, and run it.
-      </p>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Code2 size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Coding Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Solve randomly generated problems and test your understanding in code.
+          </p>
+        </div>
+      </div>
 
-      <button className="btn primary" onClick={generateProblems}>
-        Generate Problems
-      </button>
+      <div style={{ marginBottom: 20 }}>
+        <button className="sim-btn sim-btn-primary" onClick={generateProblems}>
+          Generate Problems
+        </button>
+      </div>
+
+      {currentProblems.length === 0 ? (
+        <div className="coding-empty-state">
+          No problems generated yet. Click <b>Generate Problems</b> to begin.
+        </div>
+      ) : null}
 
       {currentProblems.map((problem, index) => {
         const selectedLanguage = selectedLanguages[problem.id] || "javascript";
         const codeKey = `${problem.id}_${selectedLanguage}`;
 
         return (
-          <div key={problem.id} className="coding-problem">
-            <h3>Problem {index + 1}</h3>
-            <p>{problem.description}</p>
+          <div key={problem.id} className="coding-card-upgraded">
+            <div className="coding-card-header">
+              <div>
+                <h3>Problem {index + 1}</h3>
+                <p>{problem.description}</p>
+              </div>
 
-            <div style={{ marginBottom: "12px" }}>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: "6px",
-                  fontWeight: "600",
-                  color: "#ffffff"
-                }}
-              >
-                Select Language
-              </label>
-              <select
-                value={selectedLanguage}
-                onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: "8px",
-                  minWidth: "180px",
-                  fontSize: "14px",
-                  color: "#000000"
-                }}
-              >
-                {LANGUAGES.map((lang) => (
-                  <option key={lang.value} value={lang.value}>
-                    {lang.label}
-                  </option>
-                ))}
-              </select>
+              <div className="coding-language-wrap">
+                <label className="sorting-label">Language</label>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  className="sorting-select"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <textarea
@@ -76,41 +80,41 @@ const SortingCoding = ({
                 handleCodeChange(problem.id, selectedLanguage, e.target.value)
               }
               placeholder="Write your code here..."
-              rows={12}
-              style={{
-                width: "100%",
-                fontFamily: "monospace",
-                color: "#000000",
-                padding: "12px",
-                borderRadius: "8px",
-                marginBottom: "10px"
-              }}
+              rows={14}
+              className="coding-textarea-upgraded"
             />
 
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+            <div className="coding-actions-upgraded">
               <button
-                className="btn secondary"
+                className="sim-btn sim-btn-primary"
                 onClick={() => runCode(problem.id, selectedLanguage)}
               >
+                <Play size={16} />
                 Run Code
               </button>
 
               <button
-                className="btn info"
+                className="sim-btn sim-btn-muted"
                 onClick={() => analyzeCode(problem.id, selectedLanguage)}
               >
+                <Sparkles size={16} />
                 Analyze Code
               </button>
 
               <button
-                className="btn success"
+                className="sim-btn sim-btn-danger"
                 onClick={() => correctCode(problem.id, selectedLanguage)}
               >
+                <Wrench size={16} />
                 Correct Code
               </button>
             </div>
 
-            {results[problem.id] && <p className="result">{results[problem.id]}</p>}
+            {results[problem.id] && (
+              <div className="coding-result-box">
+                {results[problem.id]}
+              </div>
+            )}
           </div>
         );
       })}

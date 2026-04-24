@@ -1,4 +1,5 @@
 import React from "react";
+import { Activity, Play, RotateCcw, Database } from "lucide-react";
 import SimpleTable from "../../../../components/dbms/SimpleTable.jsx";
 import StepHistoryPanel from "../../../../components/dbms/StepHistoryPanel.jsx";
 import InfoStatCard from "../../../../components/dbms/InfoStatCard.jsx";
@@ -31,29 +32,39 @@ export default function DBMSJoinsSimulation({
 
   return (
     <>
-      <section className="card experiment">
-        <h2>
-          Simulation{" "}
-          <span style={{ color: "#38bdf8" }}>
-            ({joinType.toUpperCase()} JOIN)
-          </span>
-        </h2>
+      <section className="sorting-sim-card">
+        <div className="sorting-sim-header">
+          <div className="sorting-sim-title-wrap">
+            <div className="sorting-sim-icon">
+              <Activity size={18} />
+            </div>
+            <div>
+              <h2 className="sorting-sim-title">Simulation</h2>
+              <p className="sorting-sim-subtitle">
+                Visualize {joinType.toUpperCase()} JOIN step by step across two related tables.
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <div className="buttons" style={{ marginBottom: 14 }}>
-          <button className="btn primary" onClick={runSimulation} disabled={isRunning}>
+        <div className="sorting-btn-group" style={{ marginBottom: 18 }}>
+          <button className="sim-btn sim-btn-primary" onClick={runSimulation} disabled={isRunning}>
+            <Play size={16} />
             {isRunning ? "Running..." : "Run Join"}
           </button>
 
-          <button className="btn info" onClick={loadSample} disabled={isRunning}>
+          <button className="sim-btn sim-btn-muted" onClick={loadSample} disabled={isRunning}>
+            <Database size={16} />
             Load Sample
           </button>
 
-          <button className="btn secondary" onClick={reset} disabled={isRunning}>
+          <button className="sim-btn sim-btn-danger" onClick={reset} disabled={isRunning}>
+            <RotateCcw size={16} />
             Reset
           </button>
         </div>
 
-        <div className="info-box">
+        <div className="sorting-info-box">
           {message || "Run the join simulation to begin."}
         </div>
 
@@ -71,34 +82,52 @@ export default function DBMSJoinsSimulation({
         )}
 
         <div
+          className="sorting-stats-grid"
           style={{
-            marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16
+            marginTop: 18,
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))"
           }}
         >
           <InfoStatCard label="Students Rows" value={studentsTable.length} />
           <InfoStatCard label="Departments Rows" value={departmentsTable.length} />
           <InfoStatCard label="Joined Rows" value={joinedRows.length} />
+          <InfoStatCard label="Join Type" value={joinType.toUpperCase()} />
         </div>
 
         {generatedSQL && (
           <div
             style={{
-              marginTop: 16,
-              padding: "14px 16px",
-              borderRadius: 10,
-              background: "rgba(15,23,42,0.45)",
-              border: "1px solid rgba(56,189,248,0.25)",
-              color: "#e5e7eb",
-              fontFamily: "monospace",
-              lineHeight: 1.7,
+              marginTop: 18,
+              padding: "18px",
+              borderRadius: 18,
+              background: "rgba(2, 8, 23, 0.82)",
+              border: "1px solid rgba(56,189,248,0.18)",
               overflowX: "auto"
             }}
           >
-            <strong style={{ color: "#38bdf8" }}>Generated SQL:</strong>
-            <div style={{ marginTop: 8, whiteSpace: "pre-wrap" }}>{generatedSQL}</div>
+            <div
+              style={{
+                color: "#38bdf8",
+                fontWeight: 800,
+                marginBottom: 10,
+                fontSize: "0.98rem"
+              }}
+            >
+              SQL Editor Preview
+            </div>
+
+            <pre
+              style={{
+                margin: 0,
+                color: "#e2e8f0",
+                fontFamily: `"Fira Code", "Consolas", monospace`,
+                fontSize: "0.95rem",
+                lineHeight: 1.75,
+                whiteSpace: "pre-wrap"
+              }}
+            >
+{generatedSQL}
+            </pre>
           </div>
         )}
 
@@ -125,10 +154,7 @@ export default function DBMSJoinsSimulation({
         rowKeyField="department_id"
       />
 
-      <SimpleTable
-        title="Join Result"
-        rows={joinedRows}
-      />
+      <SimpleTable title="Join Result" rows={joinedRows} />
 
       <StepHistoryPanel steps={stepHistory} />
     </>

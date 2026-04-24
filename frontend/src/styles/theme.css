@@ -1,48 +1,122 @@
-/* SimuLab Global Theme Variables (Institutional Dark Theme)
-   Enforced for all UI components and pages */
+/* SimuLab Global Theme Variables
+   Option 4: Minimal Premium
+   Clean, elegant, presentation-ready */
+
 :root {
-  /* Brand Colors */
-  --color-primary: #38bdf8; /* SimuLab Blue */
-  --color-accent: #818cf8;  /* Academic Violet */
+  /* ======================
+     BRAND / ACCENT COLORS
+     ====================== */
+  --color-primary: #60a5fa;
+  --color-accent: #c084fc;
+  --color-highlight: #f59e0b;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-info: #93c5fd;
 
-  /* Background Layers */
-  --bg-main: #0b0f1a;
-  --bg-panel: #121826;
-  --bg-panel-soft: #161d2e;
-  --bg-elevated: #1a2236;
+  /* ======================
+     BACKGROUND LAYERS
+     ====================== */
+  --bg-main: #0a0a0a;
+  --bg-panel: #111111;
+  --bg-panel-soft: #1a1a1a;
+  --bg-elevated: #222222;
+  --bg-overlay: rgba(10, 10, 10, 0.76);
 
-  /* Text Colors */
-  --text-main: #ffffff; /* default main text now white */
-  --text-muted: #9ca3af;
+  /* ======================
+     TEXT COLORS
+     ====================== */
+  --text-main: #fafafa;
+  --text-muted: #a3a3a3;
+  --text-soft: #d4d4d4;
   --text-highlight: #ffffff;
   --text-accent: var(--color-primary);
 
-  /* Border & Shadow */
-  --border: #1f2937;
-  --shadow-elevated: 0 8px 32px rgba(56,189,248,0.10), 0 1.5px 8px rgba(0,0,0,0.18);
-  --shadow-card: 0 4px 18px rgba(56,189,248,0.08), 0 1.5px 8px rgba(0,0,0,0.13);
+  /* ======================
+     BORDER COLORS
+     ====================== */
+  --border: #262626;
+  --border-soft: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(96, 165, 250, 0.24);
 
-  /* Radius */
+  /* ======================
+     SHADOWS / GLOWS
+     ====================== */
+  --shadow-elevated:
+    0 18px 44px rgba(0, 0, 0, 0.54),
+    0 4px 12px rgba(96, 165, 250, 0.06);
+
+  --shadow-card:
+    0 10px 28px rgba(0, 0, 0, 0.40),
+    0 2px 8px rgba(255, 255, 255, 0.02);
+
+  --shadow-glow-primary:
+    0 0 0 1px rgba(96, 165, 250, 0.06),
+    0 0 20px rgba(96, 165, 250, 0.10);
+
+  --shadow-glow-accent:
+    0 0 0 1px rgba(192, 132, 252, 0.06),
+    0 0 20px rgba(192, 132, 252, 0.10);
+
+  /* ======================
+     GRADIENTS
+     ====================== */
+  --gradient-primary: linear-gradient(135deg, #60a5fa 0%, #c084fc 100%);
+  --gradient-panel: linear-gradient(180deg, rgba(26, 26, 26, 0.96) 0%, rgba(17, 17, 17, 0.98) 100%);
+  --gradient-hero: radial-gradient(circle at top left, rgba(96, 165, 250, 0.10), transparent 34%),
+                   radial-gradient(circle at bottom right, rgba(192, 132, 252, 0.10), transparent 34%);
+  --gradient-grid-fade: linear-gradient(180deg, rgba(96, 165, 250, 0.03), rgba(192, 132, 252, 0.03));
+
+  /* ======================
+     STATUS COLORS
+     ====================== */
+  --signal-on: var(--color-success);
+  --signal-off: #525252;
+  --signal-pulse: var(--color-highlight);
+  --signal-data: var(--color-primary);
+  --signal-clock: var(--color-accent);
+
+  /* ======================
+     RADIUS
+     ====================== */
+  --radius-xl: 24px;
   --radius-lg: 18px;
   --radius-md: 14px;
   --radius-sm: 8px;
+  --radius-xs: 6px;
 
-  /* Spacing */
+  /* ======================
+     SPACING
+     ====================== */
   --space-2: 2px;
   --space-4: 4px;
   --space-8: 8px;
   --space-12: 12px;
   --space-16: 16px;
+  --space-20: 20px;
   --space-24: 24px;
   --space-32: 32px;
   --space-40: 40px;
+  --space-48: 48px;
   --space-56: 56px;
+  --space-72: 72px;
 
-  /* Typography */
-  --font-main: 'Inter', system-ui, sans-serif;
-  --font-size-h1: 2.6rem;
-  --font-size-h2: 2rem;
-  --font-size-h3: 1.18rem;
+  /* ======================
+     TYPOGRAPHY
+     ====================== */
+  --font-main: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --font-size-h1: 2.8rem;
+  --font-size-h2: 2.1rem;
+  --font-size-h3: 1.22rem;
   --font-size-body: 1rem;
   --font-size-helper: 0.93rem;
+  --font-size-small: 0.84rem;
+
+  /* ======================
+     TRANSITIONS
+     ====================== */
+  --transition-fast: 0.18s ease;
+  --transition-medium: 0.28s ease;
+  --transition-slow: 0.4s ease;
 }

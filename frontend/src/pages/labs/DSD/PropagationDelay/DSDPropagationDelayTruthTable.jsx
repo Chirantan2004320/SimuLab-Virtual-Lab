@@ -1,4 +1,5 @@
 import React from "react";
+import { Table2, CheckCircle2, TimerReset } from "lucide-react";
 
 function stateBadge(text, active) {
   return (
@@ -42,16 +43,29 @@ export default function DSDPropagationDelayTruthTable({
   ];
 
   return (
-    <section className="card experiment">
-      <h2>Truth Table</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        Propagation delay is described using timing conditions rather than only input-output logic combinations.
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Table2 size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Truth Table</h2>
+            <p className="sorting-sim-subtitle">
+              Timing behavior is represented through time conditions instead of only static input-output combinations.
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="card">
-        <h3>Timing Behavior Table</h3>
-        <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
+      <div className="sorting-info-box">
+        The highlighted row matches the current timing condition of the signal.
+      </div>
+
+      <div className="sorting-sim-card" style={{ marginTop: 18, padding: 18 }}>
+        <h3 style={{ color: "#f8fafc", marginBottom: 14 }}>Timing Behavior Table</h3>
+
+        <table className="dbms-table" style={{ width: "100%" }}>
           <thead>
             <tr>
               <th>Gate</th>
@@ -81,41 +95,24 @@ export default function DSDPropagationDelayTruthTable({
         </table>
       </div>
 
-      <div
-        style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "12px"
-        }}
-      >
-        <div className="card">
-          <h3>Current Condition</h3>
-          <p style={{ marginTop: "0.75rem" }}>
-            {stateBadge(timeNs < delayNs ? "t < delay" : "t ≥ delay", true)}
-          </p>
+      <div className="overview-grid" style={{ marginTop: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <TimerReset size={18} />
+            <h4>Current Condition</h4>
+          </div>
+          <p>{stateBadge(timeNs < delayNs ? "t < delay" : "t ≥ delay", true)}</p>
         </div>
 
-        <div className="card">
-          <h3>Observed Output</h3>
-          <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-            At <strong>{timeNs} ns</strong>, output is <strong>{analysis.observedOutput}</strong>.
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Observed Output</h4>
+          </div>
+          <p>
+            At <strong>{timeNs} ns</strong>, the output is <strong>{analysis.observedOutput}</strong>.
           </p>
         </div>
-
-        <div className="card">
-          <h3>Delay Value</h3>
-          <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-            Configured propagation delay = <strong>{delayNs} ns</strong>.
-          </p>
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Current Observation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          The input changed at 0 ns, but the output becomes valid only after {delayNs} ns.
-        </p>
       </div>
     </section>
   );

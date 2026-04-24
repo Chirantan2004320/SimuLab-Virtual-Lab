@@ -1,58 +1,163 @@
 import React from "react";
+import {
+  BookOpen,
+  Cpu,
+  Binary,
+  Lightbulb,
+  Layers3,
+  CheckCircle2
+} from "lucide-react";
 
-export default function DSDFlipFlopsOverview() {
+export default function DSDFlipFlopsOverview({ selectedType }) {
+  const typeNotes = {
+    sr: {
+      title: "SR Latch",
+      description:
+        "The SR latch is the most basic storage element. It uses Set and Reset inputs to control whether the output becomes 1, becomes 0, or holds its previous state."
+    },
+    d: {
+      title: "D Flip-Flop",
+      description:
+        "The D Flip-Flop removes ambiguity by using a single data input. When the clock is active, the value at D is transferred to Q."
+    },
+    jk: {
+      title: "JK Flip-Flop",
+      description:
+        "The JK Flip-Flop improves the SR design. It behaves like hold, set, reset, or toggle depending on J, K, and the clock."
+    },
+    t: {
+      title: "T Flip-Flop",
+      description:
+        "The T Flip-Flop is designed for toggling. When T is 1 and the clock is active, the output changes to its opposite state."
+    }
+  };
+
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To study the working of basic sequential storage elements such as SR, D, JK,
-          and T flip-flops by changing input conditions and observing the next state of the output.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Understand how sequential circuits store one bit and transition from present state to next state.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          Flip-flops are sequential circuits that can store one bit of information.
-          Unlike combinational circuits, their outputs depend not only on current inputs,
-          but also on previous states.
-        </p>
-        <p>
-          Common flip-flops include:
-        </p>
-        <p><strong>SR Latch:</strong> basic set-reset memory element.</p>
-        <p><strong>D Flip-Flop:</strong> stores the value of input D when clock is active.</p>
-        <p><strong>JK Flip-Flop:</strong> improved version of SR flip-flop without invalid state during normal clocked use.</p>
-        <p><strong>T Flip-Flop:</strong> toggles output when T = 1 and clock is active.</p>
-      </section>
+      <div className="er-overview-hero">
+        <div className="er-overview-hero-top">
+          <div>
+            <h3>Sequential Memory Elements</h3>
+            <p>
+              Flip-flops are fundamental <strong>sequential circuits</strong>. Unlike combinational logic,
+              they do not depend only on present inputs. They also remember the previous output state,
+              which makes them useful for storage, synchronization, counting, and state machines.
+            </p>
+          </div>
 
-      <section className="card">
-        <h2>Key Idea</h2>
-        <p>
-          Flip-flops are used to build registers, counters, memory blocks, and state machines.
-          They are fundamental to sequential digital systems.
-        </p>
-      </section>
+          <span className="overview-badge">State Storage Core</span>
+        </div>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Select the required flip-flop type.</li>
-          <li>Set the input values and clock where applicable.</li>
-          <li>Observe the current state Q and predicted next state.</li>
-          <li>Apply the new state and see how the output changes.</li>
-          <li>Compare the result with the truth table and circuit section.</li>
+        <div className="er-overview-metrics">
+          <div className="er-mini-metric">
+            <div className="er-mini-metric-icon">
+              <Binary size={16} />
+            </div>
+            <div>
+              <div className="er-mini-metric-label">Stores</div>
+              <div className="er-mini-metric-value">1 Bit</div>
+            </div>
+          </div>
+
+          <div className="er-mini-metric">
+            <div className="er-mini-metric-icon">
+              <Cpu size={16} />
+            </div>
+            <div>
+              <div className="er-mini-metric-label">Role</div>
+              <div className="er-mini-metric-value">Sequential Logic</div>
+            </div>
+          </div>
+
+          <div className="er-mini-metric">
+            <div className="er-mini-metric-icon">
+              <CheckCircle2 size={16} />
+            </div>
+            <div>
+              <div className="er-mini-metric-label">Current Focus</div>
+              <div className="er-mini-metric-value">{typeNotes[selectedType].title}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Lightbulb size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            To study the working of SR, D, JK, and T flip-flops by changing inputs and observing the transition from present state to next state.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>Current Type</h4>
+          </div>
+          <p>{typeNotes[selectedType].description}</p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Binary size={18} />
+            <h4>Key Idea</h4>
+          </div>
+          <p>
+            A flip-flop stores one binary value. Depending on its inputs and clock, it may hold, set, reset, load, or toggle its output.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Applications</h4>
+          </div>
+          <p>
+            Flip-flops are used in registers, counters, memory cells, synchronization blocks, frequency division circuits, and processor control units.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <Layers3 size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          <li>
+            <span className="overview-step-index">1</span>
+            <span>Select the required flip-flop type.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">2</span>
+            <span>Set the input values and clock where needed.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">3</span>
+            <span>Observe the current output Q and the predicted next state.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">4</span>
+            <span>Apply the next state and compare the outcome with the truth table and circuit view.</span>
+          </li>
         </ol>
-      </section>
-
-      <section className="card">
-        <h2>Practical Insight</h2>
-        <p>
-          Flip-flops are the foundation of clocked digital systems. They are used in timing,
-          synchronization, storage, counters, and processor control logic.
-        </p>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

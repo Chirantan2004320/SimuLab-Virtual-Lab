@@ -1,4 +1,5 @@
 import React from "react";
+import { Activity, Play, Square, RotateCcw, FlaskConical } from "lucide-react";
 
 function ArrayBlock({
   value,
@@ -12,140 +13,45 @@ function ArrayBlock({
   lowIndex,
   highIndex
 }) {
-  let border = "2px solid #38bdf8";
-  let background = "linear-gradient(135deg, rgba(56,189,248,0.2), rgba(129,140,248,0.2))";
-  let boxShadow = "0 4px 12px rgba(56,189,248,0.15)";
-  let opacity = 1;
+  let className = "searching-array-block";
 
   if (searchType === "binary" && lowIndex !== null && highIndex !== null) {
-    if (index < lowIndex || index > highIndex) {
-      opacity = 0.35;
-    }
+    if (index < lowIndex || index > highIndex) className += " dimmed";
   }
 
-  if (isFound) {
-    border = "2px solid #22c55e";
-    background = "linear-gradient(135deg, rgba(34,197,94,0.28), rgba(16,185,129,0.2))";
-    boxShadow = "0 0 18px rgba(34,197,94,0.35)";
-    opacity = 1;
-  } else if (searchType === "linear" && isCurrent) {
-    border = "2px solid #facc15";
-    background = "linear-gradient(135deg, rgba(250,204,21,0.25), rgba(234,179,8,0.18))";
-    boxShadow = "0 0 18px rgba(250,204,21,0.25)";
-  } else if (searchType === "binary" && isMid) {
-    border = "2px solid #facc15";
-    background = "linear-gradient(135deg, rgba(250,204,21,0.25), rgba(234,179,8,0.18))";
-    boxShadow = "0 0 18px rgba(250,204,21,0.25)";
-    opacity = 1;
-  }
+  if (isFound) className += " found";
+  else if (searchType === "linear" && isCurrent) className += " current";
+  else if (searchType === "binary" && isMid) className += " mid";
 
   return (
-    <div
-      style={{
-        minWidth: 68,
-        padding: "14px 12px",
-        borderRadius: 10,
-        background,
-        border,
-        color: "#ffffff",
-        fontWeight: 700,
-        textAlign: "center",
-        position: "relative",
-        boxShadow,
-        transition: "all 0.25s ease",
-        opacity
-      }}
-    >
-      <div style={{ fontSize: 18 }}>{value}</div>
-      <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 6 }}>idx {index}</div>
+    <div className={className}>
+      <div className="searching-array-value">{value}</div>
+      <div className="searching-array-index">idx {index}</div>
 
-      {searchType === "binary" && isLow && (
-        <div
-          style={{
-            position: "absolute",
-            top: -14,
-            left: 4,
-            fontSize: 11,
-            fontWeight: 800,
-            color: "#38bdf8"
-          }}
-        >
-          LOW
-        </div>
-      )}
-
-      {searchType === "binary" && isHigh && (
-        <div
-          style={{
-            position: "absolute",
-            top: -14,
-            right: 4,
-            fontSize: 11,
-            fontWeight: 800,
-            color: "#f87171"
-          }}
-        >
-          HIGH
-        </div>
-      )}
-
-      {searchType === "binary" && isMid && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: -14,
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontSize: 11,
-            fontWeight: 800,
-            color: "#facc15"
-          }}
-        >
-          MID
-        </div>
-      )}
+      {searchType === "binary" && isLow && <div className="searching-array-tag low">LOW</div>}
+      {searchType === "binary" && isHigh && <div className="searching-array-tag high">HIGH</div>}
+      {searchType === "binary" && isMid && <div className="searching-array-tag mid">MID</div>}
     </div>
   );
 }
 
 function StepHistoryPanel({ stepHistory }) {
   return (
-    <section className="card" style={{ marginTop: 20 }}>
-      <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Step History</h3>
+    <div className="searching-history-card">
+      <div className="searching-history-title">Step History</div>
 
       {stepHistory.length === 0 ? (
-        <p style={{ color: "#9ca3af" }}>Search steps will appear here.</p>
+        <div className="searching-history-empty">Search steps will appear here.</div>
       ) : (
-        <div
-          style={{
-            maxHeight: 260,
-            overflowY: "auto",
-            border: "1px solid rgba(148,163,184,0.25)",
-            borderRadius: 12,
-            padding: 12,
-            background: "rgba(15,23,42,0.35)"
-          }}
-        >
+        <div className="searching-history-list">
           {stepHistory.map((step, index) => (
-            <div
-              key={index}
-              style={{
-                padding: "10px 12px",
-                borderBottom:
-                  index !== stepHistory.length - 1
-                    ? "1px solid rgba(148,163,184,0.15)"
-                    : "none",
-                color: "#d1d5db",
-                lineHeight: 1.6,
-                fontSize: "0.96rem"
-              }}
-            >
-              <strong style={{ color: "#38bdf8" }}>{index + 1}.</strong> {step}
+            <div key={index} className="searching-history-item">
+              <strong>{index + 1}.</strong> {step}
             </div>
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -171,76 +77,82 @@ export default function SearchingSimulation({
   stepHistory
 }) {
   return (
-    <>
-      <section className="card experiment">
-        <h2>
-          Simulation{" "}
-          <span style={{ color: "#38bdf8" }}>
-            ({searchType === "binary" ? "Binary Search" : "Linear Search"})
-          </span>
-        </h2>
-
-        <div className="controls">
-          <div style={{ width: "100%" }}>
-            <label>Array Values</label>
-            <input
-              value={arrayInput}
-              onChange={(e) => setArrayInput(e.target.value)}
-              placeholder="Enter values like 10, 20, 30, 40"
-              style={{ color: "#ffffff", width: "100%" }}
-              disabled={isRunning}
-            />
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
           </div>
-
           <div>
-            <label>Target Value</label>
-            <input
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              ref={targetRef}
-              placeholder="Enter target"
-              style={{ color: "#ffffff" }}
-              disabled={isRunning}
-            />
-          </div>
-
-          <div className="buttons">
-            <button className="btn primary" onClick={runSearch} disabled={isRunning}>
-              {isRunning ? "Running..." : "Run Search"}
-            </button>
-
-            <button className="btn danger" onClick={stopSearch} disabled={!isRunning}>
-              Stop
-            </button>
-
-            <button className="btn info" onClick={loadSample} disabled={isRunning}>
-              Load Sample
-            </button>
-
-            <button className="btn secondary" onClick={reset} disabled={isRunning}>
-              Reset
-            </button>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              Visualize {searchType === "binary" ? "Binary Search" : "Linear Search"} step by step.
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="info-box">{message || "Run a search to begin."}</div>
+      <div className="sorting-input-row">
+        <div className="sorting-input-group" style={{ flex: 2 }}>
+          <label className="sorting-label">Array Values</label>
+          <input
+            value={arrayInput}
+            onChange={(e) => setArrayInput(e.target.value)}
+            placeholder="Enter values like 10, 20, 30, 40"
+            className="sorting-input"
+            disabled={isRunning}
+          />
+        </div>
 
-        <div className="workspace" style={{ flexWrap: "wrap", minHeight: 160 }}>
-          {array.length === 0 ? (
-            <div style={{ color: "#9ca3af", fontSize: "1.05rem" }}>
-              Parsed array will appear here
+        <div className="sorting-input-group" style={{ flex: 1 }}>
+          <label className="sorting-label">Target Value</label>
+          <input
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            ref={targetRef}
+            placeholder="Enter target"
+            className="sorting-input"
+            disabled={isRunning}
+          />
+        </div>
+      </div>
+
+      <div className="sorting-btn-group" style={{ marginBottom: 18 }}>
+        <button className="sim-btn sim-btn-primary" onClick={runSearch} disabled={isRunning}>
+          <Play size={16} />
+          {isRunning ? "Running..." : "Run Search"}
+        </button>
+
+        <button className="sim-btn sim-btn-danger" onClick={stopSearch} disabled={!isRunning}>
+          <Square size={16} />
+          Stop
+        </button>
+
+        <button className="sim-btn sim-btn-muted" onClick={loadSample} disabled={isRunning}>
+          <FlaskConical size={16} />
+          Load Sample
+        </button>
+
+        <button className="sim-btn sim-btn-muted" onClick={reset} disabled={isRunning}>
+          <RotateCcw size={16} />
+          Reset
+        </button>
+      </div>
+
+      <div className="sorting-info-box">{message || "Run a search to begin."}</div>
+
+      <div className="sorting-visualizer-wrap searching-visualizer-wrap">
+        {array.length === 0 ? (
+          <div className="linked-empty-state">
+            <div className="linked-empty-icon">🔎</div>
+            <div className="linked-empty-title">Parsed array will appear here</div>
+            <div className="linked-empty-subtitle">
+              Enter array values and a target, then run the search.
             </div>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "center",
-                padding: "18px 10px 24px"
-              }}
-            >
+          </div>
+        ) : (
+          <div className="searching-array-shell">
+            <div className="searching-array-track">
               {array.map((value, index) => (
                 <ArrayBlock
                   key={`${value}-${index}`}
@@ -257,11 +169,11 @@ export default function SearchingSimulation({
                 />
               ))}
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        )}
+      </div>
 
       <StepHistoryPanel stepHistory={stepHistory} />
-    </>
+    </section>
   );
 }

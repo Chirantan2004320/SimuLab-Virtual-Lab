@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
 import "../../../SortingLab.css";
+import { FlaskConical } from "lucide-react";
+
 import DBMSConcurrencyOverview from "./DBMSConcurrencyOverview";
 import DBMSConcurrencySimulation from "./DBMSConcurrencySimulation";
+import DBMSConcurrencyComparison from "./DBMSConcurrencyComparison";
 import DBMSConcurrencyQuiz from "./DBMSConcurrencyQuiz";
 import DBMSConcurrencyCoding from "./DBMSConcurrencyCoding";
 
@@ -84,12 +86,7 @@ const concurrencyQuizQuestionsByType = {
     },
     {
       question: "In a locking demo, if T1 holds the lock, T2 usually:",
-      options: [
-        "Must wait",
-        "Deletes the row",
-        "Commits automatically",
-        "Skips the data forever"
-      ],
+      options: ["Must wait", "Deletes the row", "Commits automatically", "Skips the data forever"],
       correct: 0
     },
     {
@@ -331,10 +328,7 @@ export default function DBMSConcurrencyLab() {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [anomalyText, setAnomalyText] = useState("");
 
-  const quizQuestions = useMemo(
-    () => concurrencyQuizQuestionsByType[demoType],
-    [demoType]
-  );
+  const quizQuestions = useMemo(() => concurrencyQuizQuestionsByType[demoType], [demoType]);
 
   const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -518,11 +512,6 @@ export default function DBMSConcurrencyLab() {
       setCurrentStage("Complete");
       setMessage(`${demoType.toUpperCase()} simulation completed.`);
       addStep(`${demoType.toUpperCase()} simulation completed successfully.`);
-
-      localStorage.setItem(
-        "vlab_last_experiment",
-        JSON.stringify({ name: `dbms-${demoType}-concurrency`, time: Date.now() })
-      );
     } finally {
       setIsRunning(false);
       setSelectedTransaction(null);
@@ -577,16 +566,6 @@ export default function DBMSConcurrencyLab() {
 
     setQuizScore(score);
     setQuizSubmitted(true);
-
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DBMS",
-      experiment: `${demoType}-concurrency`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
   const runCode = () => {
@@ -609,137 +588,214 @@ export default function DBMSConcurrencyLab() {
 
   const codingProblem = codingProblemByType[demoType];
 
+  const analyzeCode = () => {
+  if (!code.trim()) {
+    setCodeResult("Analysis: Please write or load a concurrency example first.");
+    return;
+  }
+
+  if (demoType === "lost-update") {
+    setCodeResult(
+      "Analysis:\nThis example shows two transactions reading the same old value before either safely prevents overlap. That can cause one committed update to be overwritten by another stale write."
+    );
+    return;
+  }
+
+  if (demoType === "dirty-read") {
+    setCodeResult(
+      "Analysis:\nThis example shows T2 reading data that T1 has not committed yet. If T1 rolls back, T2 has used an invalid temporary value."
+    );
+    return;
+  }
+
+  setCodeResult(
+    "Analysis:\nThis example shows locking-based concurrency control. One transaction holds the lock while the other waits, preventing unsafe simultaneous access."
+  );
+};
+
+const optimizeCode = () => {
+  if (demoType === "lost-update") {
+    setCodeResult(
+      "Optimization Suggestion:\nUse row-level locking, SELECT ... FOR UPDATE, or a stricter isolation level so concurrent transactions cannot overwrite each other's committed update."
+    );
+    return;
+  }
+
+  if (demoType === "dirty-read") {
+    setCodeResult(
+      "Optimization Suggestion:\nUse READ COMMITTED or stronger isolation so one transaction cannot read another transaction's uncommitted data."
+    );
+    return;
+  }
+
+  setCodeResult(
+    "Optimization Suggestion:\nKeep lock duration short, commit quickly, and ensure waiting transactions proceed only after the lock holder releases the row."
+  );
+};
+
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Concurrency Control</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Demo Type</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={demoType}
-              onChange={(e) => setDemoType(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-              disabled={isRunning}
-            >
-              <option value="lost-update">Lost Update</option>
-              <option value="dirty-read">Dirty Read</option>
-              <option value="locking">Locking Demo</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Concurrency Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            Concurrency Control
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Understand Lost Update, Dirty Read, and Locking through step-by-step concurrent transaction visualization.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Demo Configuration</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 16
+            }}
           >
-            Overview
-          </button>
+            <div>
+              <label className="sorting-label">Demo Type</label>
+              <select
+                value={demoType}
+                onChange={(e) => setDemoType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="lost-update">Lost Update</option>
+                <option value="dirty-read">Dirty Read</option>
+                <option value="locking">Locking Demo</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DBMSConcurrencyOverview demoType={demoType} initialRow={initialRow} />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
+              onClick={() => setActiveSection("comparison")}
+            >
+              Comparison
+            </button>
 
-          {activeSection === "simulation" && (
-            <DBMSConcurrencySimulation
-              demoType={demoType}
-              sharedRow={sharedRow}
-              runSimulation={runSimulation}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              transaction1State={transaction1State}
-              transaction2State={transaction2State}
-              transaction1Read={transaction1Read}
-              transaction2Read={transaction2Read}
-              lockHolder={lockHolder}
-              currentStage={currentStage}
-              selectedTransaction={selectedTransaction}
-              anomalyText={anomalyText}
-              stepHistory={stepHistory}
-              isRunning={isRunning}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "quiz" && (
-            <DBMSConcurrencyQuiz
-              demoType={demoType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "coding" && (
-            <DBMSConcurrencyCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              demoType={demoType}
-            />
-          )}
-        </main>
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && (
+                <DBMSConcurrencyOverview demoType={demoType} initialRow={initialRow} />
+              )}
+
+              {activeSection === "simulation" && (
+                <DBMSConcurrencySimulation
+                  demoType={demoType}
+                  sharedRow={sharedRow}
+                  runSimulation={runSimulation}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  transaction1State={transaction1State}
+                  transaction2State={transaction2State}
+                  transaction1Read={transaction1Read}
+                  transaction2Read={transaction2Read}
+                  lockHolder={lockHolder}
+                  currentStage={currentStage}
+                  selectedTransaction={selectedTransaction}
+                  anomalyText={anomalyText}
+                  stepHistory={stepHistory}
+                  isRunning={isRunning}
+                />
+              )}
+
+              {activeSection === "comparison" && (
+                <DBMSConcurrencyComparison demoType={demoType} />
+              )}
+
+              {activeSection === "quiz" && (
+                <DBMSConcurrencyQuiz
+                  demoType={demoType}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <DBMSConcurrencyCoding
+                  codingProblem={codingProblem}
+                  selectedLanguage={selectedLanguage}
+                  setSelectedLanguage={setSelectedLanguage}
+                  code={code}
+                  setCode={setCode}
+                  codeResult={codeResult}
+                  runCode={runCode}
+                  demoType={demoType}
+                  analyzeCode={analyzeCode}
+                  optimizeCode={optimizeCode}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

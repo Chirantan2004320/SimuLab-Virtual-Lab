@@ -1,121 +1,130 @@
 import React from "react";
+import { BookOpen, Target, Clock3, Database, CheckCircle2 } from "lucide-react";
 
 const QueueOverview = ({ queueType }) => {
   const isCircular = queueType === "circular";
 
+  const data = isCircular
+    ? {
+        title: "Circular Queue",
+        aim: "To understand how a Circular Queue improves memory usage by reusing vacant positions through wrap-around indexing.",
+        theory:
+          "A Circular Queue is an advanced variation of a normal queue in which the last position is logically connected back to the first. This overcomes the unused-space problem of a linear queue. When the rear reaches the end of the array, it wraps around to the beginning if there is free space available. This makes Circular Queue highly efficient for fixed-size buffer systems.",
+        steps: [
+          "Insert elements at the rear position.",
+          "Remove elements from the front position.",
+          "Use modulo arithmetic to wrap indices.",
+          "Detect full condition when advancing rear reaches front.",
+          "Detect empty condition when there are no elements left.",
+          "Reuse freed positions efficiently."
+        ],
+        time: "Enqueue: O(1), Dequeue: O(1), Peek: O(1)",
+        space: "O(n)",
+        status: "Efficient fixed-size queue structure",
+        usage:
+          "Used in CPU round-robin scheduling, circular buffers, streaming systems, I/O buffering, and real-time embedded systems."
+      }
+    : {
+        title: "Queue",
+        aim: "To understand and visualize queue operations and study the FIFO (First In First Out) principle.",
+        theory:
+          "A Queue is a linear data structure that follows the FIFO rule, meaning the first element inserted is the first one removed. Elements are added from the rear and removed from the front. It is widely used where order of processing matters, such as scheduling, buffering, and request handling systems.",
+        steps: [
+          "Insert an element at the rear using enqueue.",
+          "Remove an element from the front using dequeue.",
+          "Peek the front element without deleting it.",
+          "Check whether the queue is empty.",
+          "Check whether the queue is full in fixed-capacity implementations.",
+          "Continue processing in FIFO order."
+        ],
+        time: "Enqueue: O(1), Dequeue: O(1), Peek: O(1)",
+        space: "O(n)",
+        status: "FIFO linear data structure",
+        usage:
+          "Used in printer queues, customer waiting systems, breadth-first search, task scheduling, buffering, and message handling."
+      };
+
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To understand and visualize{" "}
-          {isCircular ? "Circular Queue" : "Queue"} operations using an
-          array-based implementation and study the FIFO (First In First Out)
-          principle.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Learn the concept, operations, and applications of {data.title}.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>{data.title}</h3>
+          <span className="overview-badge">Queue Data Structure</span>
+        </div>
 
-        {!isCircular ? (
-          <>
-            <p>
-              A Queue is a linear data structure that follows the FIFO (First In
-              First Out) principle. Elements are inserted at the rear and
-              removed from the front.
-            </p>
+        <p className="overview-hero-text">{data.theory}</p>
+      </div>
 
-            <p>
-              <strong>Operations:</strong>
-            </p>
-            <ul style={{ color: "#ffffff", lineHeight: "1.8" }}>
-              <li>
-                <strong>ENQUEUE:</strong> Add an element to the rear of the
-                queue
-              </li>
-              <li>
-                <strong>DEQUEUE:</strong> Remove an element from the front of
-                the queue
-              </li>
-              <li>
-                <strong>PEEK:</strong> View the front element without removing
-                it
-              </li>
-              <li>
-                <strong>isEmpty:</strong> Check whether the queue is empty
-              </li>
-              <li>
-                <strong>isFull:</strong> Check whether the queue is full
-              </li>
-            </ul>
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>{data.aim}</p>
+        </div>
 
-            <p>
-              <strong>Time Complexity:</strong> O(1) for enqueue and dequeue in
-              an ideal queue implementation.
-            </p>
-            <p>
-              <strong>Space Complexity:</strong> O(n), where n is the capacity
-              of the queue.
-            </p>
-            <p>
-              <strong>Applications:</strong> CPU scheduling, printer queue,
-              breadth-first search, buffering, customer waiting systems.
-            </p>
-          </>
-        ) : (
-          <>
-            <p>
-              A Circular Queue is a special form of queue in which the last
-              position is connected back to the first position. It solves the
-              space wastage problem of a simple linear queue.
-            </p>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Clock3 size={18} />
+            <h4>Time Complexity</h4>
+          </div>
+          <p>{data.time}</p>
+        </div>
 
-            <p>
-              <strong>Key Idea:</strong> When the rear reaches the last index,
-              it wraps around to the beginning if there is free space.
-            </p>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Database size={18} />
+            <h4>Space Complexity</h4>
+          </div>
+          <p>{data.space}</p>
+        </div>
 
-            <p>
-              <strong>Operations:</strong>
-            </p>
-            <ul style={{ color: "#ffffff", lineHeight: "1.8" }}>
-              <li>
-                <strong>ENQUEUE:</strong> Insert at rear using wrap-around
-              </li>
-              <li>
-                <strong>DEQUEUE:</strong> Remove from front using wrap-around
-              </li>
-              <li>
-                <strong>PEEK:</strong> View the front element
-              </li>
-              <li>
-                <strong>isEmpty:</strong> Queue contains no elements
-              </li>
-              <li>
-                <strong>isFull:</strong> Queue has reached maximum capacity
-              </li>
-            </ul>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Key Characteristic</h4>
+          </div>
+          <p>{data.status}</p>
+        </div>
+      </div>
 
-            <p>
-              <strong>Front and Rear:</strong> Both pointers move using modulo
-              arithmetic:
-              <br />
-              <code>(index + 1) % size</code>
-            </p>
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Core Operations Flow</h4>
+        </div>
 
-            <p>
-              <strong>Advantage:</strong> Better memory utilization than a
-              normal array queue.
-            </p>
-            <p>
-              <strong>Applications:</strong> CPU round-robin scheduling,
-              circular buffers, streaming systems, real-time systems.
-            </p>
-          </>
-        )}
-      </section>
-    </div>
+        <ol className="overview-steps-list">
+          {data.steps.map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Target size={18} />
+          <h4>Applications</h4>
+        </div>
+        <p>{data.usage}</p>
+      </div>
+    </section>
   );
 };
 

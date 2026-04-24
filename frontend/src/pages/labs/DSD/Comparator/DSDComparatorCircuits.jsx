@@ -1,122 +1,186 @@
 import React from "react";
+import { CircuitBoard, Info, CheckCircle2, Zap } from "lucide-react";
 
-function signalColor(v) {
+function bitColor(v) {
   return v === 1 ? "#22c55e" : "#ef4444";
 }
 
 export default function DSDComparatorCircuits({ a, b, analysis }) {
   return (
-    <section className="card experiment">
-      <h2>Circuits</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        This diagram shows a symbolic 1-bit comparator and the active comparison result.
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px",
-          marginBottom: "1rem"
-        }}
-      >
-        <div className="stat-card">
-          <strong>A</strong>
-          <div>{a}</div>
-        </div>
-        <div className="stat-card">
-          <strong>B</strong>
-          <div>{b}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Relation</strong>
-          <div>{analysis.relation}</div>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <CircuitBoard size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Circuits</h2>
+            <p className="sorting-sim-subtitle">
+              Clean symbolic view of a 1-bit comparator and its three result outputs.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem", background: "#0f172a", padding: "20px" }}>
-        <h3 style={{ marginBottom: "1rem" }}>Comparator Flow</h3>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">A</span>
+          <span className="sorting-stat-value">{a}</span>
+        </div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">B</span>
+          <span className="sorting-stat-value">{b}</span>
+        </div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Relation</span>
+          <span className="sorting-stat-value">{analysis.relation}</span>
+        </div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Active Output</span>
+          <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>
+            {analysis.activeOutput}
+          </span>
+        </div>
+      </div>
 
-        <div
-          style={{
-            position: "relative",
-            height: "360px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.2)",
-            background: "linear-gradient(180deg, #09101d, #0b1220)",
-            overflow: "hidden"
-          }}
-        >
-          <svg width="100%" height="100%" viewBox="0 0 820 360">
-            <line x1="80" y1="120" x2="300" y2="120" stroke={signalColor(a)} strokeWidth="4" />
-            <line x1="80" y1="220" x2="300" y2="220" stroke={signalColor(b)} strokeWidth="4" />
+      <div className="dsd-circuit-panel">
+        <div className="dsd-circuit-panel-head">
+          <h3 style={{ margin: 0, color: "#f8fafc" }}>1-bit Comparator Circuit</h3>
+          <div className="dsd-circuit-badge">
+            <Zap size={16} />
+            Symbolic Circuit View
+          </div>
+        </div>
 
-            <text x="20" y="125" fill={signalColor(a)} fontSize="20" fontWeight="bold">
+        <div className="dsd-circuit-canvas" style={{ height: 460 }}>
+          <svg width="100%" height="100%" viewBox="0 0 1050 460" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <filter id="compSymbolicGlow">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <text x="80" y="170" fill={bitColor(a)} fontSize="28" fontWeight="800">
               A = {a}
             </text>
-            <text x="20" y="225" fill={signalColor(b)} fontSize="20" fontWeight="bold">
+            <text x="80" y="285" fill={bitColor(b)} fontSize="28" fontWeight="800">
               B = {b}
             </text>
 
+            <path
+              d="M 180 160 L 420 160"
+              fill="none"
+              stroke={bitColor(a)}
+              strokeWidth="5"
+              strokeLinecap="round"
+            />
+            <path
+              d="M 180 275 L 420 275"
+              fill="none"
+              stroke={bitColor(b)}
+              strokeWidth="5"
+              strokeLinecap="round"
+            />
+
             <rect
-              x="300"
-              y="70"
-              width="200"
+              x="420"
+              y="110"
+              width="240"
               height="220"
-              rx="18"
-              fill="rgba(59,130,246,0.14)"
+              rx="24"
+              fill="rgba(59,130,246,0.12)"
               stroke="#60a5fa"
               strokeWidth="3"
             />
 
-            <text
-              x="400"
-              y="170"
-              textAnchor="middle"
-              fill="#e5e7eb"
-              fontSize="28"
-              fontWeight="bold"
-            >
-              COMPARATOR
+            <text x="540" y="205" textAnchor="middle" fill="#e5e7eb" fontSize="34" fontWeight="900">
+              COMP
+            </text>
+            <text x="540" y="245" textAnchor="middle" fill="#93c5fd" fontSize="20" fontWeight="800">
+              Magnitude Logic
             </text>
 
-            <line x1="500" y1="110" x2="700" y2="110" stroke={analysis.greater ? "#22c55e" : "#374151"} strokeWidth="5" />
-            <line x1="500" y1="180" x2="700" y2="180" stroke={analysis.equal ? "#38bdf8" : "#374151"} strokeWidth="5" />
-            <line x1="500" y1="250" x2="700" y2="250" stroke={analysis.less ? "#f59e0b" : "#374151"} strokeWidth="5" />
+            <path
+              d="M 660 145 L 780 145 L 780 95 L 900 95"
+              fill="none"
+              stroke={analysis.greater ? "#22c55e" : "#475569"}
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={analysis.greater ? "12 9" : "0"}
+              filter={analysis.greater ? "url(#compSymbolicGlow)" : undefined}
+            />
+            <path
+              d="M 660 220 L 900 220"
+              fill="none"
+              stroke={analysis.equal ? "#38bdf8" : "#475569"}
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={analysis.equal ? "12 9" : "0"}
+              filter={analysis.equal ? "url(#compSymbolicGlow)" : undefined}
+            />
+            <path
+              d="M 660 295 L 780 295 L 780 350 L 900 350"
+              fill="none"
+              stroke={analysis.less ? "#f59e0b" : "#475569"}
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={analysis.less ? "12 9" : "0"}
+              filter={analysis.less ? "url(#compSymbolicGlow)" : undefined}
+            />
 
-            <text x="720" y="115" fill={analysis.greater ? "#22c55e" : "#9ca3af"} fontSize="18" fontWeight="bold">
-              A &gt; B
+            <circle cx="925" cy="95" r="15" fill={analysis.greater ? "#22c55e" : "#1f2937"} />
+            <circle cx="925" cy="220" r="15" fill={analysis.equal ? "#38bdf8" : "#1f2937"} />
+            <circle cx="925" cy="350" r="15" fill={analysis.less ? "#f59e0b" : "#1f2937"} />
+
+            <text x="960" y="103" fill={analysis.greater ? "#22c55e" : "#94a3b8"} fontSize="24" fontWeight="900">
+              A &gt; B = {analysis.greater}
             </text>
-            <text x="720" y="185" fill={analysis.equal ? "#38bdf8" : "#9ca3af"} fontSize="18" fontWeight="bold">
-              A = B
+            <text x="960" y="228" fill={analysis.equal ? "#38bdf8" : "#94a3b8"} fontSize="24" fontWeight="900">
+              A = B = {analysis.equal}
             </text>
-            <text x="720" y="255" fill={analysis.less ? "#f59e0b" : "#9ca3af"} fontSize="18" fontWeight="bold">
-              A &lt; B
+            <text x="960" y="358" fill={analysis.less ? "#f59e0b" : "#94a3b8"} fontSize="24" fontWeight="900">
+              A &lt; B = {analysis.less}
             </text>
 
-            <text
-              x="400"
-              y="325"
-              textAnchor="middle"
-              fill="#fbbf24"
-              fontSize="18"
-              fontWeight="bold"
-            >
+            <rect
+              x="420"
+              y="365"
+              width="270"
+              height="52"
+              rx="16"
+              fill="rgba(15,23,42,0.75)"
+              stroke="rgba(250,204,21,0.28)"
+            />
+            <text x="555" y="399" textAnchor="middle" fill="#fbbf24" fontSize="20" fontWeight="900">
               Active Relation → {analysis.relation}
             </text>
           </svg>
         </div>
-      </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Interpretation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          The comparator checks the two inputs and activates only one of the three outputs: greater, equal, or less.
-        </p>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          For the current values, the active relation is <strong>{analysis.relation}</strong>.
-        </p>
+        <div className="dsd-circuit-note-grid">
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <Info size={18} />
+              <h4>Circuit Interpretation</h4>
+            </div>
+            <p>
+              The comparator checks A and B and activates only one result line: greater,
+              equal, or less.
+            </p>
+          </div>
+
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <CheckCircle2 size={18} />
+              <h4>Observation</h4>
+            </div>
+            <p>{analysis.note}</p>
+          </div>
+        </div>
       </div>
     </section>
   );

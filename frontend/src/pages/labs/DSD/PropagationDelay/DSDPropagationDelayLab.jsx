@@ -1,5 +1,14 @@
 import React, { useMemo, useState } from "react";
-import "../../../Lab.css";
+import "../../../SortingLab.css";
+import {
+  BookOpen,
+  PlayCircle,
+  CircuitBoard,
+  Table2,
+  Brain,
+  FileCode2,
+  ChevronsLeft
+} from "lucide-react";
 
 import DSDPropagationDelayOverview from "./DSDPropagationDelayOverview";
 import DSDPropagationDelaySimulation from "./DSDPropagationDelaySimulation";
@@ -8,14 +17,27 @@ import DSDPropagationDelayTruthTable from "./DSDPropagationDelayTruthTable";
 import DSDPropagationDelayQuiz from "./DSDPropagationDelayQuiz";
 import DSDPropagationDelayCoding from "./DSDPropagationDelayCoding";
 
+const simulabLogo = "/assets/logo.png";
+
 function gateOutput(gate, input) {
   if (gate === "NOT") return input === 1 ? 0 : 1;
   if (gate === "BUFFER") return input;
   return input;
 }
 
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "circuits", label: "Circuits", icon: CircuitBoard },
+  { key: "truth table", label: "Truth Table", icon: Table2 },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Design Practice", icon: FileCode2 }
+];
+
 export default function DSDPropagationDelayLab() {
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [selectedGate, setSelectedGate] = useState("NOT");
   const [inputBit, setInputBit] = useState(0);
   const [delayNs, setDelayNs] = useState(5);
@@ -24,7 +46,8 @@ export default function DSDPropagationDelayLab() {
   const [experimentRun, setExperimentRun] = useState(false);
 
   const analysis = useMemo(() => {
-    const initialOutput = gateOutput(selectedGate, inputBit === 1 ? 0 : 1);
+    const previousInput = inputBit === 1 ? 0 : 1;
+    const initialOutput = gateOutput(selectedGate, previousInput);
     const finalOutput = gateOutput(selectedGate, inputBit);
 
     const inputChangedAt = 0;
@@ -39,6 +62,7 @@ export default function DSDPropagationDelayLab() {
     }
 
     return {
+      previousInput,
       initialOutput,
       finalOutput,
       observedOutput,
@@ -69,69 +93,217 @@ export default function DSDPropagationDelayLab() {
     setExperimentRun(true);
   };
 
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 46
+      : activeSection === "circuits"
+      ? 60
+      : activeSection === "truth table"
+      ? 74
+      : activeSection === "quiz"
+      ? 87
+      : 94;
+
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Propagation Delay</h1>
-
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          {["overview", "simulation", "circuits", "truth table", "quiz", "coding"].map((sec) => (
-            <button
-              key={sec}
-              className={`sorting-sidebar-item ${activeSection === sec ? "active" : ""}`}
-              onClick={() => setActiveSection(sec)}
-            >
-              {sec.toUpperCase()}
-            </button>
-          ))}
-        </aside>
-
-        <main className="sorting-content">
-          {activeSection === "overview" && <DSDPropagationDelayOverview />}
-
-          {activeSection === "simulation" && (
-            <DSDPropagationDelaySimulation
-              selectedGate={selectedGate}
-              setSelectedGate={setSelectedGate}
-              inputBit={inputBit}
-              delayNs={delayNs}
-              setDelayNs={setDelayNs}
-              timeNs={timeNs}
-              analysis={analysis}
-              transitionCount={transitionCount}
-              handleToggleInput={handleToggleInput}
-              handleAdvanceTime={handleAdvanceTime}
-              handleResetTime={handleResetTime}
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
             />
-          )}
+          </div>
 
-          {activeSection === "circuits" && (
-            <DSDPropagationDelayCircuits
-              selectedGate={selectedGate}
-              inputBit={inputBit}
-              delayNs={delayNs}
-              timeNs={timeNs}
-              analysis={analysis}
-            />
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSD Virtual Lab</div>
+            </div>
           )}
+        </div>
 
-          {activeSection === "truth table" && (
-            <DSDPropagationDelayTruthTable
-              selectedGate={selectedGate}
-              inputBit={inputBit}
-              delayNs={delayNs}
-              timeNs={timeNs}
-              analysis={analysis}
-            />
-          )}
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
 
-          {activeSection === "quiz" && (
-            <DSDPropagationDelayQuiz experimentRun={experimentRun} />
-          )}
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
 
-          {activeSection === "coding" && <DSDPropagationDelayCoding />}
-        </main>
-      </div>
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="er-last-activity">
+              <div className="er-last-activity-label">Last Activity</div>
+              <div className="er-last-activity-row">
+                <span>
+                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Propagation Delay"}
+                </span>
+                <span className="dot-live">Just now</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">Propagation Delay</h1>
+            <p className="er-page-subtitle">
+              Visualize how signals take finite time to travel through logic gates, and observe how input transitions appear at the output only after the configured delay. ✨
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Delay Configuration</h2>
+              <p>Choose a gate, set the delay, toggle the input transition, and track how the output responds in time.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <CircuitBoard size={18} />
+              </div>
+              <div>
+                <strong>{selectedGate} Gate Timing</strong>
+                <span>Delay = {delayNs} ns · Current time = {timeNs} ns</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
+            <div>
+              <label className="sorting-label">Gate Type</label>
+              <select
+                value={selectedGate}
+                onChange={(e) => setSelectedGate(e.target.value)}
+                className="sorting-select"
+              >
+                <option value="NOT">NOT Gate</option>
+                <option value="BUFFER">BUFFER Gate</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="sorting-label">Observed State</label>
+              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+                {analysis.state}
+              </div>
+            </div>
+          </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Input = {inputBit}</button>
+            <button className="er-chip active">Initial Output = {analysis.initialOutput}</button>
+            <button className="er-chip active">Observed Output = {analysis.observedOutput}</button>
+            <button className="er-chip active">Final Output = {analysis.finalOutput}</button>
+            <button className="er-chip active">Delay = {delayNs} ns</button>
+            <button className="er-chip active">Time = {timeNs} ns</button>
+          </div>
+        </section>
+
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <DSDPropagationDelayOverview selectedGate={selectedGate} />
+            )}
+
+            {activeSection === "simulation" && (
+              <DSDPropagationDelaySimulation
+                selectedGate={selectedGate}
+                setSelectedGate={setSelectedGate}
+                inputBit={inputBit}
+                delayNs={delayNs}
+                setDelayNs={setDelayNs}
+                timeNs={timeNs}
+                analysis={analysis}
+                transitionCount={transitionCount}
+                handleToggleInput={handleToggleInput}
+                handleAdvanceTime={handleAdvanceTime}
+                handleResetTime={handleResetTime}
+              />
+            )}
+
+            {activeSection === "circuits" && (
+              <DSDPropagationDelayCircuits
+                selectedGate={selectedGate}
+                inputBit={inputBit}
+                delayNs={delayNs}
+                timeNs={timeNs}
+                analysis={analysis}
+              />
+            )}
+
+            {activeSection === "truth table" && (
+              <DSDPropagationDelayTruthTable
+                selectedGate={selectedGate}
+                inputBit={inputBit}
+                delayNs={delayNs}
+                timeNs={timeNs}
+                analysis={analysis}
+              />
+            )}
+
+            {activeSection === "quiz" && (
+              <DSDPropagationDelayQuiz experimentRun={experimentRun} />
+            )}
+
+            {activeSection === "coding" && (
+              <DSDPropagationDelayCoding
+                selectedGate={selectedGate}
+                inputBit={inputBit}
+                delayNs={delayNs}
+                timeNs={timeNs}
+                analysis={analysis}
+              />
+            )}
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

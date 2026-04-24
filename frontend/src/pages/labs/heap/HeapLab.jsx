@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FlaskConical } from "lucide-react";
 import "../../Lab.css";
 import "../../SortingLab.css";
 import HeapOverview from "./HeapOverview";
@@ -26,6 +27,21 @@ const maxHeapQuizQuestions = [
     question: "Extract Max removes:",
     options: ["Leaf node", "Root node", "Left child", "Right child"],
     correct: 1
+  },
+  {
+    question: "What happens after inserting into a heap?",
+    options: [
+      "Heapify down",
+      "Heapify up",
+      "Binary search",
+      "Traversal only"
+    ],
+    correct: 1
+  },
+  {
+    question: "What kind of tree structure is used by a heap?",
+    options: ["Complete binary tree", "Skew tree", "AVL tree", "General tree"],
+    correct: 0
   }
 ];
 
@@ -49,6 +65,139 @@ const minHeapQuizQuestions = [
     question: "Extract Min removes:",
     options: ["Leaf node", "Root node", "Left child", "Right child"],
     correct: 1
+  },
+  {
+    question: "What happens after removing the root from a heap?",
+    options: [
+      "Heapify up only",
+      "Heapify down",
+      "The heap becomes sorted",
+      "Nothing changes"
+    ],
+    correct: 1
+  },
+  {
+    question: "Which array relation gives the left child index?",
+    options: ["i + 1", "2i + 1", "2i + 2", "i / 2"],
+    correct: 1
+  }
+];
+
+const binaryProblemBankMax = [
+  {
+    id: 1,
+    title: "Implement insertHeap(heap, value, isMinHeap)",
+    description:
+      "Write a function insertHeap(heap, value, isMinHeap) that inserts a value into a heap and restores the heap property.",
+    functionName: "insertHeap",
+    tests: [
+      { input: [[90, 70, 80, 30], 35, false], expected: [90, 70, 80, 30, 35] },
+      { input: [[50, 40, 30], 100, false], expected: [100, 50, 30, 40] }
+    ]
+  },
+  {
+    id: 2,
+    title: "Implement peekHeap(heap)",
+    description:
+      "Write a function peekHeap(heap) that returns the root value of the heap, or null if the heap is empty.",
+    functionName: "peekHeap",
+    tests: [
+      { input: [[90, 70, 80, 30]], expected: 90 },
+      { input: [[]], expected: null }
+    ]
+  },
+  {
+    id: 3,
+    title: "Count heap nodes",
+    description:
+      "Write a function countHeapNodes(heap) that returns the total number of nodes in the heap array.",
+    functionName: "countHeapNodes",
+    tests: [
+      { input: [[90, 70, 80, 30]], expected: 4 },
+      { input: [[]], expected: 0 }
+    ]
+  },
+  {
+    id: 4,
+    title: "Check if heap is empty",
+    description:
+      "Write a function isHeapEmpty(heap) that returns true if the heap is empty, otherwise false.",
+    functionName: "isHeapEmpty",
+    tests: [
+      { input: [[]], expected: true },
+      { input: [[1]], expected: false }
+    ]
+  },
+  {
+    id: 5,
+    title: "Get parent index",
+    description:
+      "Write a function parentIndex(i) that returns the parent index for a heap node.",
+    functionName: "parentIndex",
+    tests: [
+      { input: [1], expected: 0 },
+      { input: [4], expected: 1 },
+      { input: [6], expected: 2 }
+    ]
+  }
+];
+
+const binaryProblemBankMin = [
+  {
+    id: 101,
+    title: "Implement insertHeap(heap, value, isMinHeap)",
+    description:
+      "Write a function insertHeap(heap, value, isMinHeap) that inserts a value into a heap and restores the heap property.",
+    functionName: "insertHeap",
+    tests: [
+      { input: [[10, 20, 15, 40], 35, true], expected: [10, 20, 15, 40, 35] },
+      { input: [[20, 30, 25], 5, true], expected: [5, 20, 25, 30] }
+    ]
+  },
+  {
+    id: 102,
+    title: "Implement peekHeap(heap)",
+    description:
+      "Write a function peekHeap(heap) that returns the root value of the heap, or null if the heap is empty.",
+    functionName: "peekHeap",
+    tests: [
+      { input: [[10, 20, 15, 40]], expected: 10 },
+      { input: [[]], expected: null }
+    ]
+  },
+  {
+    id: 103,
+    title: "Count heap nodes",
+    description:
+      "Write a function countHeapNodes(heap) that returns the total number of nodes in the heap array.",
+    functionName: "countHeapNodes",
+    tests: [
+      { input: [[10, 20, 15, 40]], expected: 4 },
+      { input: [[]], expected: 0 }
+    ]
+  },
+  {
+    id: 104,
+    title: "Check if heap is empty",
+    description:
+      "Write a function isHeapEmpty(heap) that returns true if the heap is empty, otherwise false.",
+    functionName: "isHeapEmpty",
+    tests: [
+      { input: [[]], expected: true },
+      { input: [[1]], expected: false }
+    ]
+  },
+  {
+    id: 105,
+    title: "Get left child index",
+    description:
+      "Write a function leftChildIndex(i) that returns the left child index for a heap node.",
+    functionName: "leftChildIndex",
+    tests: [
+      { input: [0], expected: 1 },
+      { input: [2], expected: 5 },
+      { input: [4], expected: 9 }
+    ]
   }
 ];
 
@@ -142,13 +291,99 @@ const heapCodeTemplates = {
 }`
 };
 
-const codingProblem = {
-  title: "Implement insertHeap(heap, value, isMinHeap)",
-  description:
-    "Write a function insertHeap(heap, value, isMinHeap) that inserts a value into a heap and restores the heap property."
-};
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function getStarterCode(problem, language) {
+  const fn = problem.functionName;
+
+  if (language === "python") {
+    const map = {
+      insertHeap: `def insertHeap(heap, value, isMinHeap=False):
+    # Write your solution here
+    return heap
+`,
+      peekHeap: `def peekHeap(heap):
+    # Write your solution here
+    return None
+`,
+      countHeapNodes: `def countHeapNodes(heap):
+    # Write your solution here
+    return 0
+`,
+      isHeapEmpty: `def isHeapEmpty(heap):
+    # Write your solution here
+    return False
+`,
+      parentIndex: `def parentIndex(i):
+    # Write your solution here
+    return 0
+`,
+      leftChildIndex: `def leftChildIndex(i):
+    # Write your solution here
+    return 0
+`
+    };
+    return map[fn] || `def solve():
+    pass
+`;
+  }
+
+  if (language === "cpp") {
+    return `#include <bits/stdc++.h>
+using namespace std;
+
+// Write your solution here
+`;
+  }
+
+  if (language === "c") {
+    return `/* C execution template only. Browser execution is available for JavaScript for now. */`;
+  }
+
+  if (language === "java") {
+    return `import java.util.*;
+
+public class Main {
+    // Write your solution here
+}
+`;
+  }
+
+  const map = {
+    insertHeap: `function insertHeap(heap, value, isMinHeap = false) {
+  // Write your solution here
+  return heap;
+}
+`,
+    peekHeap: `function peekHeap(heap) {
+  // Write your solution here
+  return null;
+}
+`,
+    countHeapNodes: `function countHeapNodes(heap) {
+  // Write your solution here
+  return 0;
+}
+`,
+    isHeapEmpty: `function isHeapEmpty(heap) {
+  // Write your solution here
+  return false;
+}
+`,
+    parentIndex: `function parentIndex(i) {
+  // Write your solution here
+  return 0;
+}
+`,
+    leftChildIndex: `function leftChildIndex(i) {
+  // Write your solution here
+  return 0;
+}
+`
+  };
+
+  return map[fn] || `function solve() {\n  // Write your solution here\n}\n`;
+}
 
 export default function HeapLab() {
   const [heapType, setHeapType] = useState("max");
@@ -176,9 +411,10 @@ export default function HeapLab() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(heapCodeTemplates.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [currentProblems, setCurrentProblems] = useState([]);
+  const [selectedLanguages, setSelectedLanguages] = useState({});
+  const [codes, setCodes] = useState({});
+  const [results, setResults] = useState({});
 
   useEffect(() => {
     setHeap([]);
@@ -191,12 +427,11 @@ export default function HeapLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setCurrentProblems([]);
+    setSelectedLanguages({});
+    setCodes({});
+    setResults({});
   }, [heapType, quizQuestions.length]);
-
-  useEffect(() => {
-    setCode(heapCodeTemplates[selectedLanguage]);
-    setCodeResult("");
-  }, [selectedLanguage]);
 
   const clearHighlights = () => {
     setActiveIndices([]);
@@ -478,169 +713,301 @@ export default function HeapLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+  };
+
+  const generateProblems = () => {
+    const bank = heapType === "min" ? binaryProblemBankMin : binaryProblemBankMax;
+    const shuffled = [...bank].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+
+    const initialLanguages = {};
+    const initialCodes = {};
+
+    selected.forEach((problem) => {
+      initialLanguages[problem.id] = "javascript";
+      initialCodes[`${problem.id}_javascript`] = getStarterCode(problem, "javascript");
+    });
+
+    setCurrentProblems(selected);
+    setSelectedLanguages(initialLanguages);
+    setCodes(initialCodes);
+    setResults({});
+  };
+
+  const handleLanguageChange = (problemId, language, problem) => {
+    const key = `${problemId}_${language}`;
+
+    setSelectedLanguages((prev) => ({
+      ...prev,
+      [problemId]: language
+    }));
+
+    setCodes((prev) => {
+      if (prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: getStarterCode(problem, language)
+      };
+    });
+  };
+
+  const handleCodeChange = (problemId, language, value) => {
+    const key = `${problemId}_${language}`;
+    setCodes((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const runCode = (problemId, language) => {
+    const problem = currentProblems.find((p) => p.id === problemId);
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
+
+    if (!problem || !code) {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: "Please enter code."
+      }));
+      return;
+    }
+
+    if (language !== "javascript") {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]:
+          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+      }));
       return;
     }
 
     try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(
-        "heap",
-        "value",
-        "isMinHeap",
-        `${code}; return insertHeap(heap, value, isMinHeap);`
-      );
-      const result = fn(
-        heapType === "min" ? [10, 20, 15, 40] : [90, 70, 80, 30],
-        35,
-        heapType === "min"
-      );
-      setCodeResult(`Output: ${JSON.stringify(result)}`);
+      let allCorrect = true;
+      const outputs = [];
+
+      for (const test of problem.tests) {
+        const args = test.input.map((item) => (Array.isArray(item) ? [...item] : item));
+
+        const fn = new Function(
+          ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
+          `${code}; return ${problem.functionName}(${args.map((_, i) => `arg${i}`).join(", ")});`
+        );
+
+        const result = fn(...args);
+        outputs.push(result);
+
+        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
+          allCorrect = false;
+          break;
+        }
+      }
+
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
+          : "Incorrect Output"
+      }));
     } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: `Error: ${error.message}`
+      }));
     }
   };
 
+  const analyzeCode = (problemId, language) => {
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
+
+    if (!code) {
+      alert("Please enter code to analyze.");
+      return;
+    }
+
+    const analysisData = {
+      code,
+      problemId,
+      topic: "heap",
+      heapType,
+      language
+    };
+
+    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
+    alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
+  };
+
+  const correctCode = (problemId, language) => {
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
+
+    if (!code) {
+      alert("Please enter code to correct.");
+      return;
+    }
+
+    const correctionData = {
+      code,
+      problemId,
+      topic: "heap",
+      heapType,
+      language,
+      action: "correct"
+    };
+
+    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
+    alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
+  };
+
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Heap</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Heap Settings</h2>
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Heap Type
-            </label>
-            <select
-              value={heapType}
-              onChange={(e) => setHeapType(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "200px" }}
-              disabled={isRunning}
-            >
-              <option value="max">Max Heap</option>
-              <option value="min">Min Heap</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Heap Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "200px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            {heapType === "min" ? "Min Heap" : "Max Heap"}
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Learn heap insertion, extraction, heapify-up, heapify-down, and array/tree representation through guided visualization.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
-          >
-            Overview
-          </button>
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Heap Settings</h2>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+          <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "end" }}>
+            <div style={{ minWidth: "220px" }}>
+              <label className="sorting-label">Heap Type</label>
+              <select
+                value={heapType}
+                onChange={(e) => setHeapType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="max">Max Heap</option>
+                <option value="min">Min Heap</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+            <div style={{ minWidth: "220px" }}>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && <HeapOverview heapType={heapType} />}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-          {activeSection === "simulation" && (
-            <HeapSimulation
-              heapType={heapType}
-              heap={heap}
-              input={input}
-              setInput={setInput}
-              animateInsert={animateInsert}
-              animateExtractRoot={animateExtractRoot}
-              peekRoot={peekRoot}
-              stopAnimation={stopAnimation}
-              loadSampleHeap={loadSampleHeap}
-              reset={reset}
-              message={message}
-              inputRef={inputRef}
-              activeIndices={activeIndices}
-              swappedIndices={swappedIndices}
-              isRunning={isRunning}
-              stepHistory={stepHistory}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "quiz" && (
-            <HeapQuiz
-              heapType={heapType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "coding" && (
-            <HeapCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-            />
-          )}
-        </main>
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && <HeapOverview heapType={heapType} />}
+
+              {activeSection === "simulation" && (
+                <HeapSimulation
+                  heapType={heapType}
+                  heap={heap}
+                  input={input}
+                  setInput={setInput}
+                  animateInsert={animateInsert}
+                  animateExtractRoot={animateExtractRoot}
+                  peekRoot={peekRoot}
+                  stopAnimation={stopAnimation}
+                  loadSampleHeap={loadSampleHeap}
+                  reset={reset}
+                  message={message}
+                  inputRef={inputRef}
+                  activeIndices={activeIndices}
+                  swappedIndices={swappedIndices}
+                  isRunning={isRunning}
+                  stepHistory={stepHistory}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <HeapQuiz
+                  heapType={heapType}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                  redoQuiz={redoQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <HeapCoding
+                  heapType={heapType}
+                  currentProblems={currentProblems}
+                  selectedLanguages={selectedLanguages}
+                  codes={codes}
+                  results={results}
+                  generateProblems={generateProblems}
+                  handleLanguageChange={handleLanguageChange}
+                  handleCodeChange={handleCodeChange}
+                  runCode={runCode}
+                  analyzeCode={analyzeCode}
+                  correctCode={correctCode}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

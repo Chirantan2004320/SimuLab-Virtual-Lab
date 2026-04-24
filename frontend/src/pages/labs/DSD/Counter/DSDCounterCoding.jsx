@@ -1,152 +1,171 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { FileCode2, CheckCircle2, Lightbulb, RefreshCcw } from "lucide-react";
 
 const problemBank = [
   {
     id: 1,
-    title: "Next Counter State",
+    title: "Predict the next state",
     description:
-      "Write a function nextCounterState(count) that returns the next state of a 2-bit counter."
+      "If a 2-bit counter is currently at state 10, what will be the next state after one clock pulse?",
+    answer: "11",
+    placeholder: "Write the next binary state here..."
   },
   {
     id: 2,
-    title: "Binary Bits",
+    title: "Write the full count sequence",
     description:
-      "Write a function getBits(count) that returns q1 and q0 for a 2-bit counter state."
+      "Write the full sequence of a 2-bit binary up counter starting from 00.",
+    answer: "00 → 01 → 10 → 11 → 00",
+    placeholder: "Write the full counter sequence here..."
   },
   {
     id: 3,
-    title: "Counter Reset",
+    title: "Identify Q1 and Q0",
     description:
-      "Write a function resetCounter() that returns the reset state of the counter."
+      "For decimal count 3 in a 2-bit counter, write the values of Q1 and Q0.",
+    answer: "Q1 = 1, Q0 = 1",
+    placeholder: "Write Q1 and Q0 values here..."
+  },
+  {
+    id: 4,
+    title: "Explain reset operation",
+    description:
+      "Explain what happens when the counter reset is applied.",
+    answer:
+      "Reset brings the counter back to the initial state 00 regardless of the current count.",
+    placeholder: "Write your explanation here..."
   }
 ];
 
-export default function DSDCounterCoding() {
-  const [currentProblems, setCurrentProblems] = useState([]);
-  const [codes, setCodes] = useState({});
-  const [results, setResults] = useState({});
+function normalizeText(value) {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/->/g, "→")
+    .trim();
+}
 
-  const generateProblems = () => {
-    setCurrentProblems(problemBank);
+export default function DSDCounterCoding({ count, clockPulses, analysis }) {
+  const [responses, setResponses] = useState(() =>
+    problemBank.reduce((acc, item) => {
+      acc[item.id] = "";
+      return acc;
+    }, {})
+  );
 
-    const initialCodes = {};
-    problemBank.forEach((p) => {
-      initialCodes[p.id] = getStarterCode(p.id);
-    });
+  const [feedback, setFeedback] = useState({});
 
-    setCodes(initialCodes);
-    setResults({});
+  const currentInsight = useMemo(() => {
+    return `Current state: Count = ${count}, Q1Q0 = ${analysis.binary}, next state = ${analysis.nextBinary}, clock pulses = ${clockPulses}.`;
+  }, [count, clockPulses, analysis]);
+
+  const handleChange = (id, value) => {
+    setResponses((prev) => ({ ...prev, [id]: value }));
   };
 
-  const getStarterCode = (id) => {
-    if (id === 1) {
-      return `function nextCounterState(count) {
-  return (count + 1) % 4;
-}`;
+  const checkAnswer = (problem) => {
+    const userValue = normalizeText(responses[problem.id] || "");
+    const correctValue = normalizeText(problem.answer);
+
+    let result = "";
+    if (!userValue) {
+      result = "Please write your answer first.";
+    } else if (
+      userValue === correctValue ||
+      userValue.includes(correctValue) ||
+      correctValue.includes(userValue)
+    ) {
+      result = "Correct. Your counter design answer matches the expected concept.";
+    } else {
+      result = "Partially correct or incorrect. Review the counter sequence and try again.";
     }
 
-    if (id === 2) {
-      return `function getBits(count) {
-  return {
-    q1: Math.floor(count / 2),
-    q0: count % 2
-  };
-}`;
-    }
-
-    return `function resetCounter() {
-  return 0;
-}`;
-  };
-
-  const handleCodeChange = (problemId, code) => {
-    setCodes((prev) => ({ ...prev, [problemId]: code }));
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: result
+    }));
   };
 
-  const runCode = (problemId) => {
-    const code = codes[problemId];
+  const showModelAnswer = (problem) => {
+    setResponses((prev) => ({
+      ...prev,
+      [problem.id]: problem.answer
+    }));
 
-    if (!code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code first."
-      }));
-      return;
-    }
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: "Model answer loaded."
+    }));
+  };
 
-    try {
-      let resultText = "";
-
-      if (problemId === 1) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return nextCounterState;`)();
-        const output = fn(2);
-        resultText = `Function ran successfully. Example nextCounterState(2) = ${output}`;
-      } else if (problemId === 2) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return getBits;`)();
-        const output = fn(3);
-        resultText = `Function ran successfully. Example getBits(3) = ${JSON.stringify(output)}`;
-      } else if (problemId === 3) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return resetCounter;`)();
-        const output = fn();
-        resultText = `Function ran successfully. Example resetCounter() = ${output}`;
-      }
-
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: resultText
-      }));
-    } catch (error) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Error: ${error.message}`
-      }));
-    }
+  const clearAll = () => {
+    setResponses(
+      problemBank.reduce((acc, item) => {
+        acc[item.id] = "";
+        return acc;
+      }, {})
+    );
+    setFeedback({});
   };
 
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Practice implementing basic counter logic using JavaScript functions.
-      </p>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <FileCode2 size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Design Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Practice counter state prediction, sequence writing, and reset interpretation.
+          </p>
+        </div>
+      </div>
 
-      <button className="btn primary" onClick={generateProblems}>
-        Generate Problems
-      </button>
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Live Hint:</strong> {currentInsight}
+      </div>
 
-      {currentProblems.map((problem, index) => (
-        <div key={problem.id} className="coding-problem">
-          <h3>
-            Problem {index + 1}: {problem.title}
-          </h3>
-          <p>{problem.description}</p>
+      <div className="coding-actions-upgraded" style={{ marginBottom: 18 }}>
+        <button className="sim-btn sim-btn-muted" onClick={clearAll}>
+          <RefreshCcw size={16} />
+          Reset Practice
+        </button>
+      </div>
+
+      {problemBank.map((problem, index) => (
+        <div key={problem.id} className="coding-card-upgraded">
+          <div className="coding-card-header">
+            <div>
+              <h3>
+                Task {index + 1}: {problem.title}
+              </h3>
+              <p>{problem.description}</p>
+            </div>
+          </div>
 
           <textarea
-            value={codes[problem.id] || ""}
-            onChange={(e) => handleCodeChange(problem.id, e.target.value)}
-            rows={12}
-            placeholder="Write your code here..."
-            style={{
-              width: "100%",
-              fontFamily: "monospace",
-              color: "#000",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "10px"
-            }}
+            className="coding-textarea-upgraded"
+            rows={7}
+            value={responses[problem.id]}
+            onChange={(e) => handleChange(problem.id, e.target.value)}
+            placeholder={problem.placeholder}
           />
 
-          <button className="btn secondary" onClick={() => runCode(problem.id)}>
-            Run Code
-          </button>
+          <div className="coding-actions-upgraded">
+            <button className="sim-btn sim-btn-primary" onClick={() => checkAnswer(problem)}>
+              <CheckCircle2 size={16} />
+              Check Answer
+            </button>
 
-          {results[problem.id] && (
-            <p className="result" style={{ marginTop: "10px" }}>
-              {results[problem.id]}
-            </p>
+            <button className="sim-btn sim-btn-muted" onClick={() => showModelAnswer(problem)}>
+              <Lightbulb size={16} />
+              Show Model Answer
+            </button>
+          </div>
+
+          {feedback[problem.id] && (
+            <div className="coding-result-box">{feedback[problem.id]}</div>
           )}
         </div>
       ))}
