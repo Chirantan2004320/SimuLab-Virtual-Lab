@@ -1,12 +1,28 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
 import "../../../SortingLab.css";
+import {
+  BookOpen,
+  Activity,
+  GitCompare,
+  Brain,
+  Code2,
+  Network,
+  Hammer,
+  ChevronsLeft,
+  Database,
+  Link2,
+  Table2
+} from "lucide-react";
+
 import DBMSERModelingOverview from "./DBMSERModelingOverview";
 import DBMSERModelingSimulation from "./DBMSERModelingSimulation";
+import DBMSERModelingComparison from "./DBMSERModellingComparison";
 import DBMSERModelingQuiz from "./DBMSERModelingQuiz";
 import DBMSERModelingCoding from "./DBMSERModelingCoding";
 import DBMSERDiagram from "./DBMSERDiagram";
 import DBMSERBuilder from "./DBMSERBuilder";
+
+const simulabLogo = "/assets/logo.png";
 
 const erQuizQuestionsByMode = {
   entities: [
@@ -102,22 +118,58 @@ const erQuizQuestionsByMode = {
   ]
 };
 
-const codingProblemByMode = {
-  entities: {
-    title: "Identify entities and attributes",
-    description:
-      "Write the entities and their attributes for a simple Library Management System."
-  },
-  relationships: {
-    title: "Identify relationships and cardinality",
-    description:
-      "Write relationships between Student, Course, and Instructor, and mention their cardinalities."
-  },
-  mapping: {
-    title: "Convert ER model to tables",
-    description:
-      "Write relational tables for Student, Course, and Enrollment based on an ER diagram."
-  }
+const codingProblemsByMode = {
+  entities: [
+    {
+      title: "Identify entities and attributes",
+      description:
+        "Write the entities and their main attributes for a simple Library Management System."
+    },
+    {
+      title: "Identify primary keys",
+      description:
+        "For Student, Book, and Librarian entities, write one suitable primary key for each."
+    },
+    {
+      title: "Weak vs strong entities",
+      description:
+        "Write one example of a strong entity and one example of a weak entity from a hostel system."
+    }
+  ],
+  relationships: [
+    {
+      title: "Identify relationships and cardinality",
+      description:
+        "Write relationships between Student, Course, and Instructor, and mention their cardinalities."
+    },
+    {
+      title: "Relationship naming",
+      description:
+        "Write meaningful relationship names between Customer and Order, and between Doctor and Patient."
+    },
+    {
+      title: "Choose cardinality",
+      description:
+        "For Department and Employee, decide whether the relationship is 1:1, 1:N, or M:N and explain briefly."
+    }
+  ],
+  mapping: [
+    {
+      title: "Convert ER model to tables",
+      description:
+        "Write relational tables for Student, Course, and Enrollment based on an ER diagram."
+    },
+    {
+      title: "Map one-to-many relationship",
+      description:
+        "Show how Department and Employee (1:N) are mapped into relational tables."
+    },
+    {
+      title: "Map many-to-many relationship",
+      description:
+        "Show how Student and Club (M:N) are converted into relational tables."
+    }
+  ]
 };
 
 const erCodeTemplates = {
@@ -258,14 +310,25 @@ const relationalTables = [
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: Activity },
+  { key: "comparison", label: "Comparison", icon: GitCompare },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding", icon: Code2 },
+  { key: "diagram", label: "ER Diagram", icon: Network },
+  { key: "builder", label: "ER Builder", icon: Hammer }
+];
+
 export default function DBMSERModelingLab() {
   const [mode, setMode] = useState("entities");
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState("diagram");
   const [message, setMessage] = useState("ER Modelling lab initialized.");
   const [experimentRun, setExperimentRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState(700);
   const [stepHistory, setStepHistory] = useState([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const [highlightedEntity, setHighlightedEntity] = useState(null);
   const [highlightedRelationship, setHighlightedRelationship] = useState(null);
@@ -280,8 +343,8 @@ export default function DBMSERModelingLab() {
   const [quizScore, setQuizScore] = useState(0);
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(erCodeTemplates.entities.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [codes, setCodes] = useState([erCodeTemplates.entities.javascript]);
+  const [results, setResults] = useState([""]);
 
   useEffect(() => {
     setStepHistory([]);
@@ -296,13 +359,22 @@ export default function DBMSERModelingLab() {
     setQuizAnswers(Array(erQuizQuestionsByMode[mode].length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-    setCodeResult("");
+
+    const starter = erCodeTemplates[mode][selectedLanguage];
+    const problemCount = codingProblemsByMode[mode].length;
+    setCodes(Array(problemCount).fill(starter));
+    setResults(Array(problemCount).fill(""));
   }, [mode]);
 
   useEffect(() => {
-    setCode(erCodeTemplates[mode][selectedLanguage]);
-    setCodeResult("");
-  }, [mode, selectedLanguage]);
+    const starter = erCodeTemplates[mode][selectedLanguage];
+    const problemCount = codingProblemsByMode[mode].length;
+    setCodes((prev) => {
+      if (!prev.length) return Array(problemCount).fill(starter);
+      return prev.map(() => starter);
+    });
+    setResults(Array(problemCount).fill(""));
+  }, [selectedLanguage, mode]);
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
@@ -396,11 +468,6 @@ export default function DBMSERModelingLab() {
       setCurrentStage("Complete");
       setMessage(`${mode.toUpperCase()} simulation completed.`);
       addStep(`${mode.toUpperCase()} simulation completed successfully.`);
-
-      localStorage.setItem(
-        "vlab_last_experiment",
-        JSON.stringify({ name: `dbms-er-${mode}`, time: Date.now() })
-      );
     } finally {
       setIsRunning(false);
       setHighlightedEntity(null);
@@ -449,187 +516,326 @@ export default function DBMSERModelingLab() {
 
     setQuizScore(score);
     setQuizSubmitted(true);
-
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DBMS",
-      experiment: `er-${mode}`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
+  const updateCodeAt = (index, value) => {
+    setCodes((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
+
+  const setResultAt = (index, value) => {
+    setResults((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
+
+  const runCode = (problemIndex) => {
     if (selectedLanguage !== "javascript") {
-      setCodeResult(
+      setResultAt(
+        problemIndex,
         `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
       );
       return;
     }
 
     try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(`${code}; return answer;`);
+      const fn = new Function(`${codes[problemIndex]}; return answer;`);
       const result = fn();
-      setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
+      setResultAt(problemIndex, `Output:\n${JSON.stringify(result, null, 2)}`);
     } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
+      setResultAt(problemIndex, `Error: ${error.message}`);
     }
   };
 
-  const codingProblem = codingProblemByMode[mode];
+  const analyzeCode = (problemIndex) => {
+    const content = codes[problemIndex].toLowerCase();
+    const modeChecks = {
+      entities: ["entity", "entities", "attributes", "student", "course"],
+      relationships: ["relationship", "enroll", "teach", "many", "one"],
+      mapping: ["table", "tables", "fk", "pk", "enrollment"]
+    };
+
+    const keywords = modeChecks[mode] || [];
+    const score = keywords.filter((k) => content.includes(k)).length;
+
+    if (score >= Math.max(2, keywords.length - 1)) {
+      setResultAt(
+        problemIndex,
+        "Analysis:\nYour answer includes the main concepts expected for this ER modelling problem."
+      );
+    } else {
+      setResultAt(
+        problemIndex,
+        "Analysis:\nYour answer is partially correct, but it should include more ER terms relevant to this mode."
+      );
+    }
+  };
+
+  const correctCode = (problemIndex) => {
+    const corrected = erCodeTemplates[mode][selectedLanguage];
+    updateCodeAt(problemIndex, corrected);
+    setResultAt(problemIndex, "Model answer loaded for this problem.");
+  };
+
+  const progressPercent =
+    activeSection === "diagram"
+      ? 65
+      : activeSection === "builder"
+      ? 75
+      : activeSection === "coding"
+      ? 55
+      : 50;
+
+  const modeMeta = {
+    entities: {
+      title: "Entities & Attributes",
+      description: "Understand objects, fields, and identifiers.",
+      icon: Database
+    },
+    relationships: {
+      title: "Relationships",
+      description: "Study cardinality and entity connections.",
+      icon: Link2
+    },
+    mapping: {
+      title: "Mapping",
+      description: "Convert ER concepts into relational tables.",
+      icon: Table2
+    }
+  };
+
+  const ActiveModeIcon = modeMeta[mode].icon;
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – ER Modelling</h1>
-
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Mode</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-              disabled={isRunning}
-            >
-              <option value="entities">Entities & Attributes</option>
-              <option value="relationships">Relationships</option>
-              <option value="mapping">ER to Relational Mapping</option>
-            </select>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DBMS Virtual Lab</div>
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="er-last-activity">
+              <div className="er-last-activity-label">Last Activity</div>
+              <div className="er-last-activity-row">
+                <span>
+                  {sidebarItems.find((i) => i.key === activeSection)?.label || "ER Modelling"}
+                </span>
+                <span className="dot-live">Just now</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
           <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
+            <h1 className="er-page-title">ER Modelling</h1>
+            <p className="er-page-subtitle">
+              Learn entities, attributes, relationships, ER diagrams, and relational mapping through visual exploration. ✨
+            </p>
           </div>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
-          >
-            Overview
-          </button>
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>ER Configuration</h2>
+              <p>Choose the concept mode and control the animation flow for the simulation.</p>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <ActiveModeIcon size={18} />
+              </div>
+              <div>
+                <strong>{modeMeta[mode].title}</strong>
+                <span>{modeMeta[mode].description}</span>
+              </div>
+            </div>
+          </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+          <div className="er-config-grid">
+            <div>
+              <label className="sorting-label">Mode</label>
+              <select
+                value={mode}
+                onChange={(e) => setMode(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="entities">Entities & Attributes</option>
+                <option value="relationships">Relationships</option>
+                <option value="mapping">ER to Relational Mapping</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "diagram" ? "active" : ""}`}
-            onClick={() => setActiveSection("diagram")}
-          >
-            ER Diagram
-          </button>
-          <button
-            className={`sorting-sidebar-item ${activeSection === "builder" ? "active" : ""}`}
-            onClick={() => setActiveSection("builder")}
-          >
-            ER Builder
-          </button>
-        </aside>
+          <div className="er-chip-row">
+            <button
+              className={`er-chip ${mode === "entities" ? "active" : ""}`}
+              onClick={() => setMode("entities")}
+            >
+              <Database size={14} />
+              Entities
+            </button>
+            <button
+              className={`er-chip ${mode === "relationships" ? "active" : ""}`}
+              onClick={() => setMode("relationships")}
+            >
+              <Link2 size={14} />
+              Relationships
+            </button>
+            <button
+              className={`er-chip ${mode === "mapping" ? "active" : ""}`}
+              onClick={() => setMode("mapping")}
+            >
+              <Table2 size={14} />
+              Mapping
+            </button>
+          </div>
+        </section>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DBMSERModelingOverview mode={mode} relationalTables={relationalTables} />
-          )}
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <DBMSERModelingOverview
+                mode={mode}
+                erEntities={erEntities}
+                relationalTables={relationalTables}
+              />
+            )}
 
-          {activeSection === "simulation" && (
-            <DBMSERModelingSimulation
-              mode={mode}
-              erEntities={erEntities}
-              relationalTables={relationalTables}
-              runSimulation={runSimulation}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              highlightedEntity={highlightedEntity}
-              highlightedRelationship={highlightedRelationship}
-              currentStage={currentStage}
-              observationText={observationText}
-              mappingRows={mappingRows}
-              stepHistory={stepHistory}
-              isRunning={isRunning}
-            />
-          )}
+            {activeSection === "simulation" && (
+              <DBMSERModelingSimulation
+                mode={mode}
+                erEntities={erEntities}
+                relationalTables={relationalTables}
+                runSimulation={runSimulation}
+                reset={reset}
+                loadSample={loadSample}
+                message={message}
+                highlightedEntity={highlightedEntity}
+                highlightedRelationship={highlightedRelationship}
+                currentStage={currentStage}
+                observationText={observationText}
+                mappingRows={mappingRows}
+                stepHistory={stepHistory}
+                isRunning={isRunning}
+              />
+            )}
 
-          {activeSection === "quiz" && (
-            <DBMSERModelingQuiz
-              mode={mode}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+            {activeSection === "comparison" && (
+              <DBMSERModelingComparison mode={mode} />
+            )}
 
-          {activeSection === "coding" && (
-            <DBMSERModelingCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              mode={mode}
-            />
-          )}
+            {activeSection === "quiz" && (
+              <DBMSERModelingQuiz
+                mode={mode}
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                experimentRun={experimentRun}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+              />
+            )}
 
-          {activeSection === "diagram" && (
-            <DBMSERDiagram entities={erEntities} />
-          )}
+            {activeSection === "coding" && (
+              <DBMSERModelingCoding
+                codingProblems={codingProblemsByMode[mode]}
+                selectedLanguage={selectedLanguage}
+                setSelectedLanguage={setSelectedLanguage}
+                codes={codes}
+                results={results}
+                handleCodeChange={updateCodeAt}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+                mode={mode}
+              />
+            )}
 
-          {activeSection === "builder" && <DBMSERBuilder />}
-        </main>
-      </div>
+            {activeSection === "diagram" && (
+              <DBMSERDiagram entities={erEntities} />
+            )}
+
+            {activeSection === "builder" && <DBMSERBuilder />}
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

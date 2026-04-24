@@ -1,4 +1,12 @@
 import React, { useMemo, useState } from "react";
+import {
+  PlusCircle,
+  Trash2,
+  Sparkles,
+  Database,
+  Network,
+  KeyRound
+} from "lucide-react";
 import StepHistoryPanel from "../../../../components/dbms/StepHistoryPanel.jsx";
 import ObservationBox from "../../../../components/dbms/ObservationBox.jsx";
 import InfoStatCard from "../../../../components/dbms/InfoStatCard.jsx";
@@ -7,35 +15,21 @@ import SimpleTable from "../../../../components/dbms/SimpleTable.jsx";
 function EntityDiagramBox({ entity, x, y, onDeleteEntity, onDeleteAttribute }) {
   return (
     <div
+      className="er-builder-entity"
       style={{
-        position: "absolute",
         left: x,
-        top: y,
-        width: 220,
-        padding: 12,
-        borderRadius: 10,
-        background: "rgba(15,23,42,0.85)",
-        border: "2px solid #38bdf8",
-        color: "#e5e7eb",
-        boxShadow: "0 4px 12px rgba(56,189,248,0.15)"
+        top: y
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 10,
-          marginBottom: 8
-        }}
-      >
-        <div style={{ fontWeight: 800, color: "#38bdf8" }}>{entity.name}</div>
+      <div className="er-builder-entity-head">
+        <div>{entity.name}</div>
+
         <button
-          className="btn danger"
-          style={{ padding: "4px 10px", fontSize: "0.8rem" }}
+          className="sim-btn sim-btn-danger"
+          style={{ padding: "6px 10px", borderRadius: 10 }}
           onClick={() => onDeleteEntity(entity.id)}
         >
-          Delete
+          <Trash2 size={14} />
         </button>
       </div>
 
@@ -45,34 +39,18 @@ function EntityDiagramBox({ entity, x, y, onDeleteEntity, onDeleteAttribute }) {
         entity.attributes.map((attr, index) => (
           <div
             key={`${entity.id}-${attr.name}-${index}`}
-            style={{
-              fontSize: "0.9rem",
-              padding: "6px 8px",
-              marginBottom: 6,
-              borderRadius: 8,
-              background: attr.primary
-                ? "rgba(250,204,21,0.12)"
-                : "rgba(15,23,42,0.35)",
-              border: attr.primary
-                ? "1px solid rgba(250,204,21,0.35)"
-                : "1px solid rgba(148,163,184,0.18)",
-              color: attr.primary ? "#facc15" : "#cbd5e1",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 8
-            }}
+            className={`er-builder-attr ${attr.primary ? "primary" : ""}`}
           >
             <span>
               {attr.name} {attr.primary ? "(PK)" : ""}
             </span>
 
             <button
-              className="btn danger"
-              style={{ padding: "2px 8px", fontSize: "0.72rem" }}
+              className="sim-btn sim-btn-danger"
+              style={{ padding: "4px 8px", borderRadius: 8 }}
               onClick={() => onDeleteAttribute(entity.id, index)}
             >
-              ×
+              <Trash2 size={12} />
             </button>
           </div>
         ))
@@ -106,10 +84,10 @@ function RelationshipLines({
           const to = positions[rel.toEntityId];
           if (!from || !to || !byId[rel.fromEntityId] || !byId[rel.toEntityId]) return null;
 
-          const x1 = from.x + 220;
-          const y1 = from.y + 100;
+          const x1 = from.x + 230;
+          const y1 = from.y + 110;
           const x2 = to.x;
-          const y2 = to.y + 100;
+          const y2 = to.y + 110;
 
           return (
             <line
@@ -119,7 +97,8 @@ function RelationshipLines({
               x2={x2}
               y2={y2}
               stroke="#38bdf8"
-              strokeWidth="2"
+              strokeWidth="2.4"
+              strokeDasharray="8 6"
             />
           );
         })}
@@ -130,40 +109,27 @@ function RelationshipLines({
         const to = positions[rel.toEntityId];
         if (!from || !to || !byId[rel.fromEntityId] || !byId[rel.toEntityId]) return null;
 
-        const midX = (from.x + 220 + to.x) / 2;
-        const midY = (from.y + 100 + to.y + 100) / 2;
+        const midX = (from.x + 230 + to.x) / 2;
+        const midY = (from.y + 110 + to.y + 110) / 2;
 
         return (
           <div
             key={`label-${rel.id}`}
+            className="er-builder-rel-label"
             style={{
-              position: "absolute",
               left: midX,
-              top: midY + 28,
-              transform: "translate(-50%, -50%)",
-              background: "rgba(15,23,42,0.95)",
-              padding: "6px 10px",
-              borderRadius: 8,
-              fontSize: "0.8rem",
-              color: "#facc15",
-              border: "1px solid rgba(250,204,21,0.25)",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              zIndex: 5,
-              whiteSpace: "nowrap",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.35)"
+              top: midY + 28
             }}
           >
             <span>
               {rel.name} ({rel.cardinality})
             </span>
             <button
-              className="btn danger"
-              style={{ padding: "2px 8px", fontSize: "0.72rem", pointerEvents: "auto" }}
+              className="sim-btn sim-btn-danger"
+              style={{ padding: "4px 8px", borderRadius: 8, pointerEvents: "auto" }}
               onClick={() => onDeleteRelationship(rel.id)}
             >
-              ×
+              <Trash2 size={12} />
             </button>
           </div>
         );
@@ -225,7 +191,7 @@ export default function DBMSERBuilder() {
       const col = index % 3;
       map[entity.id] = {
         x: 40 + col * 340,
-        y: 40 + row * 240
+        y: 40 + row * 250
       };
     });
     return map;
@@ -270,11 +236,11 @@ export default function DBMSERBuilder() {
       )
     );
 
-    const entityNameForStep =
+    const selectedEntityName =
       entities.find((e) => e.id === selectedEntityId)?.name || "Entity";
 
     addStep(
-      `Added attribute "${trimmed}"${isPrimary ? " as primary key" : ""} to "${entityNameForStep}".`
+      `Added attribute "${trimmed}"${isPrimary ? " as primary key" : ""} to "${selectedEntityName}".`
     );
 
     setAttributeName("");
@@ -307,6 +273,7 @@ export default function DBMSERBuilder() {
 
   const deleteEntity = (entityId) => {
     const entity = entities.find((e) => e.id === entityId);
+
     setEntities((prev) => prev.filter((e) => e.id !== entityId));
     setRelationships((prev) =>
       prev.filter(
@@ -318,7 +285,7 @@ export default function DBMSERBuilder() {
     if (fromEntityId === entityId) setFromEntityId("");
     if (toEntityId === entityId) setToEntityId("");
 
-    addStep(`Deleted entity "${entity?.name || entityId}" and its connected relationships.`);
+    addStep(`Deleted entity "${entity?.name || entityId}" and its related links.`);
   };
 
   const deleteAttribute = (entityId, attrIndex) => {
@@ -405,17 +372,24 @@ export default function DBMSERBuilder() {
 
   return (
     <>
-      <section className="card experiment">
-        <h2>
-          ER Builder <span style={{ color: "#38bdf8" }}>(Interactive)</span>
-        </h2>
+      <section className="sorting-sim-card">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <Sparkles size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">ER Builder</h2>
+            <p className="sorting-sim-subtitle">
+              Create entities, add attributes, connect relationships, and generate schema.
+            </p>
+          </div>
+        </div>
 
         <div
+          className="sorting-stats-grid"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            marginBottom: 16
+            marginBottom: 18,
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))"
           }}
         >
           <InfoStatCard label="Entities" value={entities.length} />
@@ -424,196 +398,164 @@ export default function DBMSERBuilder() {
             label="Total Attributes"
             value={entities.reduce((sum, e) => sum + e.attributes.length, 0)}
           />
+          <InfoStatCard label="Generated Tables" value={generatedTables.length} />
         </div>
 
         <ObservationBox text={observationText} />
       </section>
 
-      <section className="card">
-        <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Add Entity</h3>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            alignItems: "end"
-          }}
-        >
-          <div>
-            <label>Entity Name</label>
-            <input
-              className="lab-input"
-              value={entityName}
-              onChange={(e) => setEntityName(e.target.value)}
-              placeholder="Example: Department"
-              style={{ width: "100%" }}
-            />
+      <section className="sorting-sim-card" style={{ marginTop: 22 }}>
+        <div className="overview-grid">
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <Database size={18} />
+              <h4>Add Entity</h4>
+            </div>
+            <div style={{ display: "grid", gap: 12 }}>
+              <input
+                className="sorting-input"
+                value={entityName}
+                onChange={(e) => setEntityName(e.target.value)}
+                placeholder="Example: Department"
+              />
+              <button className="sim-btn sim-btn-primary" onClick={addEntity}>
+                <PlusCircle size={16} />
+                Add Entity
+              </button>
+            </div>
           </div>
 
-          <div className="buttons">
-            <button className="btn primary" onClick={addEntity}>
-              Add Entity
-            </button>
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <KeyRound size={18} />
+              <h4>Add Attribute</h4>
+            </div>
+            <div style={{ display: "grid", gap: 12 }}>
+              <select
+                className="sorting-select"
+                value={selectedEntityId}
+                onChange={(e) => setSelectedEntityId(e.target.value)}
+              >
+                <option value="">Select entity</option>
+                {entityOptions.map((entity) => (
+                  <option key={entity.id} value={entity.id}>
+                    {entity.name}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                className="sorting-input"
+                value={attributeName}
+                onChange={(e) => setAttributeName(e.target.value)}
+                placeholder="Example: department_id"
+              />
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  color: "#e5e7eb",
+                  fontWeight: 600
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isPrimary}
+                  onChange={(e) => setIsPrimary(e.target.checked)}
+                />
+                Mark as Primary Key
+              </label>
+
+              <button className="sim-btn sim-btn-primary" onClick={addAttribute}>
+                <PlusCircle size={16} />
+                Add Attribute
+              </button>
+            </div>
           </div>
+
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <Network size={18} />
+              <h4>Add Relationship</h4>
+            </div>
+            <div style={{ display: "grid", gap: 12 }}>
+              <select
+                className="sorting-select"
+                value={fromEntityId}
+                onChange={(e) => setFromEntityId(e.target.value)}
+              >
+                <option value="">From entity</option>
+                {entityOptions.map((entity) => (
+                  <option key={entity.id} value={entity.id}>
+                    {entity.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                className="sorting-select"
+                value={toEntityId}
+                onChange={(e) => setToEntityId(e.target.value)}
+              >
+                <option value="">To entity</option>
+                {entityOptions.map((entity) => (
+                  <option key={entity.id} value={entity.id}>
+                    {entity.name}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                className="sorting-input"
+                value={relationshipName}
+                onChange={(e) => setRelationshipName(e.target.value)}
+                placeholder="Example: BELONGS_TO"
+              />
+
+              <select
+                className="sorting-select"
+                value={cardinality}
+                onChange={(e) => setCardinality(e.target.value)}
+              >
+                <option value="1:1">1:1</option>
+                <option value="1:N">1:N</option>
+                <option value="M:N">M:N</option>
+              </select>
+
+              <button className="sim-btn sim-btn-primary" onClick={addRelationship}>
+                <PlusCircle size={16} />
+                Add Relationship
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="sorting-btn-group" style={{ marginTop: 18 }}>
+          <button className="sim-btn sim-btn-success" onClick={exportToRelationalSchema}>
+            Generate Tables
+          </button>
+          <button className="sim-btn sim-btn-danger" onClick={clearBuilder}>
+            Clear Builder
+          </button>
         </div>
       </section>
 
-      <section className="card">
-        <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Add Attribute</h3>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            alignItems: "end"
-          }}
-        >
-          <div>
-            <label>Select Entity</label>
-            <select
-              className="lab-select"
-              value={selectedEntityId}
-              onChange={(e) => setSelectedEntityId(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              <option value="">Select entity</option>
-              {entityOptions.map((entity) => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.name}
-                </option>
-              ))}
-            </select>
+      <section className="sorting-sim-card" style={{ marginTop: 22 }}>
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <Network size={18} />
           </div>
-
           <div>
-            <label>Attribute Name</label>
-            <input
-              className="lab-input"
-              value={attributeName}
-              onChange={(e) => setAttributeName(e.target.value)}
-              placeholder="Example: department_id"
-              style={{ width: "100%" }}
-            />
-          </div>
-
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              color: "#e5e7eb",
-              fontWeight: 600
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={isPrimary}
-              onChange={(e) => setIsPrimary(e.target.checked)}
-            />
-            Mark as Primary Key
-          </label>
-
-          <div className="buttons">
-            <button className="btn primary" onClick={addAttribute}>
-              Add Attribute
-            </button>
+            <h2 className="sorting-sim-title">Live ER Diagram</h2>
+            <p className="sorting-sim-subtitle">
+              Your entities and relationships are rendered below in real time.
+            </p>
           </div>
         </div>
-      </section>
 
-      <section className="card">
-        <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Add Relationship</h3>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            alignItems: "end"
-          }}
-        >
-          <div>
-            <label>From Entity</label>
-            <select
-              className="lab-select"
-              value={fromEntityId}
-              onChange={(e) => setFromEntityId(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              <option value="">Select entity</option>
-              {entityOptions.map((entity) => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label>To Entity</label>
-            <select
-              className="lab-select"
-              value={toEntityId}
-              onChange={(e) => setToEntityId(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              <option value="">Select entity</option>
-              {entityOptions.map((entity) => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label>Relationship Name</label>
-            <input
-              className="lab-input"
-              value={relationshipName}
-              onChange={(e) => setRelationshipName(e.target.value)}
-              placeholder="Example: BELONGS_TO"
-              style={{ width: "100%" }}
-            />
-          </div>
-
-          <div>
-            <label>Cardinality</label>
-            <select
-              className="lab-select"
-              value={cardinality}
-              onChange={(e) => setCardinality(e.target.value)}
-              style={{ width: "100%" }}
-            >
-              <option value="1:1">1:1</option>
-              <option value="1:N">1:N</option>
-              <option value="M:N">M:N</option>
-            </select>
-          </div>
-
-          <div className="buttons">
-            <button className="btn primary" onClick={addRelationship}>
-              Add Relationship
-            </button>
-            <button className="btn secondary" onClick={clearBuilder}>
-              Clear Builder
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Live ER Diagram</h3>
-
-        <div
-          style={{
-            position: "relative",
-            minHeight: 560,
-            background: "rgba(15,23,42,0.4)",
-            borderRadius: 10,
-            border: "1px solid rgba(148,163,184,0.2)",
-            overflow: "auto"
-          }}
-        >
+        <div className="er-builder-canvas">
           <RelationshipLines
             entities={entities}
             relationships={relationships}
@@ -637,14 +579,7 @@ export default function DBMSERBuilder() {
         </div>
       </section>
 
-      <section className="card">
-        <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Export to Relational Schema</h3>
-        <div className="buttons" style={{ marginBottom: 14 }}>
-          <button className="btn success" onClick={exportToRelationalSchema}>
-            Generate Tables
-          </button>
-        </div>
-
+      <section className="sorting-sim-card" style={{ marginTop: 22 }}>
         <SimpleTable title="Generated Relational Schema" rows={generatedTables} />
       </section>
 

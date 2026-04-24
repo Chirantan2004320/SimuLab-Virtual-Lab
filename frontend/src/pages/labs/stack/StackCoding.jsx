@@ -1,81 +1,130 @@
 import React from "react";
+import { Code2, Play, Sparkles, Wrench } from "lucide-react";
+
+const LANGUAGES = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "cpp", label: "C++" },
+  { value: "c", label: "C" },
+  { value: "java", label: "Java" }
+];
 
 export default function StackCoding({
-  codingProblem,
-  selectedLanguage,
-  setSelectedLanguage,
-  code,
-  setCode,
-  codeResult,
-  runCode
+  currentProblems,
+  selectedLanguages,
+  codes,
+  results,
+  generateProblems,
+  handleLanguageChange,
+  handleCodeChange,
+  runCode,
+  analyzeCode,
+  correctCode
 }) {
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Practice stack logic in your preferred language. JavaScript execution works now.
-        Other languages can be enabled later with Judge0.
-      </p>
-
-      <div className="coding-problem">
-        <h3>{codingProblem.title}</h3>
-        <p>{codingProblem.description}</p>
-
-        <div style={{ marginBottom: 14 }}>
-          <label
-            style={{
-              display: "block",
-              marginBottom: 6,
-              color: "#e5e7eb",
-              fontWeight: 600
-            }}
-          >
-            Select Language
-          </label>
-
-          <select
-            value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
-            className="lab-select"
-            style={{ minWidth: "220px" }}
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="c">C</option>
-            <option value="java">Java</option>
-          </select>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Code2 size={18} />
         </div>
-
-        <textarea
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          rows={14}
-          style={{
-            width: "100%",
-            fontFamily: "monospace",
-            color: "#000000"
-          }}
-        />
-
-        <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-          <button className="btn secondary" onClick={runCode}>
-            Run Code
-          </button>
+        <div>
+          <h2 className="sorting-sim-title">Coding Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Solve generated stack problems and test your implementation in code.
+          </p>
         </div>
-
-        {selectedLanguage !== "javascript" && (
-          <p style={{ marginTop: 12, color: "#fbbf24", fontWeight: 600 }}>
-            Execution for {selectedLanguage.toUpperCase()} will be enabled later with Judge0.
-          </p>
-        )}
-
-        {codeResult && (
-          <p className="result" style={{ marginTop: 12 }}>
-            {codeResult}
-          </p>
-        )}
       </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <button className="sim-btn sim-btn-primary" onClick={generateProblems}>
+          Generate Problems
+        </button>
+      </div>
+
+      {currentProblems.length === 0 ? (
+        <div className="coding-empty-state">
+          No problems generated yet. Click <b>Generate Problems</b> to begin.
+        </div>
+      ) : null}
+
+      {currentProblems.map((problem, index) => {
+        const selectedLanguage = selectedLanguages[problem.id] || "javascript";
+        const codeKey = `${problem.id}_${selectedLanguage}`;
+
+        return (
+          <div key={problem.id} className="coding-card-upgraded">
+            <div className="coding-card-header">
+              <div>
+                <h3>Problem {index + 1}: {problem.title}</h3>
+                <p>{problem.description}</p>
+              </div>
+
+              <div className="coding-language-wrap">
+                <label className="sorting-label">Language</label>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  className="sorting-select"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <textarea
+              value={codes[codeKey] || ""}
+              onChange={(e) =>
+                handleCodeChange(problem.id, selectedLanguage, e.target.value)
+              }
+              placeholder="Write your code here..."
+              rows={14}
+              className="coding-textarea-upgraded"
+            />
+
+            <div className="coding-actions-upgraded">
+              <button
+                className="sim-btn sim-btn-primary"
+                onClick={() => runCode(problem.id, selectedLanguage)}
+              >
+                <Play size={16} />
+                Run Code
+              </button>
+
+              <button
+                className="sim-btn sim-btn-muted"
+                onClick={() => analyzeCode(problem.id, selectedLanguage)}
+              >
+                <Sparkles size={16} />
+                Analyze Code
+              </button>
+
+              <button
+                className="sim-btn sim-btn-danger"
+                onClick={() => correctCode(problem.id, selectedLanguage)}
+              >
+                <Wrench size={16} />
+                Correct Code
+              </button>
+            </div>
+
+            {selectedLanguage !== "javascript" && (
+              <div className="modern-coding-note">
+                Execution for {selectedLanguage.toUpperCase()} will be enabled later with Judge0.
+              </div>
+            )}
+
+            {results[problem.id] && (
+              <div className="coding-result-box">
+                {results[problem.id]}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </section>
   );
 }

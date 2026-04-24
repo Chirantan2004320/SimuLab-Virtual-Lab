@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FlaskConical } from "lucide-react";
 import "../../Lab.css";
 import "../../SortingLab.css";
 import SearchingOverview from "./SearchingOverview";
@@ -21,6 +22,26 @@ const linearQuizQuestions = [
     question: "Linear Search checks elements:",
     options: ["Randomly", "One by one", "Using mid only", "From last to first only"],
     correct: 1
+  },
+  {
+    question: "When is Linear Search especially useful?",
+    options: [
+      "When the array is huge and sorted",
+      "When the data is unsorted or very small",
+      "Only for stacks",
+      "Only for linked lists"
+    ],
+    correct: 1
+  },
+  {
+    question: "What does Linear Search compare at each step?",
+    options: [
+      "The target with every element one by one",
+      "The target with only the first element",
+      "The target with the average value",
+      "The target with the last element only"
+    ],
+    correct: 0
   }
 ];
 
@@ -39,121 +60,149 @@ const binaryQuizQuestions = [
     question: "Binary Search compares the target with:",
     options: ["The first element", "The last element", "The middle element", "A random element"],
     correct: 2
+  },
+  {
+    question: "What happens to the search space in Binary Search after each step?",
+    options: ["It doubles", "It remains unchanged", "It is reduced by half", "It becomes random"],
+    correct: 2
+  },
+  {
+    question: "Which statement is true for Binary Search?",
+    options: [
+      "It works on any array without sorting",
+      "It is slower than Linear Search in all cases",
+      "It repeatedly narrows the valid search range",
+      "It always starts from the last element"
+    ],
+    correct: 2
   }
 ];
 
-const codingProblemByType = {
-  linear: {
+const linearProblemBank = [
+  {
+    id: 1,
     title: "Implement linearSearch(arr, target)",
     description:
-      "Write a function linearSearch(arr, target) that returns the index of target if found, otherwise returns -1."
+      "Write a function linearSearch(arr, target) that returns the index of target if found, otherwise returns -1.",
+    functionName: "linearSearch",
+    tests: [
+      { input: [[7, 14, 21, 28], 21], expected: 2 },
+      { input: [[5, 10, 15], 9], expected: -1 },
+      { input: [[1], 1], expected: 0 }
+    ]
   },
-  binary: {
+  {
+    id: 2,
+    title: "Count comparisons in Linear Search",
+    description:
+      "Write a function countLinearComparisons(arr, target) that returns how many comparisons are made before the target is found or the array ends.",
+    functionName: "countLinearComparisons",
+    tests: [
+      { input: [[7, 14, 21, 28], 21], expected: 3 },
+      { input: [[5, 10, 15], 9], expected: 3 },
+      { input: [[1], 1], expected: 1 }
+    ]
+  },
+  {
+    id: 3,
+    title: "Find first occurrence using Linear Search",
+    description:
+      "Write a function firstOccurrence(arr, target) that returns the first index of target in the array, or -1 if not found.",
+    functionName: "firstOccurrence",
+    tests: [
+      { input: [[4, 2, 4, 9], 4], expected: 0 },
+      { input: [[1, 2, 3], 5], expected: -1 },
+      { input: [[8, 8, 8], 8], expected: 0 }
+    ]
+  },
+  {
+    id: 4,
+    title: "Check existence using Linear Search",
+    description:
+      "Write a function existsLinear(arr, target) that returns true if target exists in the array, otherwise false.",
+    functionName: "existsLinear",
+    tests: [
+      { input: [[4, 8, 12], 8], expected: true },
+      { input: [[1, 2, 3], 5], expected: false },
+      { input: [[], 9], expected: false }
+    ]
+  },
+  {
+    id: 5,
+    title: "Find last occurrence using Linear Search",
+    description:
+      "Write a function lastOccurrence(arr, target) that returns the last index of target in the array, or -1 if not found.",
+    functionName: "lastOccurrence",
+    tests: [
+      { input: [[4, 2, 4, 9], 4], expected: 2 },
+      { input: [[1, 2, 3], 5], expected: -1 },
+      { input: [[8, 8, 8], 8], expected: 2 }
+    ]
+  }
+];
+
+const binaryProblemBank = [
+  {
+    id: 101,
     title: "Implement binarySearch(arr, target)",
     description:
-      "Write a function binarySearch(arr, target) for a sorted array. It should return the index of target if found, otherwise returns -1."
-  }
-};
-
-const searchingCodeTemplates = {
-  linear: {
-    javascript: `function linearSearch(arr, target) {
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] === target) return i;
-  }
-  return -1;
-}`,
-    python: `def linear_search(arr, target):
-    for i in range(len(arr)):
-        if arr[i] == target:
-            return i
-    return -1`,
-    cpp: `int linearSearch(vector<int>& arr, int target) {
-    for (int i = 0; i < arr.size(); i++) {
-        if (arr[i] == target) return i;
-    }
-    return -1;
-}`,
-    c: `int linearSearch(int arr[], int n, int target) {
-    for (int i = 0; i < n; i++) {
-        if (arr[i] == target) return i;
-    }
-    return -1;
-}`,
-    java: `static int linearSearch(int[] arr, int target) {
-    for (int i = 0; i < arr.length; i++) {
-        if (arr[i] == target) return i;
-    }
-    return -1;
-}`
+      "Write a function binarySearch(arr, target) for a sorted array. It should return the index of target if found, otherwise return -1.",
+    functionName: "binarySearch",
+    tests: [
+      { input: [[5, 10, 15, 20, 25], 20], expected: 3 },
+      { input: [[2, 4, 6, 8], 5], expected: -1 },
+      { input: [[1], 1], expected: 0 }
+    ]
   },
-  binary: {
-    javascript: `function binarySearch(arr, target) {
-  let low = 0;
-  let high = arr.length - 1;
-
-  while (low <= high) {
-    const mid = Math.floor((low + high) / 2);
-
-    if (arr[mid] === target) return mid;
-    if (arr[mid] < target) low = mid + 1;
-    else high = mid - 1;
+  {
+    id: 102,
+    title: "Count iterations in Binary Search",
+    description:
+      "Write a function countBinarySteps(arr, target) that returns how many loop iterations Binary Search takes before finding the target or concluding it is absent.",
+    functionName: "countBinarySteps",
+    tests: [
+      { input: [[5, 10, 15, 20, 25], 20], expected: 2 },
+      { input: [[2, 4, 6, 8], 5], expected: 2 },
+      { input: [[1], 1], expected: 1 }
+    ]
+  },
+  {
+    id: 103,
+    title: "Check existence using Binary Search",
+    description:
+      "Write a function existsBinary(arr, target) that returns true if target exists in the sorted array, otherwise false.",
+    functionName: "existsBinary",
+    tests: [
+      { input: [[5, 10, 15, 20, 25], 15], expected: true },
+      { input: [[2, 4, 6, 8], 5], expected: false },
+      { input: [[], 1], expected: false }
+    ]
+  },
+  {
+    id: 104,
+    title: "Return insertion position",
+    description:
+      "Write a function insertionPosition(arr, target) that returns the index where target should be inserted in a sorted array to keep it sorted.",
+    functionName: "insertionPosition",
+    tests: [
+      { input: [[5, 10, 15, 20], 12], expected: 2 },
+      { input: [[5, 10, 15, 20], 25], expected: 4 },
+      { input: [[5, 10, 15, 20], 1], expected: 0 }
+    ]
+  },
+  {
+    id: 105,
+    title: "Find lower bound",
+    description:
+      "Write a function lowerBound(arr, target) that returns the first index at which target can appear in sorted order.",
+    functionName: "lowerBound",
+    tests: [
+      { input: [[1, 2, 2, 2, 5], 2], expected: 1 },
+      { input: [[1, 3, 5], 4], expected: 2 },
+      { input: [[], 7], expected: 0 }
+    ]
   }
-
-  return -1;
-}`,
-    python: `def binary_search(arr, target):
-    low = 0
-    high = len(arr) - 1
-
-    while low <= high:
-        mid = (low + high) // 2
-        if arr[mid] == target:
-            return mid
-        elif arr[mid] < target:
-            low = mid + 1
-        else:
-            high = mid - 1
-
-    return -1`,
-    cpp: `int binarySearch(vector<int>& arr, int target) {
-    int low = 0, high = arr.size() - 1;
-
-    while (low <= high) {
-        int mid = (low + high) / 2;
-        if (arr[mid] == target) return mid;
-        if (arr[mid] < target) low = mid + 1;
-        else high = mid - 1;
-    }
-
-    return -1;
-}`,
-    c: `int binarySearch(int arr[], int n, int target) {
-    int low = 0, high = n - 1;
-
-    while (low <= high) {
-        int mid = (low + high) / 2;
-        if (arr[mid] == target) return mid;
-        if (arr[mid] < target) low = mid + 1;
-        else high = mid - 1;
-    }
-
-    return -1;
-}`,
-    java: `static int binarySearch(int[] arr, int target) {
-    int low = 0, high = arr.length - 1;
-
-    while (low <= high) {
-        int mid = (low + high) / 2;
-        if (arr[mid] == target) return mid;
-        if (arr[mid] < target) low = mid + 1;
-        else high = mid - 1;
-    }
-
-    return -1;
-}`
-  }
-};
+];
 
 const parseArrayInput = (input) =>
   input
@@ -164,6 +213,134 @@ const parseArrayInput = (input) =>
     .filter((num) => !Number.isNaN(num));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function getStarterCode(problem, language) {
+  const fn = problem.functionName;
+
+  if (language === "python") {
+    const map = {
+      linearSearch: `def linearSearch(arr, target):
+    # Write your solution here
+    return -1
+`,
+      countLinearComparisons: `def countLinearComparisons(arr, target):
+    # Write your solution here
+    return 0
+`,
+      firstOccurrence: `def firstOccurrence(arr, target):
+    # Write your solution here
+    return -1
+`,
+      existsLinear: `def existsLinear(arr, target):
+    # Write your solution here
+    return False
+`,
+      lastOccurrence: `def lastOccurrence(arr, target):
+    # Write your solution here
+    return -1
+`,
+      binarySearch: `def binarySearch(arr, target):
+    # Write your solution here
+    return -1
+`,
+      countBinarySteps: `def countBinarySteps(arr, target):
+    # Write your solution here
+    return 0
+`,
+      existsBinary: `def existsBinary(arr, target):
+    # Write your solution here
+    return False
+`,
+      insertionPosition: `def insertionPosition(arr, target):
+    # Write your solution here
+    return 0
+`,
+      lowerBound: `def lowerBound(arr, target):
+    # Write your solution here
+    return 0
+`
+    };
+    return map[fn] || `def solve():
+    pass
+`;
+  }
+
+  if (language === "cpp") {
+    return `#include <bits/stdc++.h>
+using namespace std;
+
+// Write your solution here
+`;
+  }
+
+  if (language === "c") {
+    return `/* C execution template only. Browser execution is available for JavaScript for now. */`;
+  }
+
+  if (language === "java") {
+    return `import java.util.*;
+
+public class Main {
+    // Write your solution here
+}
+`;
+  }
+
+  const map = {
+    linearSearch: `function linearSearch(arr, target) {
+  // Write your solution here
+  return -1;
+}
+`,
+    countLinearComparisons: `function countLinearComparisons(arr, target) {
+  // Write your solution here
+  return 0;
+}
+`,
+    firstOccurrence: `function firstOccurrence(arr, target) {
+  // Write your solution here
+  return -1;
+}
+`,
+    existsLinear: `function existsLinear(arr, target) {
+  // Write your solution here
+  return false;
+}
+`,
+    lastOccurrence: `function lastOccurrence(arr, target) {
+  // Write your solution here
+  return -1;
+}
+`,
+    binarySearch: `function binarySearch(arr, target) {
+  // Write your solution here
+  return -1;
+}
+`,
+    countBinarySteps: `function countBinarySteps(arr, target) {
+  // Write your solution here
+  return 0;
+}
+`,
+    existsBinary: `function existsBinary(arr, target) {
+  // Write your solution here
+  return false;
+}
+`,
+    insertionPosition: `function insertionPosition(arr, target) {
+  // Write your solution here
+  return 0;
+}
+`,
+    lowerBound: `function lowerBound(arr, target) {
+  // Write your solution here
+  return 0;
+}
+`
+  };
+
+  return map[fn] || `function solve() {\n  // Write your solution here\n}\n`;
+}
 
 export default function SearchingLab() {
   const [searchType, setSearchType] = useState("linear");
@@ -191,13 +368,14 @@ export default function SearchingLab() {
     [searchType]
   );
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
+  const [quizAnswers, setQuizAnswers] = useState([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(searchingCodeTemplates.linear.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [currentProblems, setCurrentProblems] = useState([]);
+  const [selectedLanguages, setSelectedLanguages] = useState({});
+  const [codes, setCodes] = useState({});
+  const [results, setResults] = useState({});
 
   useEffect(() => {
     stopRequestedRef.current = false;
@@ -215,13 +393,11 @@ export default function SearchingLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-    setCodeResult("");
+    setCurrentProblems([]);
+    setSelectedLanguages({});
+    setCodes({});
+    setResults({});
   }, [searchType, quizQuestions.length]);
-
-  useEffect(() => {
-    setCode(searchingCodeTemplates[searchType][selectedLanguage]);
-    setCodeResult("");
-  }, [searchType, selectedLanguage]);
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
@@ -449,167 +625,308 @@ export default function SearchingLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+  };
+
+  const generateProblems = () => {
+    const bank = searchType === "binary" ? binaryProblemBank : linearProblemBank;
+    const shuffled = [...bank].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+
+    const initialLanguages = {};
+    const initialCodes = {};
+
+    selected.forEach((problem) => {
+      initialLanguages[problem.id] = "javascript";
+      initialCodes[`${problem.id}_javascript`] = getStarterCode(problem, "javascript");
+    });
+
+    setCurrentProblems(selected);
+    setSelectedLanguages(initialLanguages);
+    setCodes(initialCodes);
+    setResults({});
+  };
+
+  const handleLanguageChange = (problemId, language, problem) => {
+    const key = `${problemId}_${language}`;
+
+    setSelectedLanguages((prev) => ({
+      ...prev,
+      [problemId]: language
+    }));
+
+    setCodes((prev) => {
+      if (prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: getStarterCode(problem, language)
+      };
+    });
+  };
+
+  const handleCodeChange = (problemId, language, value) => {
+    const key = `${problemId}_${language}`;
+    setCodes((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const runCode = (problemId, language) => {
+    const problem = currentProblems.find((p) => p.id === problemId);
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
+
+    if (!problem || !code) {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: "Please enter code."
+      }));
+      return;
+    }
+
+    if (language !== "javascript") {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]:
+          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+      }));
       return;
     }
 
     try {
-      let result;
+      let allCorrect = true;
+      const outputs = [];
 
-      if (searchType === "linear") {
+      for (const test of problem.tests) {
+        const args = test.input.map((item) => (Array.isArray(item) ? [...item] : item));
+
         // eslint-disable-next-line no-new-func
-        const fn = new Function("arr", "target", `${code}; return linearSearch(arr, target);`);
-        result = fn([7, 14, 21, 28], 21);
-      } else {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function("arr", "target", `${code}; return binarySearch(arr, target);`);
-        result = fn([5, 10, 15, 20, 25], 20);
+        const fn = new Function(
+          ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
+          `${code}; return ${problem.functionName}(${args
+            .map((_, i) => `arg${i}`)
+            .join(", ")});`
+        );
+
+        const result = fn(...args);
+        outputs.push(result);
+
+        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
+          allCorrect = false;
+          break;
+        }
       }
 
-      setCodeResult(`Output: ${JSON.stringify(result)}`);
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
+          : "Incorrect Output"
+      }));
     } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: `Error: ${error.message}`
+      }));
     }
   };
 
-  const codingProblem =
-    searchType === "binary" ? codingProblemByType.binary : codingProblemByType.linear;
+  const analyzeCode = (problemId, language) => {
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
+
+    if (!code) {
+      alert("Please enter code to analyze.");
+      return;
+    }
+
+    const analysisData = {
+      code,
+      problemId,
+      topic: "searching",
+      searchType,
+      language
+    };
+
+    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
+    alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
+  };
+
+  const correctCode = (problemId, language) => {
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
+
+    if (!code) {
+      alert("Please enter code to correct.");
+      return;
+    }
+
+    const correctionData = {
+      code,
+      problemId,
+      topic: "searching",
+      searchType,
+      language,
+      action: "correct"
+    };
+
+    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
+    alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
+  };
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Searching Algorithms</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Search Type</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-              disabled={isRunning}
-            >
-              <option value="linear">Linear Search</option>
-              <option value="binary">Binary Search</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Searching Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            {searchType === "binary" ? "Binary Search" : "Linear Search"}
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Explore searching algorithms through guided visualization, quiz practice, and
+            coding challenges.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
-          >
-            Overview
-          </button>
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Search Configuration</h2>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+          <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "end" }}>
+            <div style={{ minWidth: "240px" }}>
+              <label className="sorting-label">Search Type</label>
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="linear">Linear Search</option>
+                <option value="binary">Binary Search</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+            <div style={{ minWidth: "220px" }}>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && <SearchingOverview searchType={searchType} />}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-          {activeSection === "simulation" && (
-            <SearchingSimulation
-              searchType={searchType}
-              arrayInput={arrayInput}
-              setArrayInput={setArrayInput}
-              target={target}
-              setTarget={setTarget}
-              runSearch={runSearch}
-              stopSearch={stopSearch}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              array={array}
-              currentIndex={currentIndex}
-              foundIndex={foundIndex}
-              lowIndex={lowIndex}
-              highIndex={highIndex}
-              midIndex={midIndex}
-              targetRef={targetRef}
-              isRunning={isRunning}
-              stepHistory={stepHistory}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "quiz" && (
-            <SearchingQuiz
-              searchType={searchType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "coding" && (
-            <SearchingCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              searchType={searchType}
-            />
-          )}
-        </main>
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && <SearchingOverview searchType={searchType} />}
+
+              {activeSection === "simulation" && (
+                <SearchingSimulation
+                  searchType={searchType}
+                  arrayInput={arrayInput}
+                  setArrayInput={setArrayInput}
+                  target={target}
+                  setTarget={setTarget}
+                  runSearch={runSearch}
+                  stopSearch={stopSearch}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  array={array}
+                  currentIndex={currentIndex}
+                  foundIndex={foundIndex}
+                  lowIndex={lowIndex}
+                  highIndex={highIndex}
+                  midIndex={midIndex}
+                  targetRef={targetRef}
+                  isRunning={isRunning}
+                  stepHistory={stepHistory}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <SearchingQuiz
+                  searchType={searchType}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                  redoQuiz={redoQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <SearchingCoding
+                  searchType={searchType}
+                  currentProblems={currentProblems}
+                  selectedLanguages={selectedLanguages}
+                  codes={codes}
+                  results={results}
+                  generateProblems={generateProblems}
+                  handleLanguageChange={handleLanguageChange}
+                  handleCodeChange={handleCodeChange}
+                  runCode={runCode}
+                  analyzeCode={analyzeCode}
+                  correctCode={correctCode}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

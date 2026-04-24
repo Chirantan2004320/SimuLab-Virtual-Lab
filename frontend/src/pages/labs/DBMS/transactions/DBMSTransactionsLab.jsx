@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
 import "../../../SortingLab.css";
+import { FlaskConical } from "lucide-react";
+
 import DBMSTransactionsOverview from "./DBMSTransactionsOverview";
 import DBMSTransactionsSimulation from "./DBMSTransactionsSimulation";
+import DBMSTransactionsComparison from "./DBMSTransactionsComparison";
 import DBMSTransactionsQuiz from "./DBMSTransactionsQuiz";
 import DBMSTransactionsCoding from "./DBMSTransactionsCoding";
 
@@ -89,173 +91,10 @@ const transactionQuizQuestionsByType = {
     },
     {
       question: "A bank transfer is a common example of:",
-      options: [
-        "Sorting",
-        "Atomicity",
-        "Hashing",
-        "Searching"
-      ],
+      options: ["Sorting", "Atomicity", "Hashing", "Searching"],
       correct: 1
     }
   ]
-};
-
-const codingProblemByType = {
-  commit: {
-    title: "Write a transaction with COMMIT",
-    description:
-      "Write SQL statements to transfer money from one account to another and commit the transaction after both updates succeed."
-  },
-  rollback: {
-    title: "Write a transaction with ROLLBACK",
-    description:
-      "Write SQL statements to start a transaction, perform updates, and roll back the transaction if an error occurs."
-  },
-  atomicity: {
-    title: "Write an Atomic transaction",
-    description:
-      "Write SQL statements for a bank transfer where both debit and credit must happen together or not happen at all."
-  }
-};
-
-const transactionCodeTemplates = {
-  commit: {
-    javascript: `const query = \`
-BEGIN TRANSACTION;
-
-UPDATE accounts
-SET balance = balance - 1000
-WHERE account_id = 'A101';
-
-UPDATE accounts
-SET balance = balance + 1000
-WHERE account_id = 'B205';
-
-COMMIT;
-\`;`,
-    python: `query = """
-BEGIN TRANSACTION;
-
-UPDATE accounts
-SET balance = balance - 1000
-WHERE account_id = 'A101';
-
-UPDATE accounts
-SET balance = balance + 1000
-WHERE account_id = 'B205';
-
-COMMIT;
-"""`,
-    cpp: `string query =
-"BEGIN TRANSACTION;\\n\\n"
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n"
-"UPDATE accounts SET balance = balance + 1000 WHERE account_id = 'B205';\\n\\n"
-"COMMIT;";`,
-    c: `char query[] =
-"BEGIN TRANSACTION;\\n\\n"
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n"
-"UPDATE accounts SET balance = balance + 1000 WHERE account_id = 'B205';\\n\\n"
-"COMMIT;";`,
-    java: `String query =
-"BEGIN TRANSACTION;\\n\\n" +
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n" +
-"UPDATE accounts SET balance = balance + 1000 WHERE account_id = 'B205';\\n\\n" +
-"COMMIT;";`
-  },
-  rollback: {
-    javascript: `const query = \`
-BEGIN TRANSACTION;
-
-UPDATE accounts
-SET balance = balance - 1000
-WHERE account_id = 'A101';
-
--- Suppose an error happens before crediting second account
-
-ROLLBACK;
-\`;`,
-    python: `query = """
-BEGIN TRANSACTION;
-
-UPDATE accounts
-SET balance = balance - 1000
-WHERE account_id = 'A101';
-
--- Suppose an error happens before crediting second account
-
-ROLLBACK;
-"""`,
-    cpp: `string query =
-"BEGIN TRANSACTION;\\n\\n"
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n"
-"-- Suppose an error happens before crediting second account\\n\\n"
-"ROLLBACK;";`,
-    c: `char query[] =
-"BEGIN TRANSACTION;\\n\\n"
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n"
-"-- Suppose an error happens before crediting second account\\n\\n"
-"ROLLBACK;";`,
-    java: `String query =
-"BEGIN TRANSACTION;\\n\\n" +
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n" +
-"-- Suppose an error happens before crediting second account\\n\\n" +
-"ROLLBACK;";`
-  },
-  atomicity: {
-    javascript: `const query = \`
-BEGIN TRANSACTION;
-
-UPDATE accounts
-SET balance = balance - 1000
-WHERE account_id = 'A101';
-
-UPDATE accounts
-SET balance = balance + 1000
-WHERE account_id = 'B205';
-
--- If any step fails, undo everything
--- Otherwise, save everything
-
-COMMIT;
-\`;`,
-    python: `query = """
-BEGIN TRANSACTION;
-
-UPDATE accounts
-SET balance = balance - 1000
-WHERE account_id = 'A101';
-
-UPDATE accounts
-SET balance = balance + 1000
-WHERE account_id = 'B205';
-
--- If any step fails, undo everything
--- Otherwise, save everything
-
-COMMIT;
-"""`,
-    cpp: `string query =
-"BEGIN TRANSACTION;\\n\\n"
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n"
-"UPDATE accounts SET balance = balance + 1000 WHERE account_id = 'B205';\\n\\n"
-"-- If any step fails, undo everything\\n"
-"-- Otherwise, save everything\\n\\n"
-"COMMIT;";`,
-    c: `char query[] =
-"BEGIN TRANSACTION;\\n\\n"
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n"
-"UPDATE accounts SET balance = balance + 1000 WHERE account_id = 'B205';\\n\\n"
-"-- If any step fails, undo everything\\n"
-"-- Otherwise, save everything\\n\\n"
-"COMMIT;";`,
-    java: `String query =
-"BEGIN TRANSACTION;\\n\\n" +
-"UPDATE accounts SET balance = balance - 1000 WHERE account_id = 'A101';\\n\\n" +
-"UPDATE accounts SET balance = balance + 1000 WHERE account_id = 'B205';\\n\\n" +
-"-- If any step fails, undo everything\\n" +
-"-- Otherwise, save everything\\n\\n" +
-"COMMIT;";`
-  }
 };
 
 const initialAccounts = [
@@ -290,10 +129,6 @@ export default function DBMSTransactionsLab() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(transactionCodeTemplates.commit.javascript);
-  const [codeResult, setCodeResult] = useState("");
-
   useEffect(() => {
     setStepHistory([]);
     setAccounts(initialAccounts);
@@ -306,15 +141,10 @@ export default function DBMSTransactionsLab() {
     setQuizAnswers(Array(transactionQuizQuestionsByType[transactionType].length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-    setCodeResult("");
     setTotalBefore(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
     setTotalAfter(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
+    setActiveSection("overview");
   }, [transactionType]);
-
-  useEffect(() => {
-    setCode(transactionCodeTemplates[transactionType][selectedLanguage]);
-    setCodeResult("");
-  }, [transactionType, selectedLanguage]);
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
@@ -420,9 +250,7 @@ export default function DBMSTransactionsLab() {
       const finalTotal =
         transactionType === "rollback"
           ? totalStart
-          : (transactionType === "commit" || transactionType === "atomicity")
-          ? workingAccounts.reduce((sum, acc) => sum + acc.balance, 0)
-          : totalStart;
+          : workingAccounts.reduce((sum, acc) => sum + acc.balance, 0);
 
       setTotalAfter(finalTotal);
       setCurrentStage("Complete");
@@ -494,175 +322,172 @@ export default function DBMSTransactionsLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
-      return;
-    }
-
-    try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(`${code}; return query;`);
-      const result = fn();
-      setCodeResult(`Output:\n${result}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
-  };
-
-  const codingProblem = codingProblemByType[transactionType];
-
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Transactions / ACID</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Transaction Type</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={transactionType}
-              onChange={(e) => setTransactionType(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-              disabled={isRunning}
-            >
-              <option value="commit">COMMIT Demo</option>
-              <option value="rollback">ROLLBACK Demo</option>
-              <option value="atomicity">Atomicity Demo</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Transactions Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Transfer Amount
-            </label>
-            <input
-              value={transferAmount}
-              onChange={(e) => setTransferAmount(e.target.value)}
-              className="lab-input"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            />
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            Transactions / ACID
+          </h1>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Explore COMMIT, ROLLBACK, and Atomicity through visual simulation, quiz, and SQL transaction practice.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Transaction Configuration</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 16
+            }}
           >
-            Overview
-          </button>
+            <div>
+              <label className="sorting-label">Transaction Type</label>
+              <select
+                value={transactionType}
+                onChange={(e) => setTransactionType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="commit">COMMIT Demo</option>
+                <option value="rollback">ROLLBACK Demo</option>
+                <option value="atomicity">Atomicity Demo</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <div>
+              <label className="sorting-label">Transfer Amount</label>
+              <input
+                value={transferAmount}
+                onChange={(e) => setTransferAmount(e.target.value)}
+                className="sorting-input"
+                disabled={isRunning}
+              />
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DBMSTransactionsOverview transactionType={transactionType} initialAccounts={initialAccounts} />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-          {activeSection === "simulation" && (
-            <DBMSTransactionsSimulation
-              transactionType={transactionType}
-              accounts={accounts}
-              runSimulation={runSimulation}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              selectedAccountId={selectedAccountId}
-              stepHistory={stepHistory}
-              currentStage={currentStage}
-              transactionState={transactionState}
-              totalBefore={totalBefore}
-              totalAfter={totalAfter}
-              transferAmount={transferAmount}
-              isRunning={isRunning}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
+              onClick={() => setActiveSection("comparison")}
+            >
+              Comparison
+            </button>
 
-          {activeSection === "quiz" && (
-            <DBMSTransactionsQuiz
-              transactionType={transactionType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "coding" && (
-            <DBMSTransactionsCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              transactionType={transactionType}
-            />
-          )}
-        </main>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
+
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && (
+                <DBMSTransactionsOverview
+                  transactionType={transactionType}
+                  initialAccounts={initialAccounts}
+                />
+              )}
+
+              {activeSection === "simulation" && (
+                <DBMSTransactionsSimulation
+                  transactionType={transactionType}
+                  accounts={accounts}
+                  runSimulation={runSimulation}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  selectedAccountId={selectedAccountId}
+                  stepHistory={stepHistory}
+                  currentStage={currentStage}
+                  transactionState={transactionState}
+                  totalBefore={totalBefore}
+                  totalAfter={totalAfter}
+                  transferAmount={transferAmount}
+                  isRunning={isRunning}
+                />
+              )}
+
+              {activeSection === "comparison" && (
+                <DBMSTransactionsComparison
+                  transactionType={transactionType}
+                  initialAccounts={initialAccounts}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <DBMSTransactionsQuiz
+                  transactionType={transactionType}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <DBMSTransactionsCoding transactionType={transactionType} />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

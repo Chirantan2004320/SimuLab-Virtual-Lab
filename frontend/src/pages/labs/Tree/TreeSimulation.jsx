@@ -1,87 +1,46 @@
 import React from "react";
+import {
+  Activity,
+  Plus,
+  Search,
+  Trash2,
+  RotateCcw,
+  Square,
+  FlaskConical,
+  ArrowDownUp,
+  Rows3
+} from "lucide-react";
 
 function TreeNodeCard({ node, isVisited, isActive }) {
-  let background =
-    "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(129,140,248,0.18))";
-  let border = "2px solid #38bdf8";
-  let boxShadow = "0 4px 12px rgba(56,189,248,0.15)";
-
-  if (isVisited) {
-    background =
-      "linear-gradient(135deg, rgba(34,197,94,0.24), rgba(16,185,129,0.16))";
-    border = "2px solid #22c55e";
-    boxShadow = "0 0 18px rgba(34,197,94,0.28)";
-  }
-
-  if (isActive) {
-    background =
-      "linear-gradient(135deg, rgba(250,204,21,0.28), rgba(234,179,8,0.18))";
-    border = "2px solid #facc15";
-    boxShadow = "0 0 22px rgba(250,204,21,0.35)";
-  }
-
   return (
     <div
-      style={{
-        minWidth: 58,
-        minHeight: 58,
-        borderRadius: "50%",
-        background,
-        border,
-        color: "#ffffff",
-        fontWeight: 700,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow,
-        margin: "0 auto",
-        transition: "all 0.25s ease"
-      }}
+      className={`tree-node-card ${isVisited ? "visited" : ""} ${isActive ? "active" : ""}`}
     >
       {node.value}
     </div>
   );
 }
 
-function RenderTree({ node, visitedNodeIds, activeNodeId }) {
+function RenderTree({ node, visitedNodeIds, activeNodeId, isRoot = false }) {
   if (!node) return null;
 
   const isVisited = visitedNodeIds.includes(node.id);
   const isActive = activeNodeId === node.id;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        marginTop: 12
-      }}
-    >
-      <TreeNodeCard node={node} isVisited={isVisited} isActive={isActive} />
+    <div className="tree-node-wrapper">
+      <div className="tree-node-top-wrap">
+        {isRoot && <div className="tree-root-badge">ROOT</div>}
+        <TreeNodeCard node={node} isVisited={isVisited} isActive={isActive} />
+      </div>
 
       {(node.left || node.right) && (
         <>
-          <div
-            style={{
-              width: 2,
-              height: 18,
-              background: "rgba(148,163,184,0.7)",
-              marginTop: 6
-            }}
-          />
+          <div className="tree-connector-down" />
+          <div className="tree-connector-branch" />
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "flex-start",
-              gap: 28,
-              marginTop: 6,
-              flexWrap: "nowrap"
-            }}
-          >
-            <div style={{ minWidth: 120, textAlign: "center" }}>
+          <div className="tree-children-row">
+            <div className="tree-child-slot left-slot">
               {node.left ? (
                 <RenderTree
                   node={node.left}
@@ -89,11 +48,11 @@ function RenderTree({ node, visitedNodeIds, activeNodeId }) {
                   activeNodeId={activeNodeId}
                 />
               ) : (
-                <div style={{ color: "#64748b", marginTop: 18 }}>NULL</div>
+                <div className="tree-null-tag">NULL</div>
               )}
             </div>
 
-            <div style={{ minWidth: 120, textAlign: "center" }}>
+            <div className="tree-child-slot right-slot">
               {node.right ? (
                 <RenderTree
                   node={node.right}
@@ -101,7 +60,7 @@ function RenderTree({ node, visitedNodeIds, activeNodeId }) {
                   activeNodeId={activeNodeId}
                 />
               ) : (
-                <div style={{ color: "#64748b", marginTop: 18 }}>NULL</div>
+                <div className="tree-null-tag">NULL</div>
               )}
             </div>
           </div>
@@ -124,6 +83,7 @@ export default function TreeSimulation({
   runPreorder,
   runInorder,
   runPostorder,
+  runLevelOrder,
   searchBST,
   deleteNodeHandler,
   stopTraversal,
@@ -134,133 +94,173 @@ export default function TreeSimulation({
   lastTraversal,
   visitedNodeIds,
   activeNodeId,
-  isRunning
+  isRunning,
+  nodeCount
 }) {
   return (
-    <section className="card experiment">
-      <h2>
-        Simulation{" "}
-        <span style={{ color: "#38bdf8" }}>
-          ({treeMode === "bst" ? "Binary Search Tree" : "Binary Tree"})
-        </span>
-      </h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              {treeMode === "bst"
+                ? "Insert, search, delete, and traverse a BST with animated node highlighting."
+                : "Insert and traverse a binary tree with improved connectors and traversal animation."}
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div className="controls">
-        <div>
-          <label>Node Value</label>
+      <div className="sorting-input-row">
+        <div className="sorting-input-group">
+          <label className="sorting-label">Node Value</label>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             ref={inputRef}
             placeholder={treeMode === "bst" ? "Enter number" : "Enter node value"}
-            style={{ color: "#ffffff" }}
+            className="sorting-input"
             disabled={isRunning}
           />
         </div>
 
         {treeMode === "bst" && (
-          <div>
-            <label>Search Value</label>
+          <div className="sorting-input-group">
+            <label className="sorting-label">Search Value</label>
             <input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Enter value to search"
-              style={{ color: "#ffffff" }}
+              className="sorting-input"
               disabled={isRunning}
             />
           </div>
         )}
 
         {treeMode === "bst" && (
-          <div>
-            <label>Delete Value</label>
+          <div className="sorting-input-group">
+            <label className="sorting-label">Delete Value</label>
             <input
               value={deleteInput}
               onChange={(e) => setDeleteInput(e.target.value)}
               placeholder="Enter value to delete"
-              style={{ color: "#ffffff" }}
+              className="sorting-input"
               disabled={isRunning}
             />
           </div>
         )}
+      </div>
 
-        <div className="buttons">
-          <button className="btn primary" onClick={insertNode} disabled={isRunning}>
-            Insert Node
+      <div className="sorting-btn-group" style={{ marginBottom: 18 }}>
+        <button className="sim-btn sim-btn-primary" onClick={insertNode} disabled={isRunning}>
+          <Plus size={16} />
+          Insert Node
+        </button>
+
+        <button className="sim-btn sim-btn-muted" onClick={runPreorder} disabled={isRunning}>
+          <ArrowDownUp size={16} />
+          Preorder
+        </button>
+
+        <button className="sim-btn sim-btn-muted" onClick={runInorder} disabled={isRunning}>
+          <ArrowDownUp size={16} />
+          Inorder
+        </button>
+
+        <button className="sim-btn sim-btn-muted" onClick={runPostorder} disabled={isRunning}>
+          <ArrowDownUp size={16} />
+          Postorder
+        </button>
+
+        <button className="sim-btn sim-btn-muted" onClick={runLevelOrder} disabled={isRunning}>
+          <Rows3 size={16} />
+          Level Order
+        </button>
+
+        {treeMode === "bst" && (
+          <button className="sim-btn sim-btn-muted" onClick={() => searchBST()} disabled={isRunning}>
+            <Search size={16} />
+            Search
           </button>
+        )}
 
-          <button className="btn info" onClick={runPreorder} disabled={isRunning}>
-            Preorder
+        {treeMode === "bst" && (
+          <button className="sim-btn sim-btn-danger" onClick={deleteNodeHandler} disabled={isRunning}>
+            <Trash2 size={16} />
+            Delete
           </button>
+        )}
 
-          <button className="btn success" onClick={runInorder} disabled={isRunning}>
-            Inorder
-          </button>
+        <button className="sim-btn sim-btn-danger" onClick={stopTraversal} disabled={!isRunning}>
+          <Square size={16} />
+          Stop
+        </button>
 
-          <button className="btn secondary" onClick={runPostorder} disabled={isRunning}>
-            Postorder
-          </button>
+        <button className="sim-btn sim-btn-muted" onClick={loadSampleTree} disabled={isRunning}>
+          <FlaskConical size={16} />
+          Load Sample
+        </button>
 
-          {treeMode === "bst" && (
-            <button className="btn info" onClick={searchBST} disabled={isRunning}>
-              Search
-            </button>
-          )}
+        <button className="sim-btn sim-btn-muted" onClick={reset} disabled={isRunning}>
+          <RotateCcw size={16} />
+          Reset
+        </button>
+      </div>
 
-          {treeMode === "bst" && (
-            <button className="btn danger" onClick={deleteNodeHandler} disabled={isRunning}>
-              Delete
-            </button>
-          )}
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Tree Type</span>
+          <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>
+            {treeMode === "bst" ? "BST" : "Binary"}
+          </span>
+        </div>
 
-          <button className="btn danger" onClick={stopTraversal} disabled={!isRunning}>
-            Stop
-          </button>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Nodes</span>
+          <span className="sorting-stat-value">{nodeCount}</span>
+        </div>
 
-          <button className="btn info" onClick={loadSampleTree} disabled={isRunning}>
-            Load Sample
-          </button>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Visited Nodes</span>
+          <span className="sorting-stat-value">{visitedNodeIds.length}</span>
+        </div>
 
-          <button className="btn secondary" onClick={reset} disabled={isRunning}>
-            Reset
-          </button>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Status</span>
+          <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>
+            {isRunning ? "Running" : "Idle"}
+          </span>
         </div>
       </div>
 
-      <div className="info-box">{message || "Perform an operation to begin."}</div>
+      <div className="sorting-info-box">{message || "Perform an operation to begin."}</div>
 
       {lastTraversal.length > 0 && (
-        <div
-          style={{
-            marginTop: 14,
-            padding: "12px 14px",
-            background: "rgba(56,189,248,0.1)",
-            borderRadius: 10,
-            borderLeft: "4px solid #38bdf8",
-            color: "#e5e7eb",
-            fontWeight: 600
-          }}
-        >
+        <div className="tree-output-box">
           Output: {lastTraversal.join(" → ")}
         </div>
       )}
 
-      <div
-        className="workspace"
-        style={{
-          minHeight: 320,
-          overflowX: "auto",
-          padding: "18px 12px"
-        }}
-      >
+      <div className="sorting-visualizer-wrap tree-visualizer-wrap">
         {!treeRoot ? (
-          <div style={{ color: "#9ca3af", fontSize: "1.05rem" }}>Tree is empty</div>
+          <div className="linked-empty-state">
+            <div className="linked-empty-icon">🌳</div>
+            <div className="linked-empty-title">Tree is empty</div>
+            <div className="linked-empty-subtitle">
+              Insert nodes or load a sample tree to start visualization.
+            </div>
+          </div>
         ) : (
-          <div style={{ minWidth: "fit-content", margin: "0 auto" }}>
+          <div className="tree-shell">
             <RenderTree
               node={treeRoot}
               visitedNodeIds={visitedNodeIds}
               activeNodeId={activeNodeId}
+              isRoot
             />
           </div>
         )}

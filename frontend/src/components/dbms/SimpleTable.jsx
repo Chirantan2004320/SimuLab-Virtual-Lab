@@ -1,47 +1,32 @@
 import React from "react";
 
-export default function SimpleTable({ title, rows, highlightRows = [], rowKeyField }) {
-  if (!rows || rows.length === 0) {
-    return (
-      <section className="card">
-        <h3>{title}</h3>
-        <p style={{ color: "#9ca3af" }}>No data available.</p>
-      </section>
-    );
-  }
-
-  const columns = Object.keys(rows[0]);
-
+export default function SimpleTable({ title, rows }) {
   return (
-    <section className="card">
-      <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>{title}</h3>
+    <div className="dbms-table-shell">
+      <h3 className="dbms-table-title">{title}</h3>
 
-      <div style={{ overflowX: "auto" }}>
-        <table className="dbms-table">
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th key={col}>{col.toUpperCase()}</th>
-              ))}
-            </tr>
-          </thead>
-
-          <tbody>
-            {rows.map((row, i) => {
-              const key = row[rowKeyField] ?? i;
-              const isHighlighted = highlightRows.includes(key);
-
-              return (
-                <tr key={i} className={isHighlighted ? "highlight-row" : ""}>
-                  {columns.map((col) => (
-                    <td key={col}>{row[col]}</td>
-                  ))}
+      {rows.length === 0 ? (
+        <div className="dbms-empty">No data yet. Run the simulation.</div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="dbms-table">
+            <thead>
+              <tr>
+                <th>TABLE NAME</th>
+                <th>COLUMNS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={index}>
+                  <td>{row.table_name}</td>
+                  <td>{row.columns}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }

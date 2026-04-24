@@ -1,90 +1,131 @@
 import React from "react";
+import { Code2, Play, Sparkles, Wrench } from "lucide-react";
 
-export default function GraphQuiz({
+const LANGUAGES = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "cpp", label: "C++" },
+  { value: "c", label: "C" },
+  { value: "java", label: "Java" }
+];
+
+export default function GraphCoding({
   traversalType,
-  quizQuestions,
-  quizAnswers,
-  quizSubmitted,
-  quizScore,
-  experimentRun,
-  handleQuizAnswer,
-  submitQuiz
+  currentProblems,
+  selectedLanguages,
+  codes,
+  results,
+  generateProblems,
+  handleLanguageChange,
+  handleCodeChange,
+  runCode,
+  analyzeCode,
+  correctCode
 }) {
   return (
-    <section className="card">
-      <h2>
-        Quiz <span style={{ color: "#38bdf8" }}>({traversalType.toUpperCase()})</span>
-      </h2>
-
-      {!experimentRun ? (
-        <p style={{ color: "#d1d5db" }}>
-          Please run the experiment at least once before attempting the quiz.
-        </p>
-      ) : (
-        <div>
-          {quizQuestions.map((q, i) => (
-            <div
-              key={i}
-              style={{
-                marginBottom: 20,
-                paddingBottom: 16,
-                borderBottom: "1px solid var(--border)"
-              }}
-            >
-              <div style={{ marginBottom: 10 }}>
-                <strong style={{ color: "#e5e7eb", fontSize: "1.05rem" }}>
-                  {i + 1}. {q.question}
-                </strong>
-              </div>
-
-              <div style={{ marginLeft: 20 }}>
-                {q.options.map((opt, j) => (
-                  <label
-                    key={j}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      marginBottom: 8,
-                      cursor: "pointer",
-                      color: "#d1d5db"
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name={`q${i}`}
-                      checked={quizAnswers[i] === j}
-                      onChange={() => handleQuizAnswer(i, j)}
-                      disabled={quizSubmitted}
-                    />
-                    {opt}
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {!quizSubmitted ? (
-            <button className="btn primary" onClick={submitQuiz}>
-              Submit Quiz
-            </button>
-          ) : (
-            <div
-              style={{
-                marginTop: 16,
-                padding: "1rem",
-                background: "rgba(56,189,248,0.1)",
-                borderRadius: 8,
-                borderLeft: "4px solid #38bdf8"
-              }}
-            >
-              <strong style={{ color: "#38bdf8", fontSize: "1.1rem" }}>
-                Quiz Score: {quizScore} / {quizQuestions.length}
-              </strong>
-            </div>
-          )}
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Code2 size={18} />
         </div>
-      )}
+        <div>
+          <h2 className="sorting-sim-title">Coding Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Solve generated {traversalType.toUpperCase()} graph problems and test your implementation.
+          </p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <button className="sim-btn sim-btn-primary" onClick={generateProblems}>
+          Generate Problems
+        </button>
+      </div>
+
+      {currentProblems.length === 0 ? (
+        <div className="coding-empty-state">
+          No problems generated yet. Click <b>Generate Problems</b> to begin.
+        </div>
+      ) : null}
+
+      {currentProblems.map((problem, index) => {
+        const selectedLanguage = selectedLanguages[problem.id] || "javascript";
+        const codeKey = `${problem.id}_${selectedLanguage}`;
+
+        return (
+          <div key={problem.id} className="coding-card-upgraded">
+            <div className="coding-card-header">
+              <div>
+                <h3>Problem {index + 1}: {problem.title}</h3>
+                <p>{problem.description}</p>
+              </div>
+
+              <div className="coding-language-wrap">
+                <label className="sorting-label">Language</label>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  className="sorting-select"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <textarea
+              value={codes[codeKey] || ""}
+              onChange={(e) =>
+                handleCodeChange(problem.id, selectedLanguage, e.target.value)
+              }
+              placeholder="Write your code here..."
+              rows={14}
+              className="coding-textarea-upgraded"
+            />
+
+            <div className="coding-actions-upgraded">
+              <button
+                className="sim-btn sim-btn-primary"
+                onClick={() => runCode(problem.id, selectedLanguage)}
+              >
+                <Play size={16} />
+                Run Code
+              </button>
+
+              <button
+                className="sim-btn sim-btn-muted"
+                onClick={() => analyzeCode(problem.id, selectedLanguage)}
+              >
+                <Sparkles size={16} />
+                Analyze Code
+              </button>
+
+              <button
+                className="sim-btn sim-btn-danger"
+                onClick={() => correctCode(problem.id, selectedLanguage)}
+              >
+                <Wrench size={16} />
+                Correct Code
+              </button>
+            </div>
+
+            {selectedLanguage !== "javascript" && (
+              <div className="modern-coding-note">
+                Execution for {selectedLanguage.toUpperCase()} will be enabled later with Judge0.
+              </div>
+            )}
+
+            {results[problem.id] && (
+              <div className="coding-result-box">
+                {results[problem.id]}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </section>
   );
 }

@@ -59,8 +59,10 @@ import { useAuth } from './context/AuthContext';
 
 // Public Pages
 import Home from "./pages/Home.jsx";
-import Login from "./pages/Login";
+import Login from "./pages/Login.jsx";
 import Register from "./pages/Register";
+import Labs from "./pages/Labs.jsx";
+import Profile from "./pages/Profile";
 
 // Protected Pages
 import Dashboard from "./pages/Dashboard.jsx";
@@ -76,7 +78,6 @@ const ProtectedRoute = ({ children }) => {
 
   return user ? children : <Navigate to="/login" replace />;
 };
-
 
 function AppContent() {
   const location = useLocation();
@@ -121,7 +122,7 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         {/* 🔒 Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard instituteMode={instituteMode} /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><div /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}/>
 
         {/* Stack Array Lab Route */}
         <Route path="/labs/stack" element={<ProtectedRoute><StackArray /></ProtectedRoute>} />
@@ -236,11 +237,23 @@ function AppContent() {
         
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
+
+            <Route
+  path="/labs"
+  element={
+    <ProtectedRoute>
+      <Labs />
+    </ProtectedRoute>
+  }
+/>
+
+
       </Routes>
 
 
       {/* AI Assistant - Available on all pages */}
       <AIAssistant currentPage={page} instituteMode={instituteMode} />
+
     </>
   );
 }

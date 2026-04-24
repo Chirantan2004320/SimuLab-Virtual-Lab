@@ -1,66 +1,89 @@
 import React from "react";
+import { Binary, GitBranch, Workflow, Lightbulb } from "lucide-react";
 
-export default function DSDMultiplexerOverview() {
+export default function DSDMultiplexerOverview({ analysis }) {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To study the working of a 4-to-1 multiplexer by selecting one of several input
-          lines using select signals and observing the output.
+    <div className="overview-shell">
+      <section className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>Data Selection in Digital Systems</h3>
+          <div className="overview-badge">4-to-1 MUX</div>
+        </div>
+        <p className="overview-hero-text">
+          A multiplexer is a combinational circuit that chooses one input from many available data lines
+          and forwards it to a single output. In a 4-to-1 multiplexer, the select lines S1 and S0 decide
+          whether I0, I1, I2, or I3 reaches the output Y.
         </p>
       </section>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          A multiplexer (MUX) is a combinational circuit that selects one input from many
-          available input lines and forwards it to a single output line.
-        </p>
-        <p>
-          A 4-to-1 multiplexer has four data inputs: I0, I1, I2, and I3, two select lines:
-          S1 and S0, and one output Y.
-        </p>
-        <p>
-          The select lines determine which input appears at the output:
-        </p>
-        <p>
-          <strong>00 → I0</strong><br />
-          <strong>01 → I1</strong><br />
-          <strong>10 → I2</strong><br />
-          <strong>11 → I3</strong>
-        </p>
-      </section>
+      <div className="overview-grid">
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <Binary size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            Study how a 4-to-1 multiplexer routes one selected input to the output using binary select lines.
+          </p>
+        </section>
 
-      <section className="card">
-        <h2>Boolean Expression</h2>
-        <p>
-          The output of a 4-to-1 multiplexer can be written as:
-        </p>
-        <p>
-          <strong>
-            Y = I0·S1̅·S0̅ + I1·S1̅·S0 + I2·S1·S0̅ + I3·S1·S0
-          </strong>
-        </p>
-      </section>
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <GitBranch size={18} />
+            <h4>Selection Logic</h4>
+          </div>
+          <p>
+            The select combination decides the active path:
+            <br />00 → I0
+            <br />01 → I1
+            <br />10 → I2
+            <br />11 → I3
+          </p>
+        </section>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Toggle the data inputs I0, I1, I2, and I3.</li>
-          <li>Set the select lines S1 and S0.</li>
-          <li>Observe which input is selected.</li>
-          <li>Verify that the output matches the selected input.</li>
-          <li>Compare the result with the circuit diagram and truth table.</li>
-        </ol>
-      </section>
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <Workflow size={18} />
+            <h4>Boolean Expression</h4>
+          </div>
+          <p>{analysis.expression}</p>
+        </section>
 
-      <section className="card">
-        <h2>Practical Insight</h2>
-        <p>
-          Multiplexers are widely used in communication systems, data routing,
-          CPU control logic, ALUs, and digital switching circuits.
-        </p>
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <Lightbulb size={18} />
+            <h4>Practical Insight</h4>
+          </div>
+          <p>
+            Multiplexers are used in processors, communication systems, ALUs, and digital switching networks.
+          </p>
+        </section>
+      </div>
+
+      <section className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <Workflow size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ul className="overview-steps-list">
+          <li>
+            <span className="overview-step-index">1</span>
+            <span>Toggle the data inputs I0, I1, I2, and I3.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">2</span>
+            <span>Set the select lines S1 and S0.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">3</span>
+            <span>Observe which input gets connected to output Y.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">4</span>
+            <span>Verify the result with the truth table and circuit view.</span>
+          </li>
+        </ul>
       </section>
     </div>
   );

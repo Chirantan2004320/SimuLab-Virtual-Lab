@@ -1,153 +1,170 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { FileCode2, CheckCircle2, Lightbulb, RefreshCcw } from "lucide-react";
 
 const problemBank = [
   {
     id: 1,
-    title: "Greater Check",
+    title: "Predict comparator output",
     description:
-      "Write a function isGreater(a, b) that returns 1 if a > b, otherwise 0."
+      "For A = 1 and B = 0, identify which output becomes active: A > B, A = B, or A < B.",
+    answer: "A > B",
+    placeholder: "Write the active output here..."
   },
   {
     id: 2,
-    title: "Equality Check",
+    title: "Write the greater-than expression",
     description:
-      "Write a function isEqual(a, b) that returns 1 if a === b, otherwise 0."
+      "Write the Boolean expression for the greater-than output of a 1-bit comparator.",
+    answer: "A · B̅",
+    placeholder: "Write the expression for A > B..."
   },
   {
     id: 3,
-    title: "1-bit Comparator",
+    title: "Write the equality expression",
     description:
-      "Write a function comparator(a, b) that returns an object with greater, equal, and less outputs."
+      "Write the Boolean expression for the equality output of a 1-bit comparator.",
+    answer: "A̅B̅ + AB",
+    placeholder: "Write the expression for A = B..."
+  },
+  {
+    id: 4,
+    title: "Design interpretation",
+    description:
+      "Explain why only one comparator output should be active for a valid 1-bit comparison.",
+    answer:
+      "Only one comparator output is active because two binary inputs can have only one valid relationship at a time: A is greater than B, A is equal to B, or A is less than B.",
+    placeholder: "Write your explanation here..."
   }
 ];
 
-export default function DSDComparatorCoding() {
-  const [currentProblems, setCurrentProblems] = useState([]);
-  const [codes, setCodes] = useState({});
-  const [results, setResults] = useState({});
+function normalizeText(value) {
+  return value
+    .toLowerCase()
+    .replace(/[\s.]+/g, " ")
+    .replace(/×/g, "·")
+    .trim();
+}
 
-  const generateProblems = () => {
-    setCurrentProblems(problemBank);
+export default function DSDComparatorCoding({ a, b, analysis }) {
+  const [responses, setResponses] = useState(() =>
+    problemBank.reduce((acc, item) => {
+      acc[item.id] = "";
+      return acc;
+    }, {})
+  );
 
-    const initialCodes = {};
-    problemBank.forEach((p) => {
-      initialCodes[p.id] = getStarterCode(p.id);
-    });
+  const [feedback, setFeedback] = useState({});
 
-    setCodes(initialCodes);
-    setResults({});
+  const currentInsight = useMemo(() => {
+    return `Current state: A = ${a}, B = ${b}, so the active relation is ${analysis.relation}.`;
+  }, [a, b, analysis]);
+
+  const handleChange = (id, value) => {
+    setResponses((prev) => ({ ...prev, [id]: value }));
   };
 
-  const getStarterCode = (id) => {
-    if (id === 1) {
-      return `function isGreater(a, b) {
-  return a > b ? 1 : 0;
-}`;
+  const checkAnswer = (problem) => {
+    const userValue = normalizeText(responses[problem.id] || "");
+    const correctValue = normalizeText(problem.answer);
+
+    let result = "";
+    if (!userValue) {
+      result = "Please write your answer first.";
+    } else if (
+      userValue === correctValue ||
+      userValue.includes(correctValue) ||
+      correctValue.includes(userValue)
+    ) {
+      result = "Correct. Your comparator design answer matches the expected concept.";
+    } else {
+      result = "Partially correct or incorrect. Review the comparator relation and logic expression.";
     }
 
-    if (id === 2) {
-      return `function isEqual(a, b) {
-  return a === b ? 1 : 0;
-}`;
-    }
-
-    return `function comparator(a, b) {
-  return {
-    greater: a > b ? 1 : 0,
-    equal: a === b ? 1 : 0,
-    less: a < b ? 1 : 0
-  };
-}`;
-  };
-
-  const handleCodeChange = (problemId, code) => {
-    setCodes((prev) => ({ ...prev, [problemId]: code }));
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: result
+    }));
   };
 
-  const runCode = (problemId) => {
-    const code = codes[problemId];
+  const showModelAnswer = (problem) => {
+    setResponses((prev) => ({
+      ...prev,
+      [problem.id]: problem.answer
+    }));
+    setFeedback((prev) => ({
+      ...prev,
+      [problem.id]: "Model answer loaded."
+    }));
+  };
 
-    if (!code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code first."
-      }));
-      return;
-    }
-
-    try {
-      let resultText = "";
-
-      if (problemId === 1) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return isGreater;`)();
-        const output = fn(1, 0);
-        resultText = `Function ran successfully. Example isGreater(1,0) = ${output}`;
-      } else if (problemId === 2) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return isEqual;`)();
-        const output = fn(1, 1);
-        resultText = `Function ran successfully. Example isEqual(1,1) = ${output}`;
-      } else if (problemId === 3) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return comparator;`)();
-        const output = fn(0, 1);
-        resultText = `Function ran successfully. Example comparator(0,1) = ${JSON.stringify(output)}`;
-      }
-
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: resultText
-      }));
-    } catch (error) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Error: ${error.message}`
-      }));
-    }
+  const clearAll = () => {
+    setResponses(
+      problemBank.reduce((acc, item) => {
+        acc[item.id] = "";
+        return acc;
+      }, {})
+    );
+    setFeedback({});
   };
 
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Practice implementing comparison logic using JavaScript functions.
-      </p>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <FileCode2 size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Design Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Practice comparator output prediction, Boolean expression writing, and design interpretation.
+          </p>
+        </div>
+      </div>
 
-      <button className="btn primary" onClick={generateProblems}>
-        Generate Problems
-      </button>
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Live Hint:</strong> {currentInsight}
+      </div>
 
-      {currentProblems.map((problem, index) => (
-        <div key={problem.id} className="coding-problem">
-          <h3>
-            Problem {index + 1}: {problem.title}
-          </h3>
-          <p>{problem.description}</p>
+      <div className="coding-actions-upgraded" style={{ marginBottom: 18 }}>
+        <button className="sim-btn sim-btn-muted" onClick={clearAll}>
+          <RefreshCcw size={16} />
+          Reset Practice
+        </button>
+      </div>
+
+      {problemBank.map((problem, index) => (
+        <div key={problem.id} className="coding-card-upgraded">
+          <div className="coding-card-header">
+            <div>
+              <h3>
+                Task {index + 1}: {problem.title}
+              </h3>
+              <p>{problem.description}</p>
+            </div>
+          </div>
 
           <textarea
-            value={codes[problem.id] || ""}
-            onChange={(e) => handleCodeChange(problem.id, e.target.value)}
-            rows={12}
-            placeholder="Write your code here..."
-            style={{
-              width: "100%",
-              fontFamily: "monospace",
-              color: "#000",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "10px"
-            }}
+            className="coding-textarea-upgraded"
+            rows={7}
+            value={responses[problem.id]}
+            onChange={(e) => handleChange(problem.id, e.target.value)}
+            placeholder={problem.placeholder}
           />
 
-          <button className="btn secondary" onClick={() => runCode(problem.id)}>
-            Run Code
-          </button>
+          <div className="coding-actions-upgraded">
+            <button className="sim-btn sim-btn-primary" onClick={() => checkAnswer(problem)}>
+              <CheckCircle2 size={16} />
+              Check Answer
+            </button>
 
-          {results[problem.id] && (
-            <p className="result" style={{ marginTop: "10px" }}>
-              {results[problem.id]}
-            </p>
+            <button className="sim-btn sim-btn-muted" onClick={() => showModelAnswer(problem)}>
+              <Lightbulb size={16} />
+              Show Model Answer
+            </button>
+          </div>
+
+          {feedback[problem.id] && (
+            <div className="coding-result-box">{feedback[problem.id]}</div>
           )}
         </div>
       ))}

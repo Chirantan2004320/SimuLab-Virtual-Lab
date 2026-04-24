@@ -1,4 +1,5 @@
 import React from "react";
+import { CircuitBoard, Info, CheckCircle2, Zap } from "lucide-react";
 
 function signalColor(v) {
   return v === 1 ? "#22c55e" : "#ef4444";
@@ -14,112 +15,139 @@ export default function DSDPropagationDelayCircuits({
   const gateLabel = selectedGate === "NOT" ? "NOT" : "BUF";
 
   return (
-    <section className="card experiment">
-      <h2>Circuits</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        This diagram shows the input transition, gate block, and delayed output response.
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px",
-          marginBottom: "1rem"
-        }}
-      >
-        <div className="stat-card">
-          <strong>Gate</strong>
-          <div>{selectedGate}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Delay</strong>
-          <div>{delayNs} ns</div>
-        </div>
-        <div className="stat-card">
-          <strong>Time</strong>
-          <div>{timeNs} ns</div>
-        </div>
-        <div className="stat-card">
-          <strong>Output Change At</strong>
-          <div>{analysis.outputChangesAt} ns</div>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <CircuitBoard size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Circuits</h2>
+            <p className="sorting-sim-subtitle">
+              Symbolic timing path showing the delayed response of the output relative to the input transition.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem", background: "#0f172a", padding: "20px" }}>
-        <h3 style={{ marginBottom: "1rem" }}>Delay Path View</h3>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Gate</span>
+          <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>{selectedGate}</span>
+        </div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Delay</span>
+          <span className="sorting-stat-value">{delayNs} ns</span>
+        </div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Time</span>
+          <span className="sorting-stat-value">{timeNs} ns</span>
+        </div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Output Change At</span>
+          <span className="sorting-stat-value">{analysis.outputChangesAt} ns</span>
+        </div>
+      </div>
 
-        <div
-          style={{
-            position: "relative",
-            height: "360px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.2)",
-            background: "linear-gradient(180deg, #09101d, #0b1220)",
-            overflow: "hidden"
-          }}
-        >
-          <svg width="100%" height="100%" viewBox="0 0 820 360" preserveAspectRatio="xMidYMid meet">
-            <line x1="70" y1="180" x2="280" y2="180" stroke={signalColor(inputBit)} strokeWidth="5" />
-            <text x="20" y="185" fill={signalColor(inputBit)} fontSize="22" fontWeight="bold">
+      <div className="dsd-circuit-panel">
+        <div className="dsd-circuit-panel-head">
+          <h3 style={{ margin: 0, color: "#f8fafc" }}>Delay Path View</h3>
+
+          <div className="dsd-circuit-badge">
+            <Zap size={16} />
+            Symbolic Timing Circuit
+          </div>
+        </div>
+
+        <div className="dsd-circuit-canvas">
+          <svg width="100%" height="100%" viewBox="0 0 1100 430" preserveAspectRatio="xMidYMid meet">
+            <text x="90" y="188" fill={signalColor(inputBit)} fontSize="28" fontWeight="800">
               IN = {inputBit}
             </text>
+            <path d="M 180 180 L 420 180" fill="none" stroke={signalColor(inputBit)} strokeWidth="6" />
 
             <rect
-              x="280"
+              x="420"
               y="110"
-              width="180"
+              width="220"
               height="140"
-              rx="20"
+              rx="22"
               fill="rgba(59,130,246,0.12)"
               stroke="#60a5fa"
               strokeWidth="3"
             />
-            <text x="370" y="175" textAnchor="middle" fill="#e5e7eb" fontSize="30" fontWeight="bold">
+            <text x="530" y="175" textAnchor="middle" fill="#e5e7eb" fontSize="34" fontWeight="800">
               {gateLabel}
             </text>
-            <text x="370" y="210" textAnchor="middle" fill="#93c5fd" fontSize="18" fontWeight="bold">
+            <text x="530" y="210" textAnchor="middle" fill="#93c5fd" fontSize="18" fontWeight="700">
               Delay = {delayNs} ns
             </text>
 
-            <line x1="460" y1="180" x2="710" y2="180" stroke={signalColor(analysis.observedOutput)} strokeWidth="5" />
-            <text x="720" y="185" fill={signalColor(analysis.observedOutput)} fontSize="22" fontWeight="bold">
+            <path
+              d="M 640 180 L 900 180"
+              fill="none"
+              stroke={signalColor(analysis.observedOutput)}
+              strokeWidth="6"
+              strokeDasharray={timeNs < delayNs ? "10 8" : "0"}
+            />
+            <text x="920" y="188" fill={signalColor(analysis.observedOutput)} fontSize="28" fontWeight="800">
               OUT = {analysis.observedOutput}
             </text>
 
             <path
-              d="M90 300 L90 270 L180 270 L180 235"
+              d="M 200 315 L 200 275 L 315 275 L 315 225"
               fill="none"
               stroke="#fbbf24"
               strokeWidth="4"
             />
+            <text x="110" y="338" fill="#fcd34d" fontSize="16" fontWeight="800">
+              Input changed at 0 ns
+            </text>
+
             <path
-              d="M560 300 L560 270 L650 270 L650 235"
+              d="M 760 315 L 760 275 L 860 275 L 860 225"
               fill="none"
               stroke="#22c55e"
               strokeWidth="4"
               strokeDasharray={timeNs < delayNs ? "8 6" : "0"}
             />
-
-            <text x="55" y="322" fill="#fcd34d" fontSize="16" fontWeight="bold">
-              Input changed at 0 ns
-            </text>
-            <text x="515" y="322" fill="#86efac" fontSize="16" fontWeight="bold">
+            <text x="665" y="338" fill="#86efac" fontSize="16" fontWeight="800">
               Output responds at {delayNs} ns
             </text>
           </svg>
         </div>
-      </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Circuit Interpretation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          The input changes immediately, but the gate output responds only after the propagation delay.
-        </p>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          At the current time of <strong>{timeNs} ns</strong>, the observed output is <strong>{analysis.observedOutput}</strong>.
-        </p>
+        <div className="dsd-circuit-note-grid">
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <Info size={18} />
+              <h4>Circuit Interpretation</h4>
+            </div>
+            <p>
+              The input changes immediately, but the gate needs <strong>{delayNs} ns</strong> before the output can reflect the new input.
+            </p>
+          </div>
+
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <CheckCircle2 size={18} />
+              <h4>Current Observation</h4>
+            </div>
+            <p>
+              At the current time of <strong>{timeNs} ns</strong>, the observed output is <strong>{analysis.observedOutput}</strong>.
+            </p>
+          </div>
+
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <CircuitBoard size={18} />
+              <h4>Meaning</h4>
+            </div>
+            <p>
+              A dashed output path means the output is still in transition and has not yet fully responded to the new input.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );

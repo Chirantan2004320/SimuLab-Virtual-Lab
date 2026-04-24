@@ -1,7 +1,11 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
+import { GitCompare, Play, Pause, RotateCcw } from "lucide-react";
 
 function parseInput(text) {
-  return text.split(/,|\s+/).map(Number).filter((n) => !isNaN(n));
+  return text
+    .split(/,|\s+/)
+    .map(Number)
+    .filter((n) => !isNaN(n));
 }
 
 function generateBubbleSteps(a0) {
@@ -250,40 +254,52 @@ function generateInsertionSteps(a0) {
 
 function AlgorithmPanel({ title, steps, currentIndex, type }) {
   const current = steps[currentIndex] || { array: [] };
+  const arr = current.array || [];
+  const maxVal = arr.length ? Math.max(...arr) : 1;
 
   return (
-    <div className="comparison-panel">
-      <h3>{title}</h3>
+    <div className="comparison-card">
+      <div className="comparison-card-head">
+        <h3>{title}</h3>
+        <span className="comparison-chip">
+          {currentIndex >= steps.length - 1 ? "Done" : "Running"}
+        </span>
+      </div>
 
-      <div className="comparison-stats">
+      <div className="comparison-mini-stats">
         <span>Comparisons: <b>{current.comparisons || 0}</b></span>
         <span>Swaps/Shifts: <b>{current.swaps || 0}</b></span>
-        <span>Status: <b>{currentIndex >= steps.length - 1 ? "Done" : "Running"}</b></span>
       </div>
 
       <div className="comparison-info-box">
         {current.info || "Ready"}
       </div>
 
-      <div className="comparison-workspace">
-        {(current.array || []).map((v, i) => {
-          let className = "cell";
+      <div className="comparison-bars-area">
+        {arr.map((v, i) => {
+          let extraClass = "";
 
           if (type === "selection") {
-            if (i === current.i) className += " current-i";
-            if (i === current.j) className += " scanning-j";
-            if (i === current.minIndex) className += " min-index";
+            if (i === current.i) extraClass = "bar-current";
+            if (i === current.j) extraClass = "bar-scan";
+            if (i === current.minIndex) extraClass = "bar-min";
           } else if (type === "insertion") {
-            if (i === current.keyIndex) className += " current-i";
-            if (i === current.j) className += " scanning-j";
-            if (i <= current.sortedEnd && current.sortedEnd !== undefined) className += " min-index";
+            if (i === current.keyIndex) extraClass = "bar-current";
+            if (i === current.j) extraClass = "bar-scan";
+            if (i <= current.sortedEnd && current.sortedEnd !== undefined) extraClass = "bar-sorted";
           } else {
-            if (i === current.j || i === current.j + 1) className += " active";
+            if (i === current.j || i === current.j + 1) extraClass = "bar-active";
           }
 
+          const heightPercent = Math.max(14, (v / maxVal) * 100);
+
           return (
-            <div key={i} className={className}>
-              {v}
+            <div key={i} className="comparison-bar-column">
+              <div className="comparison-bar-value">{v}</div>
+              <div
+                className={`sorting-bar ${extraClass}`}
+                style={{ height: `${heightPercent}%` }}
+              />
             </div>
           );
         })}
@@ -358,42 +374,65 @@ export default function SortingComparison() {
   }, [bubbleIndex, selectionIndex, insertionIndex, bubbleSteps.length, selectionSteps.length, insertionSteps.length]);
 
   return (
-    <section className="card experiment">
-      <h2>Comparison Visualizer</h2>
-      <p style={{ marginBottom: "16px" }}>
-        Run Bubble Sort, Selection Sort, and Insertion Sort side by side on the same input.
-      </p>
-
-      <div className="controls">
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <GitCompare size={18} />
+        </div>
         <div>
-          <label>Input Array</label>
+          <h2 className="sorting-sim-title">Comparison Visualizer</h2>
+          <p className="sorting-sim-subtitle">
+            Run Bubble, Selection, and Insertion Sort side by side on the same input.
+          </p>
+        </div>
+      </div>
+
+      <div className="sorting-input-row">
+        <div className="sorting-input-group">
+          <label className="sorting-label">Input Array</label>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            style={{ color: "#ffffff" }}
+            className="sorting-input"
           />
         </div>
 
-        <div className="buttons">
-          <button className="btn primary" onClick={startAll}>Start Comparison</button>
-          <button className="btn secondary" onClick={pauseAll}>Pause</button>
-          <button className="btn danger" onClick={resetAll}>Reset</button>
+        <div className="sorting-btn-group">
+          <button className="sim-btn sim-btn-primary" onClick={startAll}>
+            <Play size={16} />
+            Start Comparison
+          </button>
+          <button className="sim-btn sim-btn-muted" onClick={pauseAll}>
+            <Pause size={16} />
+            Pause
+          </button>
+          <button className="sim-btn sim-btn-danger" onClick={resetAll}>
+            <RotateCcw size={16} />
+            Reset
+          </button>
         </div>
       </div>
 
-      <div className="speed" style={{ marginBottom: "18px" }}>
-        <label>Animation Speed: {speed} ms</label>
-        <input
-          type="range"
-          min="200"
-          max="1500"
-          step="100"
-          value={speed}
-          onChange={(e) => setSpeed(Number(e.target.value))}
-        />
+      <div className="sorting-bottom-controls" style={{ marginBottom: 20 }}>
+        <div className="comparison-summary-strip">
+          <span>Total Steps: <b>{maxSteps}</b></span>
+        </div>
+
+        <div className="sorting-speed-wrap">
+          <label className="sorting-label">Animation Speed: {speed} ms</label>
+          <input
+            type="range"
+            min="200"
+            max="1500"
+            step="100"
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+            className="sorting-range"
+          />
+        </div>
       </div>
 
-      <div className="comparison-grid">
+      <div className="comparison-grid-upgraded">
         <AlgorithmPanel
           title="Bubble Sort"
           steps={bubbleSteps}
@@ -412,14 +451,6 @@ export default function SortingComparison() {
           currentIndex={insertionIndex}
           type="insertion"
         />
-      </div>
-
-      <div className="comparison-summary">
-        <p><strong>Total Steps:</strong> {maxSteps}</p>
-        <p>
-          This view helps compare how each algorithm behaves on the same input and how their
-          comparisons and swaps/shifts differ in practice.
-        </p>
       </div>
     </section>
   );

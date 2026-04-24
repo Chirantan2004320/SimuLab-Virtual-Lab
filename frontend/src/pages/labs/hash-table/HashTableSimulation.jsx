@@ -1,25 +1,9 @@
 import React from "react";
+import { Activity, Plus, Search, Trash2, FlaskConical, RotateCcw } from "lucide-react";
 
 function ChainNode({ value, isActive }) {
   return (
-    <div
-      style={{
-        minWidth: 60,
-        padding: "10px 12px",
-        borderRadius: 10,
-        background: isActive
-          ? "linear-gradient(135deg, rgba(250,204,21,0.28), rgba(234,179,8,0.18))"
-          : "linear-gradient(135deg, rgba(56,189,248,0.22), rgba(129,140,248,0.18))",
-        border: isActive ? "2px solid #facc15" : "2px solid #38bdf8",
-        color: "#ffffff",
-        fontWeight: 700,
-        textAlign: "center",
-        boxShadow: isActive
-          ? "0 0 18px rgba(250,204,21,0.28)"
-          : "0 4px 12px rgba(56,189,248,0.15)",
-        transition: "all 0.25s ease"
-      }}
-    >
+    <div className={`hash-chain-node ${isActive ? "active" : ""}`}>
       {value}
     </div>
   );
@@ -27,50 +11,21 @@ function ChainNode({ value, isActive }) {
 
 function StepHistoryPanel({ stepHistory }) {
   return (
-    <section
-      style={{
-        marginTop: 18,
-        padding: "14px",
-        borderRadius: 12,
-        background: "rgba(15,23,42,0.28)",
-        border: "1px solid rgba(148,163,184,0.18)"
-      }}
-    >
-      <h3 style={{ color: "#e5e7eb", marginBottom: 14 }}>Step History</h3>
+    <div className="hash-history-card">
+      <div className="hash-history-title">Step History</div>
 
       {stepHistory.length === 0 ? (
-        <div style={{ color: "#9ca3af" }}>Operation steps will appear here.</div>
+        <div className="hash-history-empty">Operation steps will appear here.</div>
       ) : (
-        <div
-          style={{
-            maxHeight: 260,
-            overflowY: "auto",
-            border: "1px solid rgba(148,163,184,0.2)",
-            borderRadius: 10,
-            padding: 10,
-            background: "rgba(2,6,23,0.25)"
-          }}
-        >
+        <div className="hash-history-list">
           {stepHistory.map((step, index) => (
-            <div
-              key={index}
-              style={{
-                padding: "8px 10px",
-                borderBottom:
-                  index !== stepHistory.length - 1
-                    ? "1px solid rgba(148,163,184,0.12)"
-                    : "none",
-                color: "#d1d5db",
-                lineHeight: 1.55,
-                fontSize: "0.95rem"
-              }}
-            >
-              <strong style={{ color: "#38bdf8" }}>{index + 1}.</strong> {step}
+            <div key={index} className="hash-history-item">
+              <strong>{index + 1}.</strong> {step}
             </div>
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -92,120 +47,127 @@ export default function HashTableSimulation({
   isRunning
 }) {
   return (
-    <section className="card experiment">
-      <h2>
-        Simulation <span style={{ color: "#38bdf8" }}>(Hash Table)</span>
-      </h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              Visualize hashing, collisions, and separate chaining bucket by bucket.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div className="controls">
-        <div>
-          <label>Value</label>
+      <div className="sorting-input-row">
+        <div className="sorting-input-group">
+          <label className="sorting-label">Value</label>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             ref={inputRef}
             placeholder="Enter number"
-            style={{ color: "#ffffff" }}
+            className="sorting-input"
             disabled={isRunning}
           />
         </div>
 
-        <div className="buttons">
-          <button className="btn primary" onClick={insert} disabled={isRunning}>
+        <div className="sorting-btn-group">
+          <button className="sim-btn sim-btn-primary" onClick={insert} disabled={isRunning}>
+            <Plus size={16} />
             Insert
           </button>
 
-          <button className="btn info" onClick={search} disabled={isRunning}>
+          <button className="sim-btn sim-btn-muted" onClick={search} disabled={isRunning}>
+            <Search size={16} />
             Search
           </button>
 
-          <button className="btn danger" onClick={remove} disabled={isRunning}>
+          <button className="sim-btn sim-btn-danger" onClick={remove} disabled={isRunning}>
+            <Trash2 size={16} />
             Delete
           </button>
 
-          <button className="btn info" onClick={loadSample} disabled={isRunning}>
+          <button className="sim-btn sim-btn-muted" onClick={loadSample} disabled={isRunning}>
+            <FlaskConical size={16} />
             Load Sample
           </button>
 
-          <button className="btn secondary" onClick={reset} disabled={isRunning}>
+          <button className="sim-btn sim-btn-muted" onClick={reset} disabled={isRunning}>
+            <RotateCcw size={16} />
             Reset
           </button>
         </div>
       </div>
 
-      <div className="info-box">{message || "Perform an operation to begin."}</div>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Table Size</span>
+          <span className="sorting-stat-value">{tableSize}</span>
+        </div>
 
-      <section
-        style={{
-          marginTop: 18,
-          padding: "14px",
-          borderRadius: 12,
-          background: "rgba(15,23,42,0.28)",
-          border: "1px solid rgba(148,163,184,0.18)"
-        }}
-      >
-        <h3 style={{ color: "#e5e7eb", marginBottom: 14 }}>
-          Bucket Visualization (Table Size = {tableSize})
-        </h3>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Filled Buckets</span>
+          <span className="sorting-stat-value">
+            {table.filter((bucket) => bucket.length > 0).length}
+          </span>
+        </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Stored Keys</span>
+          <span className="sorting-stat-value">
+            {table.reduce((sum, bucket) => sum + bucket.length, 0)}
+          </span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Collision Buckets</span>
+          <span className="sorting-stat-value">
+            {table.filter((bucket) => bucket.length > 1).length}
+          </span>
+        </div>
+      </div>
+
+      <div className="sorting-info-box">{message || "Perform an operation to begin."}</div>
+
+      <div className="hash-panel-card">
+        <div className="hash-panel-title">Bucket Visualization (Table Size = {tableSize})</div>
+
+        <div className="hash-bucket-list">
           {table.map((bucket, i) => (
             <div
               key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                padding: "12px 14px",
-                borderRadius: 12,
-                border: activeBucket === i ? "2px solid #facc15" : "1px solid rgba(148,163,184,0.2)",
-                background:
-                  activeBucket === i
-                    ? "rgba(250,204,21,0.08)"
-                    : "rgba(2,6,23,0.2)",
-                transition: "all 0.25s ease"
-              }}
+              className={`hash-bucket-row ${activeBucket === i ? "active" : ""}`}
             >
-              <div
-                style={{
-                  minWidth: 58,
-                  fontWeight: 800,
-                  color: activeBucket === i ? "#facc15" : "#38bdf8",
-                  fontSize: "1.05rem"
-                }}
-              >
-                {i}
-              </div>
+              <div className="hash-bucket-index">{i}</div>
 
-              <div style={{ color: "#94a3b8", fontWeight: 700 }}>→</div>
+              <div className="hash-bucket-arrow">→</div>
 
               {bucket.length === 0 ? (
-                <div style={{ color: "#64748b", fontWeight: 600 }}>Empty</div>
+                <div className="hash-bucket-empty">Empty</div>
               ) : (
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <div className="hash-chain-wrap">
                   {bucket.map((value, index) => (
                     <React.Fragment key={`${value}-${index}`}>
-                      <ChainNode value={value} isActive={activeBucket === i && activeValue === value} />
+                      <ChainNode
+                        value={value}
+                        isActive={activeBucket === i && activeValue === value}
+                      />
                       {index < bucket.length - 1 && (
-                        <div
-                          style={{
-                            color: "#cbd5e1",
-                            fontSize: 20,
-                            fontWeight: 700
-                          }}
-                        >
-                          →
-                        </div>
+                        <div className="hash-chain-arrow">→</div>
                       )}
                     </React.Fragment>
                   ))}
-                  <div style={{ color: "#64748b", fontWeight: 700, marginLeft: 4 }}>NULL</div>
+                  <div className="hash-chain-null">NULL</div>
                 </div>
               )}
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
       <StepHistoryPanel stepHistory={stepHistory} />
     </section>

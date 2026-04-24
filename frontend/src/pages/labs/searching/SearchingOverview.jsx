@@ -1,67 +1,132 @@
 import React from "react";
+import { Search, Target, Clock3, Database, CheckCircle2, BookOpen } from "lucide-react";
 
 export default function SearchingOverview({ searchType }) {
   const isBinary = searchType === "binary";
 
+  const data = isBinary
+    ? {
+        name: "Binary Search",
+        badge: "Divide and Conquer",
+        aim: "To understand how Binary Search efficiently finds a target by repeatedly dividing the search range in half.",
+        theory:
+          "Binary Search is an efficient searching algorithm that works only on sorted arrays. It compares the target with the middle element of the current range. If the target is smaller, the search continues in the left half; if larger, it continues in the right half. This repeated halving makes Binary Search much faster than Linear Search for large sorted datasets.",
+        time: "Worst: O(log n), Average: O(log n), Best: O(1)",
+        space: "O(1)",
+        rule: "Requires a sorted array",
+        steps: [
+          "Set low to the first index and high to the last index.",
+          "Find the middle index of the current range.",
+          "Compare the target with the middle element.",
+          "If equal, return the index.",
+          "If the target is smaller, continue in the left half.",
+          "If the target is larger, continue in the right half.",
+          "Repeat until the target is found or the range becomes invalid."
+        ],
+        usage:
+          "Binary Search is ideal for large sorted datasets where fast lookup is required."
+      }
+    : {
+        name: "Linear Search",
+        badge: "Sequential Search",
+        aim: "To understand how Linear Search checks each element one by one until the target is found or the array ends.",
+        theory:
+          "Linear Search is the simplest searching algorithm. It scans the array from left to right and compares each element with the target. It does not require the array to be sorted, which makes it useful for small or unsorted datasets, though it becomes slower for larger inputs.",
+        time: "Worst: O(n), Average: O(n), Best: O(1)",
+        space: "O(1)",
+        rule: "Works on both sorted and unsorted arrays",
+        steps: [
+          "Start from the first element in the array.",
+          "Compare the current element with the target.",
+          "If they match, return the index.",
+          "If not, move to the next element.",
+          "Continue until the target is found or the array ends.",
+          "Return -1 if the target is not present."
+        ],
+        usage:
+          "Linear Search is useful when the dataset is small, unsorted, or when simplicity matters more than speed."
+      };
+
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To understand and visualize the working of{" "}
-          {isBinary ? "Binary Search" : "Linear Search"} for finding a target element in an array.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Understand the concept, flow, and complexity of {data.name}.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        {!isBinary ? (
-          <>
-            <p>
-              Linear Search is a simple searching algorithm in which each element of the array
-              is checked one by one until the target is found or the array ends.
-            </p>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>{data.name}</h3>
+          <span className="overview-badge">{data.badge}</span>
+        </div>
 
-            <p>
-              <strong>Key points:</strong>
-            </p>
+        <p className="overview-hero-text">{data.theory}</p>
+      </div>
 
-            <ul style={{ color: "#ffffff", lineHeight: "1.8" }}>
-              <li>Works on both sorted and unsorted arrays</li>
-              <li>Checks elements sequentially</li>
-              <li>Easy to implement</li>
-              <li>Worst-case time complexity: O(n)</li>
-            </ul>
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>{data.aim}</p>
+        </div>
 
-            <p>
-              <strong>Use case:</strong> Suitable for small or unsorted datasets.
-            </p>
-          </>
-        ) : (
-          <>
-            <p>
-              Binary Search is an efficient searching algorithm that works on a{" "}
-              <strong>sorted array</strong>. It repeatedly compares the target with the middle
-              element and reduces the search range by half.
-            </p>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Clock3 size={18} />
+            <h4>Time Complexity</h4>
+          </div>
+          <p>{data.time}</p>
+        </div>
 
-            <p>
-              <strong>Key points:</strong>
-            </p>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Database size={18} />
+            <h4>Space Complexity</h4>
+          </div>
+          <p>{data.space}</p>
+        </div>
 
-            <ul style={{ color: "#ffffff", lineHeight: "1.8" }}>
-              <li>Works only on sorted arrays</li>
-              <li>Checks the middle element first</li>
-              <li>Reduces the search range by half each step</li>
-              <li>Worst-case time complexity: O(log n)</li>
-            </ul>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Key Requirement</h4>
+          </div>
+          <p>{data.rule}</p>
+        </div>
+      </div>
 
-            <p>
-              <strong>Use case:</strong> Suitable for fast searching in sorted datasets.
-            </p>
-          </>
-        )}
-      </section>
-    </div>
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <Search size={18} />
+          <h4>Algorithm Steps</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {data.steps.map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Where It Is Useful</h4>
+        </div>
+        <p>{data.usage}</p>
+      </div>
+    </section>
   );
 }

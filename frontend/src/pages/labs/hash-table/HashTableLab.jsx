@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { FlaskConical } from "lucide-react";
 import "../../Lab.css";
 import "../../SortingLab.css";
 import HashTableOverview from "./HashTableOverview";
@@ -33,14 +34,77 @@ const hashQuizQuestions = [
     question: "In separate chaining, collisions are handled using:",
     options: ["Arrays only", "Stacks", "Linked lists / chains", "Binary trees only"],
     correct: 2
+  },
+  {
+    question: "Which formula is used in this lab's hash function?",
+    options: ["key + size", "key * size", "key % size", "size % key"],
+    correct: 2
+  },
+  {
+    question: "What is the expected average-case time complexity of insert/search/delete in a good hash table?",
+    options: ["O(1)", "O(log n)", "O(n)", "O(n²)"],
+    correct: 0
   }
 ];
 
-const codingProblem = {
-  title: "Implement hashInsert(table, key, size)",
-  description:
-    "Write a function hashInsert(table, key, size) that inserts a numeric key into a hash table using separate chaining."
-};
+const problemBank = [
+  {
+    id: 1,
+    title: "Implement hashInsert(table, key, size)",
+    description:
+      "Write a function hashInsert(table, key, size) that inserts a numeric key into a hash table using separate chaining.",
+    functionName: "hashInsert",
+    tests: [
+      { input: [[[], [], [], [], [], [], []], 10, 7], expected: [[], [], [], [10], [], [], []] },
+      { input: [[[7], [], [], [], [], [], []], 14, 7], expected: [[7, 14], [], [], [], [], [], []] }
+    ]
+  },
+  {
+    id: 2,
+    title: "Implement hashSearch(table, key, size)",
+    description:
+      "Write a function hashSearch(table, key, size) that returns true if the key exists in the appropriate chain, otherwise false.",
+    functionName: "hashSearch",
+    tests: [
+      { input: [[[7, 14], [], [], [], [], [], []], 14, 7], expected: true },
+      { input: [[[7, 14], [], [], [], [], [], []], 21, 7], expected: false }
+    ]
+  },
+  {
+    id: 3,
+    title: "Implement hashDelete(table, key, size)",
+    description:
+      "Write a function hashDelete(table, key, size) that removes the key from the chain if present and returns the updated table.",
+    functionName: "hashDelete",
+    tests: [
+      { input: [[[7, 14], [], [], [], [], [], []], 14, 7], expected: [[7], [], [], [], [], [], []] },
+      { input: [[[7], [], [], [], [], [], []], 10, 7], expected: [[7], [], [], [], [], [], []] }
+    ]
+  },
+  {
+    id: 4,
+    title: "Implement getBucketIndex(key, size)",
+    description:
+      "Write a function getBucketIndex(key, size) that returns the bucket index using the hash rule from this lab.",
+    functionName: "getBucketIndex",
+    tests: [
+      { input: [10, 7], expected: 3 },
+      { input: [24, 7], expected: 3 },
+      { input: [5, 7], expected: 5 }
+    ]
+  },
+  {
+    id: 5,
+    title: "Implement bucketLength(table, index)",
+    description:
+      "Write a function bucketLength(table, index) that returns the number of elements stored in a given chain.",
+    functionName: "bucketLength",
+    tests: [
+      { input: [[[7, 14], [], [], [], [], [], []], 0], expected: 2 },
+      { input: [[[7, 14], [], [], [], [], [], []], 1], expected: 0 }
+    ]
+  }
+];
 
 const hashCodeTemplates = {
   javascript: `function hashInsert(table, key, size) {
@@ -71,6 +135,89 @@ const hashCodeTemplates = {
 const createEmptyTable = () => Array.from({ length: TABLE_SIZE }, () => []);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function getStarterCode(problem, language) {
+  const fn = problem.functionName;
+
+  if (language === "python") {
+    const map = {
+      hashInsert: `def hashInsert(table, key, size):
+    # Write your solution here
+    return table
+`,
+      hashSearch: `def hashSearch(table, key, size):
+    # Write your solution here
+    return False
+`,
+      hashDelete: `def hashDelete(table, key, size):
+    # Write your solution here
+    return table
+`,
+      getBucketIndex: `def getBucketIndex(key, size):
+    # Write your solution here
+    return 0
+`,
+      bucketLength: `def bucketLength(table, index):
+    # Write your solution here
+    return 0
+`
+    };
+    return map[fn] || `def solve():
+    pass
+`;
+  }
+
+  if (language === "cpp") {
+    return `#include <bits/stdc++.h>
+using namespace std;
+
+// Write your solution here
+`;
+  }
+
+  if (language === "c") {
+    return `/* C execution template only. Browser execution is available for JavaScript for now. */`;
+  }
+
+  if (language === "java") {
+    return `import java.util.*;
+
+public class Main {
+    // Write your solution here
+}
+`;
+  }
+
+  const map = {
+    hashInsert: `function hashInsert(table, key, size) {
+  // Write your solution here
+  return table;
+}
+`,
+    hashSearch: `function hashSearch(table, key, size) {
+  // Write your solution here
+  return false;
+}
+`,
+    hashDelete: `function hashDelete(table, key, size) {
+  // Write your solution here
+  return table;
+}
+`,
+    getBucketIndex: `function getBucketIndex(key, size) {
+  // Write your solution here
+  return 0;
+}
+`,
+    bucketLength: `function bucketLength(table, index) {
+  // Write your solution here
+  return 0;
+}
+`
+  };
+
+  return map[fn] || `function solve() {\n  // Write your solution here\n}\n`;
+}
+
 export default function HashTableLab() {
   const [table, setTable] = useState(createEmptyTable());
   const [input, setInput] = useState("");
@@ -90,14 +237,10 @@ export default function HashTableLab() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(hashCodeTemplates.javascript);
-  const [codeResult, setCodeResult] = useState("");
-
-  useEffect(() => {
-    setCode(hashCodeTemplates[selectedLanguage]);
-    setCodeResult("");
-  }, [selectedLanguage]);
+  const [currentProblems, setCurrentProblems] = useState([]);
+  const [selectedLanguages, setSelectedLanguages] = useState({});
+  const [codes, setCodes] = useState({});
+  const [results, setResults] = useState({});
 
   const hash = (value) => value % TABLE_SIZE;
 
@@ -333,133 +476,281 @@ export default function HashTableLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+  };
+
+  const generateProblems = () => {
+    const shuffled = [...problemBank].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+
+    const initialLanguages = {};
+    const initialCodes = {};
+
+    selected.forEach((problem) => {
+      initialLanguages[problem.id] = "javascript";
+      initialCodes[`${problem.id}_javascript`] = getStarterCode(problem, "javascript");
+    });
+
+    setCurrentProblems(selected);
+    setSelectedLanguages(initialLanguages);
+    setCodes(initialCodes);
+    setResults({});
+  };
+
+  const handleLanguageChange = (problemId, language, problem) => {
+    const key = `${problemId}_${language}`;
+
+    setSelectedLanguages((prev) => ({
+      ...prev,
+      [problemId]: language
+    }));
+
+    setCodes((prev) => {
+      if (prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: getStarterCode(problem, language)
+      };
+    });
+  };
+
+  const handleCodeChange = (problemId, language, value) => {
+    const key = `${problemId}_${language}`;
+    setCodes((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const runCode = (problemId, language) => {
+    const problem = currentProblems.find((p) => p.id === problemId);
+    const codeKey = `${problemId}_${language}`;
+    const currentCode = codes[codeKey];
+
+    if (!problem || !currentCode) {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: "Please enter code."
+      }));
+      return;
+    }
+
+    if (language !== "javascript") {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]:
+          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+      }));
       return;
     }
 
     try {
-      const sampleTable = [[], [], [], [], [], [], []];
-      // eslint-disable-next-line no-new-func
-      const fn = new Function("table", "key", "size", `${code}; return hashInsert(table, key, size);`);
-      const result = fn(sampleTable, 10, TABLE_SIZE);
-      setCodeResult(`Output: ${JSON.stringify(result)}`);
+      const outputs = [];
+      let allCorrect = true;
+
+      for (const test of problem.tests) {
+        const args = test.input.map((item) =>
+          Array.isArray(item) ? JSON.parse(JSON.stringify(item)) : item
+        );
+
+        const fn = new Function(
+          ...Array.from({ length: args.length }, (_, index) => `arg${index}`),
+          `${currentCode}; return ${problem.functionName}(${args.map((_, index) => `arg${index}`).join(", ")});`
+        );
+
+        const result = fn(...args);
+        outputs.push(result);
+
+        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
+          allCorrect = false;
+          break;
+        }
+      }
+
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
+          : "Incorrect Output"
+      }));
     } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: `Error: ${error.message}`
+      }));
     }
   };
 
+  const analyzeCode = (problemId, language) => {
+    const codeKey = `${problemId}_${language}`;
+    const currentCode = codes[codeKey];
+
+    if (!currentCode) {
+      alert("Please enter code to analyze.");
+      return;
+    }
+
+    const analysisData = {
+      code: currentCode,
+      problemId,
+      topic: "hash-table",
+      language
+    };
+
+    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
+    alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
+  };
+
+  const correctCode = (problemId, language) => {
+    const codeKey = `${problemId}_${language}`;
+    const currentCode = codes[codeKey];
+
+    if (!currentCode) {
+      alert("Please enter code to correct.");
+      return;
+    }
+
+    const correctionData = {
+      code: currentCode,
+      problemId,
+      topic: "hash-table",
+      language,
+      action: "correct"
+    };
+
+    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
+    alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
+  };
+
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Hash Table</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Settings</h2>
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1000}>Slow</option>
-              <option value={650}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Hash Table Experiment
+            </span>
           </div>
+
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            Hash Table
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Explore hashing, collisions, separate chaining, insertion, search, and deletion through interactive bucket visualization.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
-          >
-            Overview
-          </button>
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Settings</h2>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && <HashTableOverview tableSize={TABLE_SIZE} />}
+          <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "end" }}>
+            <div style={{ minWidth: "220px" }}>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1000}>Slow</option>
+                <option value={650}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          {activeSection === "simulation" && (
-            <HashTableSimulation
-              table={table}
-              input={input}
-              setInput={setInput}
-              insert={insert}
-              search={search}
-              remove={remove}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              activeBucket={activeBucket}
-              activeValue={activeValue}
-              inputRef={inputRef}
-              stepHistory={stepHistory}
-              tableSize={TABLE_SIZE}
-              isRunning={isRunning}
-            />
-          )}
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "quiz" && (
-            <HashTableQuiz
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && <HashTableOverview tableSize={TABLE_SIZE} />}
 
-          {activeSection === "coding" && (
-            <HashTableCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-            />
-          )}
-        </main>
+              {activeSection === "simulation" && (
+                <HashTableSimulation
+                  table={table}
+                  input={input}
+                  setInput={setInput}
+                  insert={insert}
+                  search={search}
+                  remove={remove}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  activeBucket={activeBucket}
+                  activeValue={activeValue}
+                  inputRef={inputRef}
+                  stepHistory={stepHistory}
+                  tableSize={TABLE_SIZE}
+                  isRunning={isRunning}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <HashTableQuiz
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                  redoQuiz={redoQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <HashTableCoding
+                  currentProblems={currentProblems}
+                  selectedLanguages={selectedLanguages}
+                  codes={codes}
+                  results={results}
+                  generateProblems={generateProblems}
+                  handleLanguageChange={handleLanguageChange}
+                  handleCodeChange={handleCodeChange}
+                  runCode={runCode}
+                  analyzeCode={analyzeCode}
+                  correctCode={correctCode}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );

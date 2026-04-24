@@ -1,4 +1,5 @@
 import React from "react";
+import { Table2, CheckCircle2, Cpu } from "lucide-react";
 
 function stateBadgeStyle(state) {
   let background = "rgba(148,163,184,0.18)";
@@ -105,112 +106,6 @@ export default function DSDFlipFlopsTruthTable({
     { CLK: 1, T: 1, nextQ: "Q̅", state: "Toggle" }
   ];
 
-  const renderSR = () => (
-    <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
-      <thead>
-        <tr>
-          <th>S</th>
-          <th>R</th>
-          <th>Next Q</th>
-          <th>State</th>
-        </tr>
-      </thead>
-      <tbody>
-        {srRows.map((row, index) => {
-          const highlight = row.S === s && row.R === r;
-          return (
-            <tr key={index} className={highlight ? "highlight-row" : ""}>
-              <td>{row.S}</td>
-              <td>{row.R}</td>
-              <td>{renderOutputCell(row.nextQ)}</td>
-              <td>{renderStateBadge(row.state)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-
-  const renderD = () => (
-    <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
-      <thead>
-        <tr>
-          <th>CLK</th>
-          <th>D</th>
-          <th>Next Q</th>
-          <th>State</th>
-        </tr>
-      </thead>
-      <tbody>
-        {dRows.map((row, index) => {
-          const highlight = row.CLK === clk && row.D === d;
-          return (
-            <tr key={index} className={highlight ? "highlight-row" : ""}>
-              <td>{row.CLK}</td>
-              <td>{row.D}</td>
-              <td>{renderOutputCell(row.nextQ)}</td>
-              <td>{renderStateBadge(row.state)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-
-  const renderJK = () => (
-    <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
-      <thead>
-        <tr>
-          <th>CLK</th>
-          <th>J</th>
-          <th>K</th>
-          <th>Next Q</th>
-          <th>State</th>
-        </tr>
-      </thead>
-      <tbody>
-        {jkRows.map((row, index) => {
-          const highlight = row.CLK === clk && row.J === j && row.K === k;
-          return (
-            <tr key={index} className={highlight ? "highlight-row" : ""}>
-              <td>{row.CLK}</td>
-              <td>{row.J}</td>
-              <td>{row.K}</td>
-              <td>{renderOutputCell(row.nextQ)}</td>
-              <td>{renderStateBadge(row.state)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-
-  const renderT = () => (
-    <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
-      <thead>
-        <tr>
-          <th>CLK</th>
-          <th>T</th>
-          <th>Next Q</th>
-          <th>State</th>
-        </tr>
-      </thead>
-      <tbody>
-        {tRows.map((row, index) => {
-          const highlight = row.CLK === clk && row.T === t;
-          return (
-            <tr key={index} className={highlight ? "highlight-row" : ""}>
-              <td>{row.CLK}</td>
-              <td>{row.T}</td>
-              <td>{renderOutputCell(row.nextQ)}</td>
-              <td>{renderStateBadge(row.state)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-
   const tableTitle =
     selectedType === "sr"
       ? "SR Latch Truth Table"
@@ -221,60 +116,153 @@ export default function DSDFlipFlopsTruthTable({
       : "T Flip-Flop Truth Table";
 
   return (
-    <section className="card experiment">
-      <h2>Truth Table</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        The truth table below shows the behavior of the selected flip-flop or latch. The highlighted row matches the current input combination.
-      </div>
-
-      <div className="card">
-        <h3>{tableTitle}</h3>
-
-        {selectedType === "sr" && renderSR()}
-        {selectedType === "d" && renderD()}
-        {selectedType === "jk" && renderJK()}
-        {selectedType === "t" && renderT()}
-      </div>
-
-      <div
-        style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "12px"
-        }}
-      >
-        <div className="card">
-          <h3>Current State</h3>
-          <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-            Present output is <strong>Q = {q}</strong>.
-          </p>
-        </div>
-
-        <div className="card">
-          <h3>Next State</h3>
-          <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-            Based on the selected inputs, the next output is <strong>Q = {analysis.nextQ}</strong>.
-          </p>
-        </div>
-
-        <div className="card">
-          <h3>Operation</h3>
-          <p style={{ marginTop: "0.75rem" }}>
-            {renderStateBadge(analysis.stateName)}
-          </p>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Table2 size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Truth Table</h2>
+            <p className="sorting-sim-subtitle">
+              Compare the current input combination with the formal behavior rules of the selected sequential element.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Current Input Observation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          Current Q = <strong>{q}</strong>, Next Q = <strong>{analysis.nextQ}</strong>, State = <strong>{analysis.stateName}</strong>.
-        </p>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          This matches the highlighted rule in the truth table for the present input combination.
-        </p>
+      <div className="sorting-info-box">
+        The highlighted row corresponds to the currently selected input combination.
+      </div>
+
+      <div className="sorting-sim-card" style={{ marginTop: 18, padding: 18 }}>
+        <h3 style={{ color: "#f8fafc", marginBottom: 14 }}>{tableTitle}</h3>
+
+        {selectedType === "sr" && (
+          <table className="dbms-table" style={{ width: "100%" }}>
+            <thead>
+              <tr>
+                <th>S</th>
+                <th>R</th>
+                <th>Next Q</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {srRows.map((row, index) => {
+                const highlight = row.S === s && row.R === r;
+                return (
+                  <tr key={index} className={highlight ? "highlight-row" : ""}>
+                    <td>{row.S}</td>
+                    <td>{row.R}</td>
+                    <td>{renderOutputCell(row.nextQ)}</td>
+                    <td>{renderStateBadge(row.state)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        {selectedType === "d" && (
+          <table className="dbms-table" style={{ width: "100%" }}>
+            <thead>
+              <tr>
+                <th>CLK</th>
+                <th>D</th>
+                <th>Next Q</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dRows.map((row, index) => {
+                const highlight = row.CLK === clk && row.D === d;
+                return (
+                  <tr key={index} className={highlight ? "highlight-row" : ""}>
+                    <td>{row.CLK}</td>
+                    <td>{row.D}</td>
+                    <td>{renderOutputCell(row.nextQ)}</td>
+                    <td>{renderStateBadge(row.state)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        {selectedType === "jk" && (
+          <table className="dbms-table" style={{ width: "100%" }}>
+            <thead>
+              <tr>
+                <th>CLK</th>
+                <th>J</th>
+                <th>K</th>
+                <th>Next Q</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jkRows.map((row, index) => {
+                const highlight = row.CLK === clk && row.J === j && row.K === k;
+                return (
+                  <tr key={index} className={highlight ? "highlight-row" : ""}>
+                    <td>{row.CLK}</td>
+                    <td>{row.J}</td>
+                    <td>{row.K}</td>
+                    <td>{renderOutputCell(row.nextQ)}</td>
+                    <td>{renderStateBadge(row.state)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        {selectedType === "t" && (
+          <table className="dbms-table" style={{ width: "100%" }}>
+            <thead>
+              <tr>
+                <th>CLK</th>
+                <th>T</th>
+                <th>Next Q</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tRows.map((row, index) => {
+                const highlight = row.CLK === clk && row.T === t;
+                return (
+                  <tr key={index} className={highlight ? "highlight-row" : ""}>
+                    <td>{row.CLK}</td>
+                    <td>{row.T}</td>
+                    <td>{renderOutputCell(row.nextQ)}</td>
+                    <td>{renderStateBadge(row.state)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="overview-grid" style={{ marginTop: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>Current State</h4>
+          </div>
+          <p>
+            Present output is <strong>Q = {q}</strong> and predicted next state is <strong>Q = {analysis.nextQ}</strong>.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Operation</h4>
+          </div>
+          <p style={{ marginTop: 6 }}>{renderStateBadge(analysis.stateName)}</p>
+        </div>
       </div>
     </section>
   );

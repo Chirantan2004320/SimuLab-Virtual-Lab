@@ -1,65 +1,111 @@
 import React from "react";
+import { Binary, Cpu, GitBranchPlus, Lightbulb } from "lucide-react";
 
-export default function DSDAddersOverview() {
+export default function DSDAddersOverview({ selectedAdder, analysis }) {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To study the working of Half Adder and Full Adder circuits by changing binary inputs
-          and observing the resulting Sum and Carry outputs.
+    <div className="overview-shell">
+      <section className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>Binary Addition Visualizer</h3>
+          <span className="overview-badge">{analysis.selected.title}</span>
+        </div>
+
+        <p className="overview-hero-text">
+          Adders are the foundation of digital arithmetic. They combine binary inputs and
+          generate a <strong>Sum</strong> output and a <strong>Carry</strong> output.
+          The Half Adder is the starting point, while the Full Adder extends the concept
+          by accepting an additional carry input.
         </p>
       </section>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          Adders are digital circuits used to perform binary addition. They are fundamental
-          building blocks in arithmetic logic units and processors.
-        </p>
-        <p>
-          A <strong>Half Adder</strong> adds two binary inputs A and B. It produces:
-        </p>
-        <p>
-          <strong>Sum = A ⊕ B</strong><br />
-          <strong>Carry = A · B</strong>
-        </p>
-        <p>
-          A <strong>Full Adder</strong> adds three inputs A, B, and Carry-in (Cin). It produces:
-        </p>
-        <p>
-          <strong>Sum = A ⊕ B ⊕ Cin</strong><br />
-          <strong>Carry = (A·B) + (B·Cin) + (A·Cin)</strong>
-        </p>
-      </section>
+      <div className="overview-grid">
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <Binary size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            To study the working of Half Adder and Full Adder circuits by changing binary
+            inputs and observing the resulting Sum and Carry outputs.
+          </p>
+        </section>
 
-      <section className="card">
-        <h2>Difference Between Half Adder and Full Adder</h2>
-        <p>
-          <strong>Half Adder:</strong> accepts only two inputs and has no carry-in.
-        </p>
-        <p>
-          <strong>Full Adder:</strong> accepts three inputs, including carry-in, and is more useful
-          in multi-bit binary addition.
-        </p>
-      </section>
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>Core Theory</h4>
+          </div>
+          <p>
+            A <strong>Half Adder</strong> adds two bits A and B.
+            A <strong>Full Adder</strong> adds A, B, and Carry-in (Cin), making it suitable
+            for multi-bit binary addition.
+          </p>
+        </section>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Select either Half Adder or Full Adder in the simulation section.</li>
-          <li>Toggle the input bits A and B.</li>
-          <li>For Full Adder, also toggle Carry-in (Cin).</li>
-          <li>Observe the Sum and Carry outputs.</li>
-          <li>Compare the observed values with the truth table and circuit view.</li>
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <GitBranchPlus size={18} />
+            <h4>Current Formulas</h4>
+          </div>
+          <p>
+            <strong>Sum:</strong> {analysis.selected.expressionSum}
+            <br />
+            <strong>Carry:</strong> {analysis.selected.expressionCarry}
+          </p>
+        </section>
+
+        <section className="overview-card">
+          <div className="overview-card-head">
+            <Lightbulb size={18} />
+            <h4>Practical Use</h4>
+          </div>
+          <p>
+            Full Adders are cascaded to form ripple-carry adders and larger arithmetic units
+            used inside processors, ALUs, embedded systems, and digital controllers.
+          </p>
+        </section>
+      </div>
+
+      <section className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <Binary size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list" style={{ listStyle: "none", padding: 0 }}>
+          <li>
+            <span className="overview-step-index">1</span>
+            <span>Select either Half Adder or Full Adder.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">2</span>
+            <span>Toggle the input bits A and B.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">3</span>
+            <span>For Full Adder, also toggle the Carry-in (Cin).</span>
+          </li>
+          <li>
+            <span className="overview-step-index">4</span>
+            <span>Observe the Sum and Carry outputs in simulation and circuits view.</span>
+          </li>
+          <li>
+            <span className="overview-step-index">5</span>
+            <span>Compare the observed values with the truth table.</span>
+          </li>
         </ol>
       </section>
 
-      <section className="card">
-        <h2>Practical Insight</h2>
+      <section className="overview-card">
+        <div className="overview-card-head">
+          <Cpu size={18} />
+          <h4>Half Adder vs Full Adder</h4>
+        </div>
         <p>
-          Full Adders are used in cascaded form to build larger binary adders, such as 4-bit,
-          8-bit, and 16-bit arithmetic units in digital systems.
+          <strong>Half Adder:</strong> takes two inputs and does not have a carry-in input.
+          <br />
+          <strong>Full Adder:</strong> takes three inputs including carry-in, so it can be
+          chained with other adders for larger binary operations.
         </p>
       </section>
     </div>

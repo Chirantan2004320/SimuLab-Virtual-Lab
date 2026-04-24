@@ -3,6 +3,8 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PaymentDialog from "../components/PaymentDialog";
+//import { motion } from "framer-motion";
+import { FlaskConical } from "lucide-react";
 import "./SortingLab.css";
 
 // Import child components
@@ -281,10 +283,10 @@ function SortingLab() {
 
   const [, setExperimentsList] = useState([]);
   const [selectedExp, setSelectedExp] = useState(null);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [hasAccess, setHasAccess] = useState(true);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [purchaseMsg, setPurchaseMsg] = useState("");
-  const [purchaseExpiry,] = useState(null);
+  const [purchaseExpiry] = useState(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showPaymentReceipt, setShowPaymentReceipt] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState(null);
@@ -674,11 +676,6 @@ function SortingLab() {
   }
 
   function start() {
-    if (selectedExp && selectedExp.requiresPayment && !hasAccess) {
-      setPurchaseMsg("This experiment requires purchase. Please buy access to run it.");
-      return;
-    }
-
     const a = parseInput(input);
     if (a.length < 2) return;
 
@@ -699,6 +696,7 @@ function SortingLab() {
         prog.experiments = prog.experiments || [];
         if (!prog.experiments.includes(selectedAlgorithm)) {
           prog.experiments.push(selectedAlgorithm);
+          prog.points = (prog.points || 0) + 5;
         }
         prog.lastExperimentRun = Date.now();
         localStorage.setItem(key, JSON.stringify(prog));
@@ -731,7 +729,7 @@ function SortingLab() {
 
         if (sorting) {
           setSelectedExp(sorting);
-          setTimeout(() => checkAccess(sorting._id), 300);
+          setTimeout(() => checkAccess(), 300);
         } else {
           console.warn("No sorting experiment found in list");
         }
@@ -743,19 +741,8 @@ function SortingLab() {
     fetchExps();
   }, [setExperimentsList]);
 
-  const checkAccess = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const res = await axios.get(`http://localhost:5000/api/experiments/${id}/access`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-
-      setHasAccess(!!res.data.access);
-    } catch (e) {
-      console.error("Error checking access:", e.response?.data || e.message);
-      setHasAccess(false);
-    }
+  const checkAccess = async () => {
+    setHasAccess(true);
   };
 
   const handleGooglePayClick = () => {
@@ -838,6 +825,7 @@ function SortingLab() {
         const prog = JSON.parse(localStorage.getItem(key) || "{}");
         prog.quizzes = prog.quizzes || [];
         prog.quizzes.push(quizResult);
+        prog.points = (prog.points || 0) + score * 2;
         localStorage.setItem(key, JSON.stringify(prog));
       } else {
         const existingScores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
@@ -948,49 +936,48 @@ function SortingLab() {
     }
   }
 
- function generateProblems() {
-  const filteredProblems = problemBank.filter((p) => p.algorithm === selectedAlgorithm);
-  const shuffled = [...filteredProblems].sort(() => 0.5 - Math.random());
-  const selected = shuffled.slice(0, 3);
+  function generateProblems() {
+    const filteredProblems = problemBank.filter((p) => p.algorithm === selectedAlgorithm);
+    const shuffled = [...filteredProblems].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
 
-  const initialLanguages = {};
-  const initialCodes = {};
+    const initialLanguages = {};
+    const initialCodes = {};
 
-  selected.forEach((problem) => {
-    initialLanguages[problem.id] = "javascript";
-    initialCodes[`${problem.id}_javascript`] = getStarterCode(problem, "javascript");
-  });
+    selected.forEach((problem) => {
+      initialLanguages[problem.id] = "javascript";
+      initialCodes[`${problem.id}_javascript`] = getStarterCode(problem, "javascript");
+    });
 
-  setCurrentProblems(selected);
-  setSelectedLanguages(initialLanguages);
-  setCodes(initialCodes);
-  setResults({});
-}
-
+    setCurrentProblems(selected);
+    setSelectedLanguages(initialLanguages);
+    setCodes(initialCodes);
+    setResults({});
+  }
 
   function getStarterCode(problem, language) {
-  const funcMatch = problem.description.match(/Function:\s*(\w+)/);
-  const funcName = funcMatch ? funcMatch[1] : "solve";
+    const funcMatch = problem.description.match(/Function:\s*(\w+)/);
+    const funcName = funcMatch ? funcMatch[1] : "solve";
 
-  if (language === "python") {
-    return `def ${funcName}(arr):
+    if (language === "python") {
+      return `def ${funcName}(arr):
     # Write your solution here
     pass
 `;
-  }
+    }
 
-  if (language === "cpp") {
-    return `#include <bits/stdc++.h>
+    if (language === "cpp") {
+      return `#include <bits/stdc++.h>
 using namespace std;
 
 void ${funcName}(vector<int>& arr) {
     // Write your solution here
 }
 `;
-  }
+    }
 
-  if (language === "java") {
-    return `import java.util.*;
+    if (language === "java") {
+      return `import java.util.*;
 
 public class Main {
     public static void ${funcName}(int[] arr) {
@@ -998,169 +985,170 @@ public class Main {
     }
 }
 `;
-  }
+    }
 
-  return `function ${funcName}(arr) {
+    return `function ${funcName}(arr) {
   // Write your solution here
 }
 `;
-}
+  }
 
   function handleCodeChange(problemId, language, code) {
-  const key = `${problemId}_${language}`;
-  setCodes((prev) => ({ ...prev, [key]: code }));
-}
+    const key = `${problemId}_${language}`;
+    setCodes((prev) => ({ ...prev, [key]: code }));
+  }
 
   function handleLanguageChange(problemId, language, problem) {
-  const key = `${problemId}_${language}`;
+    const key = `${problemId}_${language}`;
 
-  setSelectedLanguages((prev) => ({
-    ...prev,
-    [problemId]: language
-  }));
-
-  setCodes((prev) => {
-    if (prev[key]) return prev;
-    return {
+    setSelectedLanguages((prev) => ({
       ...prev,
-      [key]: getStarterCode(problem, language)
-    };
-  });
-}
+      [problemId]: language
+    }));
 
+    setCodes((prev) => {
+      if (prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: getStarterCode(problem, language)
+      };
+    });
+  }
 
   function runCode(problemId, language) {
-  const problem = currentProblems.find((p) => p.id === problemId);
-  const codeKey = `${problemId}_${language}`;
-  const code = codes[codeKey];
+    const problem = currentProblems.find((p) => p.id === problemId);
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
 
-  if (!code) {
-    setResults((prev) => ({ ...prev, [problemId]: "Please enter code" }));
-    return;
-  }
-
-  if (language !== "javascript") {
-    setResults((prev) => ({
-      ...prev,
-      [problemId]:
-        `${language.toUpperCase()} execution will be added later. For now, only JavaScript runs directly in the browser.`
-    }));
-    return;
-  }
-
-  try {
-    const funcMatch = problem.description.match(/Function:\s*(\w+)/);
-    const funcName = funcMatch ? funcMatch[1] : null;
-
-    if (!funcName) {
-      setResults((prev) => ({ ...prev, [problemId]: "Incorrect Output" }));
+    if (!code) {
+      setResults((prev) => ({ ...prev, [problemId]: "Please enter code" }));
       return;
     }
 
-    let allCorrect = true;
-    const actualResults = [];
-
-    for (const test of problem.tests) {
-      let result;
-
-      // eslint-disable-next-line no-new-func
-      if (problem.id === 9) {
-      // eslint-disable-next-line no-new-func
-        const func = new Function(
-          "arr",
-          "startIndex",
-          code + "; return " + funcName + "(arr, startIndex);"
-        );
-        result = func(test.input[0], test.input[1]);
-      // eslint-disable-next-line no-new-func
-      } else if (problem.id === 10) {
-        // eslint-disable-next-line no-new-func
-        const func = new Function("arr", code + "; return " + funcName + "(arr);");
-        result = func([...test.input]);
-      // eslint-disable-next-line no-new-func
-      } else if ([3, 5, 8, 13].includes(problem.id)) {
-      // eslint-disable-next-line no-new-func  
-        const func = new Function("arr", code + "; return " + funcName + "(arr);");
-        result = func([...test.input]);
-      // eslint-disable-next-line no-new-func
-      } else {
-      // eslint-disable-next-line no-new-func  
-        const func = new Function("arr", code + "; " + funcName + "(arr); return arr;");
-        result = func([...test.input]);
-      }
-
-      actualResults.push(result);
-
-      if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
-        allCorrect = false;
-        break;
-      }
+    if (language !== "javascript") {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]:
+          `${language.toUpperCase()} execution will be added later. For now, only JavaScript runs directly in the browser.`
+      }));
+      return;
     }
 
-    setResults((prev) => ({
-      ...prev,
-      [problemId]: allCorrect
-        ? `Correct! Your outputs: ${actualResults
-            .map((result) => JSON.stringify(result))
-            .join(", ")}`
-        : "Incorrect Output"
-    }));
+    try {
+      const funcMatch = problem.description.match(/Function:\s*(\w+)/);
+      const funcName = funcMatch ? funcMatch[1] : null;
 
-    if (allCorrect) {
-      const practice = JSON.parse(localStorage.getItem("vlab_practice") || "{}");
-      practice[selectedAlgorithm] = (practice[selectedAlgorithm] || 0) + 1;
-      localStorage.setItem("vlab_practice", JSON.stringify(practice));
+      if (!funcName) {
+        setResults((prev) => ({ ...prev, [problemId]: "Incorrect Output" }));
+        return;
+      }
+
+      let allCorrect = true;
+      const actualResults = [];
+
+      for (const test of problem.tests) {
+        let result;
+
+        if (problem.id === 9) {
+          const func = new Function(
+            "arr",
+            "startIndex",
+            code + "; return " + funcName + "(arr, startIndex);"
+          );
+          result = func(test.input[0], test.input[1]);
+        } else if (problem.id === 10) {
+          const func = new Function("arr", code + "; return " + funcName + "(arr);");
+          result = func([...test.input]);
+        } else if ([3, 5, 8, 13].includes(problem.id)) {
+          const func = new Function("arr", code + "; return " + funcName + "(arr);");
+          result = func([...test.input]);
+        } else {
+          const func = new Function("arr", code + "; " + funcName + "(arr); return arr;");
+          result = func([...test.input]);
+        }
+
+        actualResults.push(result);
+
+        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
+          allCorrect = false;
+          break;
+        }
+      }
+
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? `Correct! Your outputs: ${actualResults
+              .map((result) => JSON.stringify(result))
+              .join(", ")}`
+          : "Incorrect Output"
+      }));
+
+      if (allCorrect) {
+        const practice = JSON.parse(localStorage.getItem("vlab_practice") || "{}");
+        practice[selectedAlgorithm] = (practice[selectedAlgorithm] || 0) + 1;
+        localStorage.setItem("vlab_practice", JSON.stringify(practice));
+
+        const currentUser = user || JSON.parse(localStorage.getItem("user") || "null");
+        if (currentUser && currentUser.id) {
+          const key = `vlab_progress_${currentUser.id}`;
+          const prog = JSON.parse(localStorage.getItem(key) || "{}");
+
+          prog.coding = prog.coding || {};
+          prog.coding[selectedAlgorithm] = (prog.coding[selectedAlgorithm] || 0) + 1;
+          prog.points = (prog.points || 0) + 10;
+
+          localStorage.setItem(key, JSON.stringify(prog));
+        }
+      }
+    } catch (e) {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: "Error: " + e.message
+      }));
     }
-  } catch (e) {
-    setResults((prev) => ({
-      ...prev,
-      [problemId]: "Error: " + e.message
-    }));
   }
-}
-
 
   function analyzeCode(problemId, language) {
-  const codeKey = `${problemId}_${language}`;
-  const code = codes[codeKey];
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
 
-  if (!code) {
-    alert("Please enter code to analyze");
-    return;
+    if (!code) {
+      alert("Please enter code to analyze");
+      return;
+    }
+
+    const analysisData = {
+      code,
+      problemId,
+      algorithm: selectedAlgorithm,
+      language
+    };
+
+    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
+    alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   }
-
-  const analysisData = {
-    code,
-    problemId,
-    algorithm: selectedAlgorithm,
-    language
-  };
-
-  localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
-  alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
-}
-
 
   function correctCode(problemId, language) {
-  const codeKey = `${problemId}_${language}`;
-  const code = codes[codeKey];
+    const codeKey = `${problemId}_${language}`;
+    const code = codes[codeKey];
 
-  if (!code) {
-    alert("Please enter code to correct");
-    return;
+    if (!code) {
+      alert("Please enter code to correct");
+      return;
+    }
+
+    const correctionData = {
+      code,
+      problemId,
+      algorithm: selectedAlgorithm,
+      language,
+      action: "correct"
+    };
+
+    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
+    alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   }
-
-  const correctionData = {
-    code,
-    problemId,
-    algorithm: selectedAlgorithm,
-    language,
-    action: "correct"
-  };
-
-  localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
-  alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
-}
 
   useEffect(() => {
     setQuizAnswers(Array(quizQuestions[selectedAlgorithm].length).fill(null));
@@ -1204,293 +1192,180 @@ public class Main {
 
   if (loading) {
     return (
-      <div className="lab-page">
-        <p>Loading...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading...
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="lab-page">
-        <p>Please log in to access the lab.</p>
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Please log in to access the lab.
       </div>
-    );
-  }
-
-  if (selectedExp && selectedExp.requiresPayment && !hasAccess) {
-    return (
-      <>
-        <div className="lab-page">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              minHeight: "100vh",
-              backgroundColor: "#f0f2f5",
-              padding: "20px"
-            }}
-          >
-            <div
-              style={{
-                backgroundColor: "white",
-                padding: "50px",
-                borderRadius: "15px",
-                maxWidth: "600px",
-                width: "100%",
-                textAlign: "center",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.1)"
-              }}
-            >
-              <div style={{ fontSize: 80, marginBottom: 20, color: "#d1495a" }}>🔒</div>
-
-              <h1 style={{ margin: "0 0 20px 0", color: "#333", fontSize: 32 }}>Experiment Locked</h1>
-
-              <p style={{ fontSize: 18, color: "#666", marginBottom: 30 }}>
-                <strong>{selectedExp.title}</strong>
-              </p>
-
-              <div
-                style={{
-                  backgroundColor: "#f8f9fa",
-                  padding: "20px",
-                  borderRadius: "8px",
-                  marginBottom: 30,
-                  borderLeft: "4px solid #2980b9"
-                }}
-              >
-                <p style={{ margin: "10px 0", color: "#333" }}>
-                  <strong>To access this experiment, you need to purchase a subscription</strong>
-                </p>
-                <p style={{ margin: "10px 0", color: "#666", fontSize: 14 }}>
-                  Get <strong>{selectedExp.defaultDurationDays || 30} days</strong> of full access for just{" "}
-                  <strong>₹{selectedExp.price || 1}</strong>
-                </p>
-              </div>
-
-              <div style={{ marginBottom: 30, textAlign: "left" }}>
-                <h3 style={{ marginTop: 0, marginBottom: 15, color: "#333" }}>What You'll Get:</h3>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                  <li style={{ padding: "8px 0", color: "#555", borderBottom: "1px solid #eee" }}>
-                    ✓ Full access to {selectedExp.title}
-                  </li>
-                  <li style={{ padding: "8px 0", color: "#555", borderBottom: "1px solid #eee" }}>
-                    ✓ Step-by-step visualizations
-                  </li>
-                  <li style={{ padding: "8px 0", color: "#555", borderBottom: "1px solid #eee" }}>
-                    ✓ Interactive quizzes and practice problems
-                  </li>
-                  <li style={{ padding: "8px 0", color: "#555" }}>
-                    ✓ Valid for {selectedExp.defaultDurationDays || 30} days from purchase
-                  </li>
-                </ul>
-              </div>
-
-              <div
-                style={{
-                  backgroundColor: "#27ae60",
-                  color: "white",
-                  padding: "25px",
-                  borderRadius: "10px",
-                  marginBottom: 30
-                }}
-              >
-                <p style={{ margin: 0, fontSize: 14 }}>Subscription Price</p>
-                <p style={{ margin: "10px 0 0 0", fontSize: 42, fontWeight: "bold" }}>₹{selectedExp.price || 1}</p>
-                <p style={{ margin: "5px 0 0 0", fontSize: 12, opacity: 0.9 }}>
-                  for {selectedExp.defaultDurationDays || 30} days access
-                </p>
-              </div>
-
-              <button
-                onClick={handleGooglePayClick}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "15px 30px",
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  backgroundColor: "#2980b9",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  marginBottom: 15,
-                  transition: "background-color 0.3s"
-                }}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = "#1f618d")}
-                onMouseLeave={(e) => (e.target.style.backgroundColor = "#2980b9")}
-              >
-                💳 Pay with Google Pay
-              </button>
-
-              <p style={{ fontSize: 12, color: "#999", margin: 0 }}>
-                Payment is secure and encrypted. You'll get instant access after payment.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {showPaymentDialog && (
-          <PaymentDialog
-            selectedExp={selectedExp}
-            user={user}
-            onSuccess={() => {
-              setHasAccess(true);
-              setPurchaseMsg("✓ Payment verified! Access granted.");
-            }}
-            onClose={() => {
-              setShowPaymentDialog(false);
-              setPurchaseMsg("");
-            }}
-            isLoading={purchaseLoading}
-            setLoading={setPurchaseLoading}
-            setMessage={setPurchaseMsg}
-          />
-        )}
-      </>
     );
   }
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – {algorithmNames[selectedAlgorithm]}</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Algorithm Selection</h2>
-        <select
-          value={selectedAlgorithm}
-          onChange={(e) => setSelectedAlgorithm(e.target.value)}
-          style={{
-            color: "#000",
-            padding: "10px 12px",
-            borderRadius: "8px",
-            fontSize: "15px",
-            minWidth: "220px"
-          }}
-        >
-          <option value="bubble">Bubble Sort</option>
-          <option value="selection">Selection Sort</option>
-          <option value="insertion">Insertion Sort</option>
-        </select>
-      </section>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Sorting Experiment
+            </span>
+          </div>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            {algorithmNames[selectedAlgorithm]}
+          </h1>
+
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Explore sorting visually through simulation, comparison, quiz, and coding practice.
+          </p>
+        </div>
+
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Algorithm Selection</h2>
+
+          <select
+            value={selectedAlgorithm}
+            onChange={(e) => setSelectedAlgorithm(e.target.value)}
+            className="sorting-select"
           >
-            Overview
-          </button>
+            <option value="bubble">Bubble Sort</option>
+            <option value="selection">Selection Sort</option>
+            <option value="insertion">Insertion Sort</option>
+          </select>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+          {purchaseMsg ? (
+            <div className="mt-4 text-sm text-green-300 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+              {purchaseMsg}
+            </div>
+          ) : null}
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
-            onClick={() => setActiveSection("comparison")}
-          >
-            Comparison
-          </button>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
+              onClick={() => setActiveSection("comparison")}
+            >
+              Comparison
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "comparison" && (
-           <SortingComparison />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "overview" && (
-            <SortingOverview
-              selectedAlgorithm={selectedAlgorithm}
-              algorithmNames={algorithmNames}
-              setSelectedAlgorithm={setSelectedAlgorithm}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
 
-          {activeSection === "simulation" && (
-            <SortingSimulation
-              selectedAlgorithm={selectedAlgorithm}
-              algorithmNames={algorithmNames}
-              input={input}
-              setInput={setInput}
-              start={start}
-              pause={pause}
-              reset={reset}
-              prevStep={prevStep}
-              nextStep={nextStep}
-              idx={idx}
-              steps={steps}
-              selectedExp={selectedExp}
-              hasAccess={hasAccess}
-              purchaseExpiry={purchaseExpiry}
-              purchaseLoading={purchaseLoading}
-              purchaseMsg={purchaseMsg}
-              handleGooglePayClick={handleGooglePayClick}
-              comparisons={comparisons}
-              swaps={swaps}
-              current={current}
-              highlight={highlight}
-              info={info}
-              speed={speed}
-              setSpeed={setSpeed}
-            />
-          )}
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "comparison" && <SortingComparison />}
 
-          {activeSection === "quiz" && (
-            <SortingQuiz
-              selectedAlgorithm={selectedAlgorithm}
-              algorithmNames={algorithmNames}
-              experimentRun={experimentRun}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-              redoQuiz={redoQuiz}
-              exportQuiz={exportQuiz}
-            />
-          )}
+              {activeSection === "overview" && (
+                <SortingOverview
+                  selectedAlgorithm={selectedAlgorithm}
+                  algorithmNames={algorithmNames}
+                  setSelectedAlgorithm={setSelectedAlgorithm}
+                />
+              )}
 
-          {activeSection === "coding" && (
-            <SortingCoding
-              selectedAlgorithm={selectedAlgorithm}
-              currentProblems={currentProblems}
-              codes={codes}
-              selectedLanguages={selectedLanguages}
-              results={results}
-              generateProblems={generateProblems}
-             handleLanguageChange={handleLanguageChange}
-              handleCodeChange={handleCodeChange}
-              runCode={runCode}
-              analyzeCode={analyzeCode}
-              correctCode={correctCode}
-            />          
-          )}
-        </main>
+              {activeSection === "simulation" && (
+                <SortingSimulation
+                  selectedAlgorithm={selectedAlgorithm}
+                  algorithmNames={algorithmNames}
+                  input={input}
+                  setInput={setInput}
+                  start={start}
+                  pause={pause}
+                  reset={reset}
+                  prevStep={prevStep}
+                  nextStep={nextStep}
+                  idx={idx}
+                  steps={steps}
+                  selectedExp={selectedExp}
+                  hasAccess={hasAccess}
+                  purchaseExpiry={purchaseExpiry}
+                  purchaseLoading={purchaseLoading}
+                  purchaseMsg={purchaseMsg}
+                  handleGooglePayClick={handleGooglePayClick}
+                  comparisons={comparisons}
+                  swaps={swaps}
+                  current={current}
+                  highlight={highlight}
+                  info={info}
+                  speed={speed}
+                  setSpeed={setSpeed}
+                />
+              )}
+
+              {activeSection === "quiz" && (
+                <SortingQuiz
+                  selectedAlgorithm={selectedAlgorithm}
+                  algorithmNames={algorithmNames}
+                  experimentRun={experimentRun}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                  redoQuiz={redoQuiz}
+                  exportQuiz={exportQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <SortingCoding
+                  selectedAlgorithm={selectedAlgorithm}
+                  currentProblems={currentProblems}
+                  codes={codes}
+                  selectedLanguages={selectedLanguages}
+                  results={results}
+                  generateProblems={generateProblems}
+                  handleLanguageChange={handleLanguageChange}
+                  handleCodeChange={handleCodeChange}
+                  runCode={runCode}
+                  analyzeCode={analyzeCode}
+                  correctCode={correctCode}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
 
-      {showPaymentDialog && (
+      {showPaymentDialog && false && (
         <PaymentDialog
           selectedExp={selectedExp}
           user={user}
@@ -1508,7 +1383,7 @@ public class Main {
         />
       )}
 
-      {showPaymentReceipt && paymentDetails && (
+      {showPaymentReceipt && false && paymentDetails && (
         <div
           style={{
             position: "fixed",
@@ -1635,7 +1510,9 @@ public class Main {
                 borderLeft: "4px solid #27ae60"
               }}
             >
-              <h4 style={{ margin: "0 0 10px 0", color: "#27ae60", fontSize: 13 }}>🔒 Security & Privacy</h4>
+              <h4 style={{ margin: "0 0 10px 0", color: "#27ae60", fontSize: 13 }}>
+                🔒 Security & Privacy
+              </h4>
               <ul
                 style={{
                   margin: 0,

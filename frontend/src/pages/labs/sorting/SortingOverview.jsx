@@ -1,4 +1,5 @@
-import React from 'react';
+import React from "react";
+import { Target, BookOpen, Clock3, Database, CheckCircle2 } from "lucide-react";
 
 const SortingOverview = ({ selectedAlgorithm }) => {
   const algorithmNames = {
@@ -7,95 +8,146 @@ const SortingOverview = ({ selectedAlgorithm }) => {
     insertion: "Insertion Sort"
   };
 
+  const overviewData = {
+    bubble: {
+      aim: "To understand how Bubble Sort repeatedly compares adjacent elements and swaps them until the array becomes sorted.",
+      theory:
+        "Bubble Sort is one of the simplest comparison-based sorting algorithms. It works by repeatedly traversing the array, comparing adjacent elements, and swapping them whenever they are in the wrong order. After each pass, the largest unsorted element moves to its correct final position, which is why the process is described as 'bubbling' the larger values upward.",
+      steps: [
+        "Start from the first element of the array.",
+        "Compare each pair of adjacent elements.",
+        "Swap them if the left element is greater than the right element.",
+        "Continue this process until the largest element reaches the end.",
+        "Repeat the passes for the remaining unsorted part of the array.",
+        "Stop early if a complete pass occurs without any swap."
+      ],
+      time: "Worst: O(n²), Average: O(n²), Best: O(n)",
+      space: "O(1)",
+      stability: "Stable",
+      usage:
+        "Bubble Sort is mainly used for educational purposes and for very small datasets where simplicity matters more than efficiency."
+    },
+    selection: {
+      aim: "To understand how Selection Sort repeatedly finds the minimum element from the unsorted portion and places it in the correct position.",
+      theory:
+        "Selection Sort divides the array into two parts: a sorted portion and an unsorted portion. In each pass, it scans the unsorted portion to find the smallest element and swaps it with the first element of that unsorted portion. This gradually grows the sorted part from left to right.",
+      steps: [
+        "Assume the first position as the current minimum.",
+        "Scan the remaining unsorted part of the array.",
+        "Find the smallest element in that unsorted portion.",
+        "Swap it with the first unsorted position.",
+        "Move the sorted-unsorted boundary one position to the right.",
+        "Repeat until the entire array is sorted."
+      ],
+      time: "Worst: O(n²), Average: O(n²), Best: O(n²)",
+      space: "O(1)",
+      stability: "Not Stable",
+      usage:
+        "Selection Sort is useful when minimizing the number of swaps is important, though it is not efficient for large inputs."
+    },
+    insertion: {
+      aim: "To understand how Insertion Sort builds the sorted array one element at a time by inserting elements into their correct positions.",
+      theory:
+        "Insertion Sort works similarly to how people sort playing cards in their hands. It assumes that the first element is already sorted, then takes each next element and inserts it into the correct place in the sorted portion. Larger elements are shifted to the right to make space for insertion.",
+      steps: [
+        "Treat the first element as already sorted.",
+        "Pick the next element as the key.",
+        "Compare the key with elements in the sorted portion from right to left.",
+        "Shift all larger elements one step to the right.",
+        "Insert the key into the correct position.",
+        "Repeat for all remaining elements."
+      ],
+      time: "Worst: O(n²), Average: O(n²), Best: O(n)",
+      space: "O(1)",
+      stability: "Stable",
+      usage:
+        "Insertion Sort performs well for small or nearly sorted datasets and is often used as a helper in hybrid sorting algorithms."
+    }
+  };
+
+  const data = overviewData[selectedAlgorithm];
+
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To understand and visualize {algorithmNames[selectedAlgorithm]} through step-by-step
-          comparisons and operations.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Learn the concept, flow, and complexity of {algorithmNames[selectedAlgorithm]}.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>{algorithmNames[selectedAlgorithm]}</h3>
+          <span className="overview-badge">Sorting Algorithm</span>
+        </div>
 
-        {selectedAlgorithm === "bubble" && (
-          <>
-            <p>
-              Bubble Sort is a simple sorting algorithm that repeatedly steps through the list,
-              compares adjacent elements, and swaps them if they are in the wrong order.
-              The pass through the list is repeated until the list is sorted.
-            </p>
-            <p><strong>Algorithm:</strong></p>
-            <ol>
-              <li>Start from the first element, compare it with the next one.</li>
-              <li>If the first element is greater than the second, swap them.</li>
-              <li>Move to the next pair and repeat the comparison and swap if necessary.</li>
-              <li>After each pass, the largest element "bubbles" to the end.</li>
-              <li>Repeat the process for the remaining unsorted elements.</li>
-            </ol>
-            <p>
-              <strong>Time Complexity:</strong> O(n²) in worst and average case, O(n) in best case (when already sorted).
-            </p>
-            <p>
-              <strong>Space Complexity:</strong> O(1) as it sorts in place.
-            </p>
-          </>
-        )}
+        <p className="overview-hero-text">{data.theory}</p>
+      </div>
 
-        {selectedAlgorithm === "selection" && (
-          <>
-            <p>
-              Selection Sort divides the input list into a sorted sublist and an unsorted sublist.
-              It repeatedly selects the smallest element from the unsorted portion and places it
-              at the beginning of the sorted portion.
-            </p>
-            <p><strong>Algorithm:</strong></p>
-            <ol>
-              <li>Find the minimum element in the unsorted array.</li>
-              <li>Swap it with the first element of the unsorted array.</li>
-              <li>Move the boundary between sorted and unsorted arrays one element to the right.</li>
-              <li>Repeat until the entire array is sorted.</li>
-            </ol>
-            <p>
-              <strong>Time Complexity:</strong> O(n²) in all cases.
-            </p>
-            <p>
-              <strong>Space Complexity:</strong> O(1) as it sorts in place.
-            </p>
-          </>
-        )}
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>{data.aim}</p>
+        </div>
 
-        {selectedAlgorithm === "insertion" && (
-          <>
-            <p>
-              Insertion Sort builds the final sorted array one element at a time.
-              It takes each element from the unsorted portion and inserts it into its
-              correct position in the sorted portion.
-            </p>
-            <p><strong>Algorithm:</strong></p>
-            <ol>
-              <li>Assume the first element is already sorted.</li>
-              <li>Take the next element as the key.</li>
-              <li>Compare the key with elements in the sorted portion from right to left.</li>
-              <li>Shift larger elements one position to the right.</li>
-              <li>Insert the key into its correct position.</li>
-              <li>Repeat until the whole array is sorted.</li>
-            </ol>
-            <p>
-              <strong>Time Complexity:</strong> O(n²) in worst and average case, O(n) in best case (when already sorted).
-            </p>
-            <p>
-              <strong>Space Complexity:</strong> O(1) as it sorts in place.
-            </p>
-            <p>
-              <strong>Stable:</strong> Yes.
-            </p>
-          </>
-        )}
-      </section>
-    </div>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Clock3 size={18} />
+            <h4>Time Complexity</h4>
+          </div>
+          <p>{data.time}</p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Database size={18} />
+            <h4>Space Complexity</h4>
+          </div>
+          <p>{data.space}</p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Stability</h4>
+          </div>
+          <p>{data.stability}</p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Algorithm Steps</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {data.steps.map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Target size={18} />
+          <h4>Where It Is Useful</h4>
+        </div>
+        <p>{data.usage}</p>
+      </div>
+    </section>
   );
 };
 

@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
 import "../../../SortingLab.css";
+import { FlaskConical } from "lucide-react";
+
 import DBMSIndexingOverview from "./DBMSIndexingOverview";
 import DBMSIndexingSimulation from "./DBMSIndexingSimulation";
+import DBMSIndexingComparison from "./DBMSIndexingComparison";
 import DBMSIndexingQuiz from "./DBMSIndexingQuiz";
 import DBMSIndexingCoding from "./DBMSIndexingCoding";
 
@@ -63,71 +65,53 @@ const indexingQuizQuestionsByType = {
   ]
 };
 
-const codingProblemByType = {
-  linear: {
-    title: "Simulate search without index",
-    description:
-      "Write logic to search a row by roll number using a linear scan through all records."
-  },
-  indexed: {
-    title: "Simulate search with index",
-    description:
-      "Write logic to search a row by roll number using an index map for faster lookup."
-  }
-};
-
-const indexingCodeTemplates = {
-  linear: {
-    javascript: `function findStudentWithoutIndex(records, targetRollNo) {
-  for (let i = 0; i < records.length; i++) {
-    if (records[i].roll_no === targetRollNo) {
-      return records[i];
+const indexingProblemBank = {
+  linear: [
+    {
+      id: 1,
+      title: "Find a student without using an index",
+      description:
+        "Write logic to search for roll number 105 by scanning the student records one by one. Explain or write the steps clearly.",
+      expectedKeywords: ["scan", "row", "one by one", "105", "match"]
+    },
+    {
+      id: 2,
+      title: "Count comparisons in linear scan",
+      description:
+        "Suppose roll number 108 is searched in the given table without an index. Write how many comparisons are needed and explain why.",
+      expectedKeywords: ["comparison", "8", "linear", "scan"]
+    },
+    {
+      id: 3,
+      title: "Why is linear scan slower?",
+      description:
+        "Write a short explanation of why searching without an index becomes slower when the table size increases.",
+      expectedKeywords: ["many rows", "one by one", "slow", "table size"]
     }
-  }
-  return null;
-}`,
-    python: `def find_student_without_index(records, target_roll_no):
-    for record in records:
-        if record["roll_no"] == target_roll_no:
-            return record
-    return None`,
-    cpp: `Student* findStudentWithoutIndex(vector<Student>& records, int targetRollNo) {
-    for (int i = 0; i < records.size(); i++) {
-        if (records[i].roll_no == targetRollNo) return &records[i];
+  ],
+  indexed: [
+    {
+      id: 4,
+      title: "Find a student using an index",
+      description:
+        "Write logic to search for roll number 105 using an index map. Explain how the DBMS jumps directly to the row.",
+      expectedKeywords: ["index", "105", "row position", "direct", "jump"]
+    },
+    {
+      id: 5,
+      title: "How does index reduce comparisons?",
+      description:
+        "Write a short explanation of how an index reduces the number of comparisons during search.",
+      expectedKeywords: ["fewer comparisons", "lookup", "direct", "faster"]
+    },
+    {
+      id: 6,
+      title: "Create a roll_no index map",
+      description:
+        "Write the idea or syntax to create a lookup map from roll number to row position for the student table.",
+      expectedKeywords: ["roll_no", "map", "row position", "index"]
     }
-    return nullptr;
-}`,
-    c: `/* Search through all rows one by one until target roll number is found */`,
-    java: `static Student findStudentWithoutIndex(List<Student> records, int targetRollNo) {
-    for (Student s : records) {
-        if (s.rollNo == targetRollNo) return s;
-    }
-    return null;
-}`
-  },
-  indexed: {
-    javascript: `function findStudentWithIndex(indexMap, records, targetRollNo) {
-  if (!(targetRollNo in indexMap)) return null;
-  const rowPosition = indexMap[targetRollNo];
-  return records[rowPosition];
-}`,
-    python: `def find_student_with_index(index_map, records, target_roll_no):
-    if target_roll_no not in index_map:
-        return None
-    row_position = index_map[target_roll_no]
-    return records[row_position]`,
-    cpp: `Student* findStudentWithIndex(unordered_map<int, int>& indexMap, vector<Student>& records, int targetRollNo) {
-    if (indexMap.find(targetRollNo) == indexMap.end()) return nullptr;
-    int rowPosition = indexMap[targetRollNo];
-    return &records[rowPosition];
-}`,
-    c: `/* Use an index structure to jump directly to the matching row position */`,
-    java: `static Student findStudentWithIndex(Map<Integer, Integer> indexMap, List<Student> records, int targetRollNo) {
-    if (!indexMap.containsKey(targetRollNo)) return null;
-    int rowPosition = indexMap.get(targetRollNo);
-    return records.get(rowPosition);
-}`
-  }
+  ]
 };
 
 const studentRecords = [
@@ -179,9 +163,9 @@ export default function DBMSIndexingLab() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(indexingCodeTemplates.linear.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [currentProblems, setCurrentProblems] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [results, setResults] = useState({});
 
   useEffect(() => {
     setStepHistory([]);
@@ -199,13 +183,10 @@ export default function DBMSIndexingLab() {
     setQuizAnswers(Array(indexingQuizQuestionsByType[searchMode].length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-    setCodeResult("");
+    setCurrentProblems([]);
+    setAnswers({});
+    setResults({});
   }, [searchMode]);
-
-  useEffect(() => {
-    setCode(indexingCodeTemplates[searchMode][selectedLanguage]);
-    setCodeResult("");
-  }, [searchMode, selectedLanguage]);
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
@@ -230,7 +211,9 @@ export default function DBMSIndexingLab() {
     setComparisons(0);
     setSelectedIndexKey(null);
     setFoundRecord(null);
-    setMessage(`Starting ${searchMode === "linear" ? "search without index" : "search with index"} for roll number ${target}...`);
+    setMessage(
+      `Starting ${searchMode === "linear" ? "search without index" : "search with index"} for roll number ${target}...`
+    );
 
     try {
       if (searchMode === "linear") {
@@ -268,7 +251,7 @@ export default function DBMSIndexingLab() {
         addStep(`Started indexed lookup for roll number ${target}.`);
         await sleep(animationSpeed);
 
-        setCurrentStage("Building / Using Index");
+        setCurrentStage("Using Index");
         setMessage("Using roll_no index to locate row position directly...");
         addStep("Used the index on roll_no to avoid scanning every row.");
         await sleep(animationSpeed);
@@ -288,8 +271,8 @@ export default function DBMSIndexingLab() {
           await sleep(animationSpeed);
 
           setCurrentStage("Record Found");
-          setMessage(`Record found quickly using index.`);
-          addStep(`Record found using indexed search with very few comparisons.`);
+          setMessage("Record found quickly using index.");
+          addStep("Record found using indexed search with very few comparisons.");
         } else {
           setCurrentStage("Not Found");
           setCurrentIndex(null);
@@ -300,6 +283,7 @@ export default function DBMSIndexingLab() {
 
       setCurrentStage("Complete");
       addStep(`${searchMode === "linear" ? "Without Index" : "With Index"} simulation completed.`);
+
       localStorage.setItem(
         "vlab_last_experiment",
         JSON.stringify({ name: `dbms-${searchMode}-indexing`, time: Date.now() })
@@ -320,7 +304,9 @@ export default function DBMSIndexingLab() {
     setComparisons(0);
     setSelectedIndexKey(null);
     setFoundRecord(null);
-    setStepHistory([`Sample loaded for ${searchMode === "linear" ? "search without index" : "search with index"}.`]);
+    setStepHistory([
+      `Sample loaded for ${searchMode === "linear" ? "search without index" : "search with index"}.`
+    ]);
     setMessage(`Sample loaded for ${searchMode === "linear" ? "linear scan" : "indexed search"}.`);
   };
 
@@ -366,186 +352,275 @@ export default function DBMSIndexingLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
+  const generateProblems = () => {
+    const shuffled = [...indexingProblemBank[searchMode]].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 3);
+
+    const initialAnswers = {};
+    selected.forEach((problem) => {
+      initialAnswers[problem.id] = "";
+    });
+
+    setCurrentProblems(selected);
+    setAnswers(initialAnswers);
+    setResults({});
+  };
+
+  const handleAnswerChange = (problemId, value) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [problemId]: value
+    }));
+  };
+
+  const runAnswer = (problemId) => {
+    const problem = currentProblems.find((p) => p.id === problemId);
+    const answer = (answers[problemId] || "").toLowerCase().trim();
+
+    if (!answer) {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: "Please write your answer first."
+      }));
       return;
     }
 
-    try {
-      if (searchMode === "linear") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function("records", "targetRollNo", `${code}; return findStudentWithoutIndex(records, targetRollNo);`);
-        const result = fn(studentRecords, 105);
-        setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
-      } else {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function("indexMap", "records", "targetRollNo", `${code}; return findStudentWithIndex(indexMap, records, targetRollNo);`);
-        const result = fn(buildIndexMap(studentRecords), studentRecords, 105);
-        setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
-      }
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
+    const matchedKeywords = problem.expectedKeywords.filter((keyword) =>
+      answer.includes(keyword.toLowerCase())
+    );
+
+    const isGood = matchedKeywords.length >= Math.ceil(problem.expectedKeywords.length / 2);
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: isGood
+        ? `Good answer. Matched concepts: ${matchedKeywords.join(", ")}`
+        : `Your answer is partially correct. Try including ideas like: ${problem.expectedKeywords.join(", ")}`
+    }));
   };
 
-  const codingProblem = codingProblemByType[searchMode];
+  const analyzeAnswer = (problemId) => {
+    const answer = (answers[problemId] || "").trim();
+
+    if (!answer) {
+      setResults((prev) => ({
+        ...prev,
+        [problemId]: "Please write an answer before analysis."
+      }));
+      return;
+    }
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]:
+        "Analysis: Your answer should clearly explain the search flow, number of checks, and why indexing is faster or slower depending on the problem."
+    }));
+  };
+
+  const correctAnswer = (problemId) => {
+    const problem = currentProblems.find((p) => p.id === problemId);
+
+    let corrected = "";
+
+    if (searchMode === "linear") {
+      corrected =
+        `Correct answer:\n${problem.description}\n\n` +
+        "A linear scan checks each row one by one until the target roll number is found. " +
+        "If the target is near the end, more comparisons are needed. " +
+        "This makes searching without an index slower for large tables.";
+    } else {
+      corrected =
+        `Correct answer:\n${problem.description}\n\n` +
+        "An index stores the target key with its row position. " +
+        "The DBMS first checks the index and then jumps directly to the matching row, " +
+        "so it performs fewer comparisons and finds the record faster.";
+    }
+
+    setAnswers((prev) => ({
+      ...prev,
+      [problemId]: corrected
+    }));
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: "Correct answer inserted."
+    }));
+  };
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Indexing</h1>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
+      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Search Mode</h2>
-
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
-          <div>
-            <select
-              value={searchMode}
-              onChange={(e) => setSearchMode(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-              disabled={isRunning}
-            >
-              <option value="linear">Without Index (Linear Scan)</option>
-              <option value="indexed">With Index</option>
-            </select>
+      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
+            <FlaskConical className="w-4 h-4 text-primary" />
+            <span className="text-sm font-display text-primary tracking-wide">
+              Interactive Indexing Experiment
+            </span>
           </div>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Target Roll No
-            </label>
-            <input
-              value={targetRollNo}
-              onChange={(e) => setTargetRollNo(e.target.value)}
-              className="lab-input"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            />
-          </div>
+          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
+            Indexing
+          </h1>
 
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 6,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Animation Speed
-            </label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="lab-select"
-              style={{ minWidth: "180px" }}
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
-          </div>
+          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
+            Understand how database indexing speeds up record search compared to scanning rows one by one.
+          </p>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="glass rounded-2xl p-6 mb-8">
+          <h2 className="font-display text-xl font-semibold mb-4">Search Configuration</h2>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 16
+            }}
           >
-            Overview
-          </button>
+            <div>
+              <label className="sorting-label">Search Mode</label>
+              <select
+                value={searchMode}
+                onChange={(e) => setSearchMode(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="linear">Without Index (Linear Scan)</option>
+                <option value="indexed">With Index</option>
+              </select>
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <div>
+              <label className="sorting-label">Target Roll No</label>
+              <input
+                value={targetRollNo}
+                onChange={(e) => setTargetRollNo(e.target.value)}
+                className="sorting-input"
+                disabled={isRunning}
+              />
+            </div>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+        <div className="sorting-lab-layout">
+          <aside className="sorting-sidebar glass">
+            <button
+              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
+              onClick={() => setActiveSection("overview")}
+            >
+              Overview
+            </button>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DBMSIndexingOverview
-              searchMode={searchMode}
-              studentRecords={studentRecords}
-              indexMap={indexMap}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
+              onClick={() => setActiveSection("simulation")}
+            >
+              Simulation
+            </button>
 
-          {activeSection === "simulation" && (
-            <DBMSIndexingSimulation
-              searchMode={searchMode}
-              records={records}
-              indexMap={indexMap}
-              runSimulation={runSimulation}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              currentIndex={currentIndex}
-              foundIndex={foundIndex}
-              currentStage={currentStage}
-              comparisons={comparisons}
-              stepHistory={stepHistory}
-              selectedIndexKey={selectedIndexKey}
-              foundRecord={foundRecord}
-              isRunning={isRunning}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
+              onClick={() => setActiveSection("comparison")}
+            >
+              Comparison
+            </button>
 
-          {activeSection === "quiz" && (
-            <DBMSIndexingQuiz
-              searchMode={searchMode}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+            <button
+              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
+              onClick={() => setActiveSection("quiz")}
+            >
+              Quiz
+            </button>
 
-          {activeSection === "coding" && (
-            <DBMSIndexingCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              searchMode={searchMode}
-            />
-          )}
-        </main>
+            <button
+              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
+              onClick={() => setActiveSection("coding")}
+            >
+              Coding
+            </button>
+          </aside>
+
+          <main className="sorting-content">
+            <div className="glass rounded-3xl p-5 sm:p-6">
+              {activeSection === "overview" && (
+                <DBMSIndexingOverview
+                  searchMode={searchMode}
+                  studentRecords={studentRecords}
+                  indexMap={indexMap}
+                />
+              )}
+
+              {activeSection === "simulation" && (
+                <DBMSIndexingSimulation
+                  searchMode={searchMode}
+                  records={records}
+                  indexMap={indexMap}
+                  runSimulation={runSimulation}
+                  reset={reset}
+                  loadSample={loadSample}
+                  message={message}
+                  currentIndex={currentIndex}
+                  foundIndex={foundIndex}
+                  currentStage={currentStage}
+                  comparisons={comparisons}
+                  stepHistory={stepHistory}
+                  selectedIndexKey={selectedIndexKey}
+                  foundRecord={foundRecord}
+                  isRunning={isRunning}
+                />
+              )}
+
+              {activeSection === "comparison" && (
+                <DBMSIndexingComparison studentRecords={studentRecords} />
+              )}
+
+              {activeSection === "quiz" && (
+                <DBMSIndexingQuiz
+                  searchMode={searchMode}
+                  quizQuestions={quizQuestions}
+                  quizAnswers={quizAnswers}
+                  quizSubmitted={quizSubmitted}
+                  quizScore={quizScore}
+                  experimentRun={experimentRun}
+                  handleQuizAnswer={handleQuizAnswer}
+                  submitQuiz={submitQuiz}
+                />
+              )}
+
+              {activeSection === "coding" && (
+                <DBMSIndexingCoding
+                  searchMode={searchMode}
+                  currentProblems={currentProblems}
+                  answers={answers}
+                  results={results}
+                  generateProblems={generateProblems}
+                  handleAnswerChange={handleAnswerChange}
+                  runAnswer={runAnswer}
+                  analyzeAnswer={analyzeAnswer}
+                  correctAnswer={correctAnswer}
+                />
+              )}
+            </div>
+          </main>
+        </div>
       </div>
     </div>
   );
