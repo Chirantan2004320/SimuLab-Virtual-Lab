@@ -7,6 +7,10 @@ import {
   Activity,
   Trash,
   ScanLine,
+  Gauge,
+  MemoryStick,
+  Layers,
+  Sparkles
 } from "lucide-react";
 
 const QueueSimulation = ({
@@ -31,36 +35,39 @@ const QueueSimulation = ({
   reset,
   QUEUE_SIZE,
   inputRef,
-  traversalActiveIndex
+  traversalActiveIndex,
+  operationStats = { enqueue: 0, dequeue: 0, peek: 0, traverse: 0 }
 }) => {
   const isCircular = queueType === "circular";
 
   const visibleSize = isCircular ? count : queue.length;
 
-  const frontValue =
-    isCircular
-      ? count > 0 && front !== -1
-        ? queue[front]
-        : "Empty"
-      : queue.length > 0
-      ? queue[0]
-      : "Empty";
+  const frontValue = isCircular
+    ? count > 0 && front !== -1
+      ? queue[front]
+      : "Empty"
+    : queue.length > 0
+    ? queue[0]
+    : "Empty";
 
-  const rearValue =
-    isCircular
-      ? count > 0 && rear !== -1
-        ? queue[rear]
-        : "Empty"
-      : queue.length > 0
-      ? queue[queue.length - 1]
-      : "Empty";
+  const rearValue = isCircular
+    ? count > 0 && rear !== -1
+      ? queue[rear]
+      : "Empty"
+    : queue.length > 0
+    ? queue[queue.length - 1]
+    : "Empty";
 
   const status =
-    visibleSize === 0
-      ? "Empty"
-      : visibleSize === QUEUE_SIZE
-      ? "Full"
-      : "Active";
+    visibleSize === 0 ? "Empty" : visibleSize === QUEUE_SIZE ? "Full" : "Active";
+
+  const totalOperations =
+    operationStats.enqueue +
+    operationStats.dequeue +
+    operationStats.peek +
+    operationStats.traverse;
+
+  const currentSpace = isCircular ? `O(${QUEUE_SIZE}) fixed` : `O(${visibleSize}) used`;
 
   return (
     <section className="sorting-sim-card">
@@ -77,10 +84,50 @@ const QueueSimulation = ({
               </span>
             </h2>
             <p className="sorting-sim-subtitle">
-              Perform queue operations interactively and observe front/rear behavior.
+              Perform enqueue, dequeue, peek, and traversal with live front/rear updates.
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="overview-grid" style={{ marginBottom: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>Operation Complexity</h4>
+          </div>
+          <p>
+            Enqueue: <strong>O(1)</strong> · Dequeue: <strong>O(1)</strong> · Peek:{" "}
+            <strong>O(1)</strong> · Traverse: <strong>O(n)</strong>
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <MemoryStick size={18} />
+            <h4>Actual Space Usage</h4>
+          </div>
+          <p>
+            Current elements: <strong>{visibleSize}</strong> / {QUEUE_SIZE} · Space:{" "}
+            <strong>{currentSpace}</strong>
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card" style={{ marginBottom: 18 }}>
+        <div className="overview-card-head">
+          <Sparkles size={18} />
+          <h4>Actual Complexity for Your Operations</h4>
+        </div>
+        <p>
+          Total operations performed: <strong>{totalOperations}</strong>
+        </p>
+        <p style={{ marginTop: 8 }}>
+          Enqueue: <strong>{operationStats.enqueue}</strong> · Dequeue:{" "}
+          <strong>{operationStats.dequeue}</strong> · Peek:{" "}
+          <strong>{operationStats.peek}</strong> · Traverse:{" "}
+          <strong>{operationStats.traverse}</strong>
+        </p>
       </div>
 
       <div className="sorting-input-row">
@@ -197,7 +244,7 @@ const QueueSimulation = ({
       </div>
 
       {isCircular && (
-        <div className="sorting-stats-grid" style={{ marginTop: "-4px", marginBottom: "18px" }}>
+        <div className="sorting-stats-grid" style={{ marginTop: "-4px", marginBottom: 18 }}>
           <div className="sorting-stat-box">
             <span className="sorting-stat-label">Front Index</span>
             <span className="sorting-stat-value">{front}</span>
@@ -209,8 +256,10 @@ const QueueSimulation = ({
           </div>
 
           <div className="sorting-stat-box">
-            <span className="sorting-stat-label">Type</span>
-            <span className="sorting-stat-value">{isCircular ? "Circular" : "Linear"}</span>
+            <span className="sorting-stat-label">Wrap Rule</span>
+            <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>
+              (index + 1) % size
+            </span>
           </div>
 
           <div className="sorting-stat-box">
@@ -221,16 +270,13 @@ const QueueSimulation = ({
       )}
 
       <div className="sorting-info-box">
+        <Layers size={16} style={{ marginRight: 10 }} />
         {visibleSize === 0
-          ? `${isCircular ? "Circular Queue" : "Queue"} is empty`
-          : `${isCircular ? "Circular Queue" : "Queue"} has ${visibleSize} element(s)`}
+          ? `${isCircular ? "Circular Queue" : "Queue"} is empty.`
+          : `${isCircular ? "Circular Queue" : "Queue"} has ${visibleSize} active element(s).`}
       </div>
 
-      {warning && (
-        <div className="queue-warning-box">
-          {warning}
-        </div>
-      )}
+      {warning && <div className="queue-warning-box">{warning}</div>}
 
       <div className="sorting-visualizer-wrap">
         {visibleSize === 0 ? (
@@ -293,6 +339,13 @@ const QueueSimulation = ({
             <div className="queue-label-rear">REAR</div>
           </div>
         )}
+      </div>
+
+      <div className="er-chip-row" style={{ marginBottom: 18 }}>
+        <button className="er-chip active">Front = Deletion side</button>
+        <button className="er-chip active">Rear = Insertion side</button>
+        <button className="er-chip active">Enqueue/Dequeue = O(1)</button>
+        <button className="er-chip active">Traverse = O(n)</button>
       </div>
 
       <div className="sorting-bottom-controls">

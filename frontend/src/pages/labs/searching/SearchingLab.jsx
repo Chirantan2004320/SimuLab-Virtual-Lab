@@ -1,11 +1,27 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FlaskConical } from "lucide-react";
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  Cpu
+} from "lucide-react";
 import "../../Lab.css";
 import "../../SortingLab.css";
 import SearchingOverview from "./SearchingOverview";
 import SearchingSimulation from "./SearchingSimulation";
 import SearchingQuiz from "./SearchingQuiz";
 import SearchingCoding from "./SearchingCoding";
+
+const simulabLogo = "/assets/logo.png";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+];
 
 const linearQuizQuestions = [
   {
@@ -359,6 +375,7 @@ export default function SearchingLab() {
   const [lowIndex, setLowIndex] = useState(null);
   const [highIndex, setHighIndex] = useState(null);
   const [midIndex, setMidIndex] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const stopRequestedRef = useRef(false);
   const targetRef = useRef(null);
@@ -778,156 +795,227 @@ export default function SearchingLab() {
     alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   };
 
+  const progressPercent =
+  activeSection === "overview"
+    ? 20
+    : activeSection === "simulation"
+    ? 52
+    : activeSection === "quiz"
+    ? 78
+    : 95;
+
+const searchModeLabel =
+  searchType === "binary" ? "Binary Search" : "Linear Search";
+
+const complexityLabel =
+  searchType === "binary" ? "O(log n)" : "O(n)";
+
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
+  <div className="er-shell">
+    <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+      <div className="er-brand">
+        <div className="er-brand-logo">
+          <img
+            src={simulabLogo}
+            alt="SimuLab"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
 
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive Searching Experiment
-            </span>
+        {!sidebarCollapsed && (
+          <div>
+            <div className="er-brand-title">SimuLab</div>
+            <div className="er-brand-subtitle">DSA Lab</div>
           </div>
+        )}
+      </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            {searchType === "binary" ? "Binary Search" : "Linear Search"}
-          </h1>
+      <div className="er-collapse-wrap">
+        <button
+          type="button"
+          className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+          onClick={() => setSidebarCollapsed((prev) => !prev)}
+        >
+          <ChevronsLeft size={18} />
+        </button>
+      </div>
 
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Explore searching algorithms through guided visualization, quiz practice, and
-            coding challenges.
+      <div className="er-nav">
+        {sidebarItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <button
+              key={item.key}
+              className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+              onClick={() => setActiveSection(item.key)}
+              title={item.label}
+            >
+              <Icon size={18} />
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {!sidebarCollapsed && (
+        <div className="er-progress-card">
+          <div className="er-progress-title">Your Progress</div>
+          <div className="er-progress-ring">
+            <div
+              className="er-progress-circle"
+              style={{
+                background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+              }}
+            >
+              <div className="er-progress-inner">
+                <div className="er-progress-value">{progressPercent}%</div>
+                <div className="er-progress-text">Complete</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </aside>
+
+    <main className="er-main-area">
+      <div className="er-page-header">
+        <div>
+          <h1 className="er-page-title">{searchModeLabel}</h1>
+          <p className="er-page-subtitle">
+            Explore searching algorithms through animated visualization, quiz practice, and coding challenges.
           </p>
         </div>
+      </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">Search Configuration</h2>
+      <section className="er-config-card">
+        <div className="er-config-top">
+          <div>
+            <h2>Search Configuration</h2>
+            <p>Select search type, animation speed, and observe how the target is found.</p>
+          </div>
 
-          <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "end" }}>
-            <div style={{ minWidth: "240px" }}>
-              <label className="sorting-label">Search Type</label>
-              <select
-                value={searchType}
-                onChange={(e) => setSearchType(e.target.value)}
-                className="sorting-select"
-                disabled={isRunning}
-              >
-                <option value="linear">Linear Search</option>
-                <option value="binary">Binary Search</option>
-              </select>
+          <div className="er-mode-pill">
+            <div className="er-mode-pill-icon">
+              <Cpu size={18} />
             </div>
-
-            <div style={{ minWidth: "220px" }}>
-              <label className="sorting-label">Animation Speed</label>
-              <select
-                value={animationSpeed}
-                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-                className="sorting-select"
-                disabled={isRunning}
-              >
-                <option value={1100}>Slow</option>
-                <option value={700}>Normal</option>
-                <option value={350}>Fast</option>
-              </select>
+            <div>
+              <strong>{searchModeLabel}</strong>
+              <span>
+                Current complexity: {complexityLabel}. Array size: {array.length || "Not loaded"}.
+              </span>
             </div>
           </div>
-        </section>
-
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
-
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
-
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
-
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
-
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "overview" && <SearchingOverview searchType={searchType} />}
-
-              {activeSection === "simulation" && (
-                <SearchingSimulation
-                  searchType={searchType}
-                  arrayInput={arrayInput}
-                  setArrayInput={setArrayInput}
-                  target={target}
-                  setTarget={setTarget}
-                  runSearch={runSearch}
-                  stopSearch={stopSearch}
-                  reset={reset}
-                  loadSample={loadSample}
-                  message={message}
-                  array={array}
-                  currentIndex={currentIndex}
-                  foundIndex={foundIndex}
-                  lowIndex={lowIndex}
-                  highIndex={highIndex}
-                  midIndex={midIndex}
-                  targetRef={targetRef}
-                  isRunning={isRunning}
-                  stepHistory={stepHistory}
-                />
-              )}
-
-              {activeSection === "quiz" && (
-                <SearchingQuiz
-                  searchType={searchType}
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  experimentRun={experimentRun}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                  redoQuiz={redoQuiz}
-                />
-              )}
-
-              {activeSection === "coding" && (
-                <SearchingCoding
-                  searchType={searchType}
-                  currentProblems={currentProblems}
-                  selectedLanguages={selectedLanguages}
-                  codes={codes}
-                  results={results}
-                  generateProblems={generateProblems}
-                  handleLanguageChange={handleLanguageChange}
-                  handleCodeChange={handleCodeChange}
-                  runCode={runCode}
-                  analyzeCode={analyzeCode}
-                  correctCode={correctCode}
-                />
-              )}
-            </div>
-          </main>
         </div>
+
+        <div className="er-config-grid">
+          <div>
+            <label className="sorting-label">Search Type</label>
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="sorting-select"
+              disabled={isRunning}
+            >
+              <option value="linear">Linear Search</option>
+              <option value="binary">Binary Search</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="sorting-label">Animation Speed</label>
+            <select
+              value={animationSpeed}
+              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+              className="sorting-select"
+              disabled={isRunning}
+            >
+              <option value={1100}>Slow</option>
+              <option value={700}>Normal</option>
+              <option value={350}>Fast</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="er-chip-row">
+          <button className="er-chip active">Mode = {searchModeLabel}</button>
+          <button className="er-chip active">Complexity = {complexityLabel}</button>
+          <button className="er-chip active">
+            Target = {target.trim() ? target : "Not Set"}
+          </button>
+          <button className="er-chip active">
+            Steps = {stepHistory.length}
+          </button>
+          <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+            {experimentRun ? "Experiment Run" : "Not Started"}
+          </button>
+        </div>
+      </section>
+
+      <div className="er-content-layout">
+        <section className="er-content-card">
+          {activeSection === "overview" && (
+            <SearchingOverview searchType={searchType} />
+          )}
+
+          {activeSection === "simulation" && (
+            <SearchingSimulation
+              searchType={searchType}
+              arrayInput={arrayInput}
+              setArrayInput={setArrayInput}
+              target={target}
+              setTarget={setTarget}
+              runSearch={runSearch}
+              stopSearch={stopSearch}
+              reset={reset}
+              loadSample={loadSample}
+              message={message}
+              array={array}
+              currentIndex={currentIndex}
+              foundIndex={foundIndex}
+              lowIndex={lowIndex}
+              highIndex={highIndex}
+              midIndex={midIndex}
+              targetRef={targetRef}
+              isRunning={isRunning}
+              stepHistory={stepHistory}
+            />
+          )}
+
+          {activeSection === "quiz" && (
+            <SearchingQuiz
+              searchType={searchType}
+              quizQuestions={quizQuestions}
+              quizAnswers={quizAnswers}
+              quizSubmitted={quizSubmitted}
+              quizScore={quizScore}
+              experimentRun={experimentRun}
+              handleQuizAnswer={handleQuizAnswer}
+              submitQuiz={submitQuiz}
+              redoQuiz={redoQuiz}
+            />
+          )}
+
+          {activeSection === "coding" && (
+            <SearchingCoding
+              searchType={searchType}
+              currentProblems={currentProblems}
+              selectedLanguages={selectedLanguages}
+              codes={codes}
+              results={results}
+              generateProblems={generateProblems}
+              handleLanguageChange={handleLanguageChange}
+              handleCodeChange={handleCodeChange}
+              runCode={runCode}
+              analyzeCode={analyzeCode}
+              correctCode={correctCode}
+            />
+          )}
+        </section>
       </div>
-    </div>
-  );
+    </main>
+  </div>
+);
 }

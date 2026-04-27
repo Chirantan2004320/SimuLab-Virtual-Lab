@@ -3,16 +3,25 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PaymentDialog from "../components/PaymentDialog";
-//import { motion } from "framer-motion";
-import { FlaskConical } from "lucide-react";
+import {
+  BookOpen,
+  PlayCircle,
+  GitCompare,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  Cpu
+} from "lucide-react";
 import "./SortingLab.css";
 
-// Import child components
 import SortingOverview from "./labs/sorting/SortingOverview";
 import SortingSimulation from "./labs/sorting/SortingSimulation";
 import SortingQuiz from "./labs/sorting/SortingQuiz";
 import SortingCoding from "./labs/sorting/SortingCoding";
 import SortingComparison from "./labs/sorting/SortingComparison";
+
+/* KEEP YOUR EXISTING quizQuestions OBJECT HERE */
+/* KEEP YOUR EXISTING problemBank ARRAY HERE */
 
 const quizQuestions = {
   bubble: [
@@ -271,6 +280,17 @@ const problemBank = [
   }
 ];
 
+
+const simulabLogo = "/assets/logo.png";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "comparison", label: "Comparison", icon: GitCompare },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+];
+
 function SortingLab() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -288,8 +308,6 @@ function SortingLab() {
   const [purchaseMsg, setPurchaseMsg] = useState("");
   const [purchaseExpiry] = useState(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [showPaymentReceipt, setShowPaymentReceipt] = useState(false);
-  const [paymentDetails, setPaymentDetails] = useState(null);
 
   const [input, setInput] = useState("5, 2, 9, 1, 6");
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("bubble");
@@ -311,15 +329,43 @@ function SortingLab() {
   const [selectedLanguages, setSelectedLanguages] = useState({});
   const [results, setResults] = useState({});
 
-  const timer = useRef(null);
-
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const timer = useRef(null);
 
   const algorithmNames = {
     bubble: "Bubble Sort",
     selection: "Selection Sort",
     insertion: "Insertion Sort"
   };
+
+  const algorithmMeta = {
+  bubble: {
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: "Yes",
+    technique: "Adjacent comparison + swapping"
+  },
+  selection: {
+    best: "O(n²)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: "No",
+    technique: "Select minimum + place in sorted side"
+  },
+  insertion: {
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: "Yes",
+    technique: "Insert key into sorted portion"
+  }
+};
 
   function getLabName(algo) {
     if (algo === "bubble") return "Bubble Sort Lab";
@@ -540,19 +586,6 @@ function SortingLab() {
           });
         }
 
-        s.push({
-          array: [...a],
-          i: i + 1,
-          j: null,
-          minIndex: null,
-          keyIndex: null,
-          sortedEnd: null,
-          info: `Pass ${pass} completed`,
-          comp,
-          sw,
-          pass
-        });
-
         pass++;
       }
 
@@ -590,7 +623,6 @@ function SortingLab() {
 
         while (j >= 0) {
           comp++;
-
           s.push({
             array: [...a],
             i,
@@ -659,19 +691,6 @@ function SortingLab() {
       });
     }
 
-    s.push({
-      array: [...a],
-      j: null,
-      info: "Array is sorted",
-      comp,
-      sw,
-      i: null,
-      minIndex: null,
-      keyIndex: null,
-      sortedEnd: null,
-      pass: null
-    });
-
     return s;
   }
 
@@ -687,29 +706,6 @@ function SortingLab() {
     setSwaps(s[0]?.sw || 0);
     setPlaying(true);
     setExperimentRun(true);
-
-    try {
-      const currentUser = user || JSON.parse(localStorage.getItem("user") || "null");
-      if (currentUser && currentUser.id) {
-        const key = `vlab_progress_${currentUser.id}`;
-        const prog = JSON.parse(localStorage.getItem(key) || "{}");
-        prog.experiments = prog.experiments || [];
-        if (!prog.experiments.includes(selectedAlgorithm)) {
-          prog.experiments.push(selectedAlgorithm);
-          prog.points = (prog.points || 0) + 5;
-        }
-        prog.lastExperimentRun = Date.now();
-        localStorage.setItem(key, JSON.stringify(prog));
-      } else {
-        const completed = JSON.parse(localStorage.getItem("vlab_completed_experiments") || "[]");
-        if (!completed.includes(selectedAlgorithm)) {
-          completed.push(selectedAlgorithm);
-          localStorage.setItem("vlab_completed_experiments", JSON.stringify(completed));
-        }
-      }
-    } catch (e) {
-      console.error("Error saving progress:", e);
-    }
   }
 
   useEffect(() => {
@@ -730,8 +726,6 @@ function SortingLab() {
         if (sorting) {
           setSelectedExp(sorting);
           setTimeout(() => checkAccess(), 300);
-        } else {
-          console.warn("No sorting experiment found in list");
         }
       } catch (e) {
         console.error("Error fetching experiments:", e);
@@ -739,7 +733,7 @@ function SortingLab() {
     };
 
     fetchExps();
-  }, [setExperimentsList]);
+  }, []);
 
   const checkAccess = async () => {
     setHasAccess(true);
@@ -752,11 +746,6 @@ function SortingLab() {
     }
     setShowPaymentDialog(true);
     setPurchaseMsg("");
-  };
-
-  const closePaymentReceipt = () => {
-    setShowPaymentReceipt(false);
-    setPaymentDetails(null);
   };
 
   function pause() {
@@ -810,33 +799,6 @@ function SortingLab() {
 
     setQuizScore(score);
     setQuizSubmitted(true);
-
-    const quizResult = {
-      correct: score,
-      total: quizQuestions[selectedAlgorithm].length,
-      algorithm: selectedAlgorithm,
-      timestamp: Date.now()
-    };
-
-    try {
-      const currentUser = user || JSON.parse(localStorage.getItem("user") || "null");
-      if (currentUser && currentUser.id) {
-        const key = `vlab_progress_${currentUser.id}`;
-        const prog = JSON.parse(localStorage.getItem(key) || "{}");
-        prog.quizzes = prog.quizzes || [];
-        prog.quizzes.push(quizResult);
-        prog.points = (prog.points || 0) + score * 2;
-        localStorage.setItem(key, JSON.stringify(prog));
-      } else {
-        const existingScores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-        existingScores.push(quizResult);
-        localStorage.setItem("vlab_scores", JSON.stringify(existingScores));
-      }
-    } catch (e) {
-      console.error("Error saving quiz result:", e);
-    }
-
-    localStorage.setItem("vlab_last_quiz_completion", Date.now().toString());
   }
 
   function redoQuiz() {
@@ -846,94 +808,7 @@ function SortingLab() {
   }
 
   function exportQuiz() {
-    const questions = quizQuestions[selectedAlgorithm] || [];
-
-    const studentDetails = user
-      ? {
-          name: user.name,
-          email: user.email,
-          studentId: user.id,
-          lab: getLabName(selectedAlgorithm)
-        }
-      : {
-          name: "Unknown",
-          email: "unknown@example.com",
-          studentId: "N/A",
-          lab: getLabName(selectedAlgorithm)
-        };
-
-    const html = `
-      <html>
-        <head>
-          <title>Sorting Quiz Results</title>
-          <style>
-            body { font-family: Arial, Helvetica, sans-serif; padding: 20px; color: #111 }
-            h1 { color: #22223b }
-            .student-info { background: #f5f5f5; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-            .q { margin-bottom: 12px }
-            .correct { color: #2b8a3e; font-weight: 700 }
-            .wrong { color: #b71c1c; font-weight: 700 }
-          </style>
-        </head>
-        <body>
-          <h1>Sorting Quiz Results - ${selectedAlgorithm}</h1>
-          <div class="student-info">
-            <h2>Student Information</h2>
-            <p><strong>Name:</strong> ${studentDetails.name}</p>
-            <p><strong>Email:</strong> ${studentDetails.email}</p>
-            <p><strong>Student ID:</strong> ${studentDetails.studentId}</p>
-            <p><strong>Lab:</strong> ${studentDetails.lab}</p>
-            <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
-            <p><strong>Score:</strong> ${quizScore} / ${questions.length}</p>
-          </div>
-          <hr />
-          <h2>Quiz Answers</h2>
-          ${questions
-            .map((q, i) => {
-              const userAnswer = quizAnswers[i];
-              const correct = q.correct;
-              return `<div class="q">
-                <div><strong>${i + 1}. ${q.question}</strong></div>
-                <div>User Answer: <span class="${userAnswer === correct ? "correct" : "wrong"}">${
-                  userAnswer !== null ? q.options[userAnswer] : "No answer"
-                }</span></div>
-                <div>Correct Answer: <span class="correct">${q.options[correct]}</span></div>
-              </div>`;
-            })
-            .join("")}
-        </body>
-      </html>`;
-
-    const w = window.open("", "_blank");
-    if (w) {
-      try {
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
-        w.focus();
-        setTimeout(() => {
-          w.print();
-        }, 300);
-        return;
-      } catch (e) {
-        // fall through
-      }
-    }
-
-    try {
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "sorting-quiz-results.html";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      alert("Popup blocked: quiz report downloaded. Open the downloaded file to print.");
-    } catch (err) {
-      alert("Unable to open or download the quiz report. Please allow popups and try again.");
-    }
+    window.print();
   }
 
   function generateProblems() {
@@ -1028,8 +903,7 @@ public class Main {
     if (language !== "javascript") {
       setResults((prev) => ({
         ...prev,
-        [problemId]:
-          `${language.toUpperCase()} execution will be added later. For now, only JavaScript runs directly in the browser.`
+        [problemId]: `${language.toUpperCase()} execution will be added later. For now, only JavaScript runs directly in the browser.`
       }));
       return;
     }
@@ -1056,10 +930,7 @@ public class Main {
             code + "; return " + funcName + "(arr, startIndex);"
           );
           result = func(test.input[0], test.input[1]);
-        } else if (problem.id === 10) {
-          const func = new Function("arr", code + "; return " + funcName + "(arr);");
-          result = func([...test.input]);
-        } else if ([3, 5, 8, 13].includes(problem.id)) {
+        } else if ([3, 5, 8, 10, 13].includes(problem.id)) {
           const func = new Function("arr", code + "; return " + funcName + "(arr);");
           result = func([...test.input]);
         } else {
@@ -1078,29 +949,9 @@ public class Main {
       setResults((prev) => ({
         ...prev,
         [problemId]: allCorrect
-          ? `Correct! Your outputs: ${actualResults
-              .map((result) => JSON.stringify(result))
-              .join(", ")}`
+          ? `Correct! Your outputs: ${actualResults.map((result) => JSON.stringify(result)).join(", ")}`
           : "Incorrect Output"
       }));
-
-      if (allCorrect) {
-        const practice = JSON.parse(localStorage.getItem("vlab_practice") || "{}");
-        practice[selectedAlgorithm] = (practice[selectedAlgorithm] || 0) + 1;
-        localStorage.setItem("vlab_practice", JSON.stringify(practice));
-
-        const currentUser = user || JSON.parse(localStorage.getItem("user") || "null");
-        if (currentUser && currentUser.id) {
-          const key = `vlab_progress_${currentUser.id}`;
-          const prog = JSON.parse(localStorage.getItem(key) || "{}");
-
-          prog.coding = prog.coding || {};
-          prog.coding[selectedAlgorithm] = (prog.coding[selectedAlgorithm] || 0) + 1;
-          prog.points = (prog.points || 0) + 10;
-
-          localStorage.setItem(key, JSON.stringify(prog));
-        }
-      }
     } catch (e) {
       setResults((prev) => ({
         ...prev,
@@ -1118,14 +969,16 @@ public class Main {
       return;
     }
 
-    const analysisData = {
-      code,
-      problemId,
-      algorithm: selectedAlgorithm,
-      language
-    };
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({
+        code,
+        problemId,
+        algorithm: selectedAlgorithm,
+        language
+      })
+    );
 
-    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
     alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   }
 
@@ -1138,15 +991,17 @@ public class Main {
       return;
     }
 
-    const correctionData = {
-      code,
-      problemId,
-      algorithm: selectedAlgorithm,
-      language,
-      action: "correct"
-    };
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({
+        code,
+        problemId,
+        algorithm: selectedAlgorithm,
+        language,
+        action: "correct"
+      })
+    );
 
-    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
     alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   }
 
@@ -1172,11 +1027,13 @@ public class Main {
 
           const nextIdx = prevIdx + 1;
           const nextStep = steps[nextIdx];
+
           if (nextStep) {
             setInfo(nextStep.info);
             setComparisons(nextStep.comp);
             setSwaps(nextStep.sw);
           }
+
           return nextIdx;
         });
       }, speed);
@@ -1189,6 +1046,17 @@ public class Main {
 
   const current = steps[idx] || {};
   const highlight = current.j;
+
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 45
+      : activeSection === "comparison"
+      ? 65
+      : activeSection === "quiz"
+      ? 82
+      : 95;
 
   if (loading) {
     return (
@@ -1207,163 +1075,220 @@ public class Main {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive Sorting Experiment
-            </span>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            {algorithmNames[selectedAlgorithm]}
-          </h1>
-
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Explore sorting visually through simulation, comparison, quiz, and coding practice.
-          </p>
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSA Lab</div>
+            </div>
+          )}
         </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">Algorithm Selection</h2>
-
-          <select
-            value={selectedAlgorithm}
-            onChange={(e) => setSelectedAlgorithm(e.target.value)}
-            className="sorting-select"
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
           >
-            <option value="bubble">Bubble Sort</option>
-            <option value="selection">Selection Sort</option>
-            <option value="insertion">Insertion Sort</option>
-          </select>
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">{algorithmNames[selectedAlgorithm]}</h1>
+            <p className="er-page-subtitle">
+              Explore sorting algorithms through animated simulation, side-by-side comparison, quiz, and coding practice.
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Algorithm Configuration</h2>
+              <p>Select a sorting algorithm and observe its comparisons, swaps, and passes.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>{algorithmNames[selectedAlgorithm]}</strong>
+                <span>
+                  Step through the algorithm and track how the array changes during execution.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
+            <div>
+              <label className="sorting-label">Sorting Algorithm</label>
+              <select
+                value={selectedAlgorithm}
+                onChange={(e) => setSelectedAlgorithm(e.target.value)}
+                className="sorting-select"
+              >
+                <option value="bubble">Bubble Sort</option>
+                <option value="selection">Selection Sort</option>
+                <option value="insertion">Insertion Sort</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="sorting-label">Current Input</label>
+              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+                {input}
+              </div>
+            </div>
+          </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Best = {algorithmMeta[selectedAlgorithm].best}</button>
+            <button className="er-chip active">Average = {algorithmMeta[selectedAlgorithm].average}</button>
+            <button className="er-chip active">Worst = {algorithmMeta[selectedAlgorithm].worst}</button>
+            <button className="er-chip active">Space = {algorithmMeta[selectedAlgorithm].space}</button>
+            <button className="er-chip active">Stable = {algorithmMeta[selectedAlgorithm].stable}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+            {experimentRun ? "Simulation Run" : "Not Started"}
+        </button>
+    </div>
 
           {purchaseMsg ? (
-            <div className="mt-4 text-sm text-green-300 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3">
+            <div className="sorting-info-box" style={{ marginTop: 18 }}>
               {purchaseMsg}
             </div>
           ) : null}
         </section>
 
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <SortingOverview
+                selectedAlgorithm={selectedAlgorithm}
+                algorithmNames={algorithmNames}
+                setSelectedAlgorithm={setSelectedAlgorithm}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
+            {activeSection === "simulation" && (
+              <SortingSimulation
+                selectedAlgorithm={selectedAlgorithm}
+                algorithmNames={algorithmNames}
+                input={input}
+                setInput={setInput}
+                start={start}
+                pause={pause}
+                reset={reset}
+                prevStep={prevStep}
+                nextStep={nextStep}
+                idx={idx}
+                steps={steps}
+                selectedExp={selectedExp}
+                hasAccess={hasAccess}
+                purchaseExpiry={purchaseExpiry}
+                purchaseLoading={purchaseLoading}
+                purchaseMsg={purchaseMsg}
+                handleGooglePayClick={handleGooglePayClick}
+                comparisons={comparisons}
+                swaps={swaps}
+                current={current}
+                highlight={highlight}
+                info={info}
+                speed={speed}
+                setSpeed={setSpeed}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
-              onClick={() => setActiveSection("comparison")}
-            >
-              Comparison
-            </button>
+            {activeSection === "comparison" && <SortingComparison />}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
+            {activeSection === "quiz" && (
+              <SortingQuiz
+                selectedAlgorithm={selectedAlgorithm}
+                algorithmNames={algorithmNames}
+                experimentRun={experimentRun}
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+                exportQuiz={exportQuiz}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
-
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "comparison" && <SortingComparison />}
-
-              {activeSection === "overview" && (
-                <SortingOverview
-                  selectedAlgorithm={selectedAlgorithm}
-                  algorithmNames={algorithmNames}
-                  setSelectedAlgorithm={setSelectedAlgorithm}
-                />
-              )}
-
-              {activeSection === "simulation" && (
-                <SortingSimulation
-                  selectedAlgorithm={selectedAlgorithm}
-                  algorithmNames={algorithmNames}
-                  input={input}
-                  setInput={setInput}
-                  start={start}
-                  pause={pause}
-                  reset={reset}
-                  prevStep={prevStep}
-                  nextStep={nextStep}
-                  idx={idx}
-                  steps={steps}
-                  selectedExp={selectedExp}
-                  hasAccess={hasAccess}
-                  purchaseExpiry={purchaseExpiry}
-                  purchaseLoading={purchaseLoading}
-                  purchaseMsg={purchaseMsg}
-                  handleGooglePayClick={handleGooglePayClick}
-                  comparisons={comparisons}
-                  swaps={swaps}
-                  current={current}
-                  highlight={highlight}
-                  info={info}
-                  speed={speed}
-                  setSpeed={setSpeed}
-                />
-              )}
-
-              {activeSection === "quiz" && (
-                <SortingQuiz
-                  selectedAlgorithm={selectedAlgorithm}
-                  algorithmNames={algorithmNames}
-                  experimentRun={experimentRun}
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                  redoQuiz={redoQuiz}
-                  exportQuiz={exportQuiz}
-                />
-              )}
-
-              {activeSection === "coding" && (
-                <SortingCoding
-                  selectedAlgorithm={selectedAlgorithm}
-                  currentProblems={currentProblems}
-                  codes={codes}
-                  selectedLanguages={selectedLanguages}
-                  results={results}
-                  generateProblems={generateProblems}
-                  handleLanguageChange={handleLanguageChange}
-                  handleCodeChange={handleCodeChange}
-                  runCode={runCode}
-                  analyzeCode={analyzeCode}
-                  correctCode={correctCode}
-                />
-              )}
-            </div>
-          </main>
+            {activeSection === "coding" && (
+              <SortingCoding
+                selectedAlgorithm={selectedAlgorithm}
+                currentProblems={currentProblems}
+                codes={codes}
+                selectedLanguages={selectedLanguages}
+                results={results}
+                generateProblems={generateProblems}
+                handleLanguageChange={handleLanguageChange}
+                handleCodeChange={handleCodeChange}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+              />
+            )}
+          </section>
         </div>
-      </div>
+      </main>
 
       {showPaymentDialog && false && (
         <PaymentDialog
@@ -1381,207 +1306,6 @@ public class Main {
           setLoading={setPurchaseLoading}
           setMessage={setPurchaseMsg}
         />
-      )}
-
-      {showPaymentReceipt && false && paymentDetails && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "40px",
-              borderRadius: "15px",
-              maxWidth: "500px",
-              width: "100%",
-              color: "#000",
-              boxShadow: "0 10px 40px rgba(0,0,0,0.3)"
-            }}
-          >
-            <div style={{ textAlign: "center", marginBottom: 30 }}>
-              <div style={{ fontSize: 50, color: "#27ae60", marginBottom: 10 }}>✓</div>
-              <h2 style={{ margin: 0, color: "#27ae60" }}>Payment Successful!</h2>
-              <p style={{ margin: "5px 0 0 0", color: "#666", fontSize: 14 }}>
-                Your subscription is now active
-              </p>
-            </div>
-
-            <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                padding: "20px",
-                borderRadius: "8px",
-                marginBottom: 25,
-                border: "1px solid #e9ecef"
-              }}
-            >
-              <div style={{ marginBottom: 15, paddingBottom: 15, borderBottom: "1px solid #dee2e6" }}>
-                <p style={{ margin: "0 0 5px 0", color: "#666", fontSize: 12 }}>EXPERIMENT</p>
-                <p style={{ margin: 0, fontSize: 16, fontWeight: "bold", color: "#000" }}>
-                  {paymentDetails.experimentTitle}
-                </p>
-              </div>
-
-              <div
-                style={{
-                  marginBottom: 15,
-                  paddingBottom: 15,
-                  borderBottom: "1px solid #dee2e6",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center"
-                }}
-              >
-                <span style={{ color: "#666", fontSize: 14 }}>Amount Paid</span>
-                <span style={{ fontSize: 18, fontWeight: "bold", color: "#27ae60" }}>
-                  ₹{paymentDetails.amount} {paymentDetails.currency}
-                </span>
-              </div>
-
-              <div
-                style={{
-                  marginBottom: 15,
-                  paddingBottom: 15,
-                  borderBottom: "1px solid #dee2e6",
-                  display: "flex",
-                  justifyContent: "space-between"
-                }}
-              >
-                <span style={{ color: "#666", fontSize: 14 }}>Subscription Duration</span>
-                <span style={{ fontSize: 14, fontWeight: "bold", color: "#000" }}>
-                  {paymentDetails.duration} days
-                </span>
-              </div>
-
-              <div
-                style={{
-                  marginBottom: 15,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center"
-                }}
-              >
-                <span style={{ color: "#666", fontSize: 14 }}>Access Until</span>
-                <span style={{ fontSize: 14, fontWeight: "bold", color: "#2980b9" }}>
-                  {paymentDetails.expiryDate}
-                </span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                backgroundColor: "#f8f9fa",
-                padding: "15px",
-                borderRadius: "8px",
-                marginBottom: 25,
-                fontSize: 12,
-                color: "#666",
-                lineHeight: "1.8"
-              }}
-            >
-              <p style={{ margin: "0 0 8px 0" }}>
-                <strong>Order ID:</strong> {paymentDetails.orderId}
-              </p>
-              <p style={{ margin: "0 0 8px 0" }}>
-                <strong>Transaction ID:</strong> {paymentDetails.transactionId}
-              </p>
-              <p style={{ margin: 0 }}>
-                <strong>Purchase Date:</strong> {paymentDetails.purchaseDate}
-              </p>
-            </div>
-
-            <div
-              style={{
-                backgroundColor: "#e8f5e9",
-                padding: "15px",
-                borderRadius: "8px",
-                marginBottom: 25,
-                borderLeft: "4px solid #27ae60"
-              }}
-            >
-              <h4 style={{ margin: "0 0 10px 0", color: "#27ae60", fontSize: 13 }}>
-                🔒 Security & Privacy
-              </h4>
-              <ul
-                style={{
-                  margin: 0,
-                  padding: "0 0 0 20px",
-                  fontSize: 11,
-                  color: "#555",
-                  lineHeight: "1.6"
-                }}
-              >
-                <li>✓ Encrypted Payment: All transactions are protected by SSL/TLS encryption</li>
-                <li>✓ Data Protection: Your personal data is securely stored and never shared</li>
-                <li>✓ Verification: You can verify this receipt using your Order ID</li>
-                <li>✓ Non-transferable: This subscription is exclusively for the registered user</li>
-                <li>✓ Support: Report any unauthorized access at support@virtuallab.com</li>
-              </ul>
-            </div>
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                className="btn success"
-                onClick={closePaymentReceipt}
-                style={{
-                  flex: 1,
-                  padding: "12px 20px",
-                  fontSize: 14,
-                  fontWeight: "bold",
-                  backgroundColor: "#27ae60",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer"
-                }}
-              >
-                Start Learning
-              </button>
-              <button
-                className="btn secondary"
-                onClick={closePaymentReceipt}
-                style={{
-                  flex: 1,
-                  padding: "12px 20px",
-                  fontSize: 14,
-                  fontWeight: "bold",
-                  backgroundColor: "#3498db",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer"
-                }}
-              >
-                Download Receipt
-              </button>
-            </div>
-
-            <div
-              style={{
-                marginTop: 20,
-                padding: "12px",
-                backgroundColor: "#fff3cd",
-                borderRadius: "5px",
-                fontSize: 12,
-                color: "#856404",
-                borderLeft: "4px solid #ffc107"
-              }}
-            >
-              <strong>Note:</strong> After {paymentDetails.duration} days, you'll need to renew your subscription to continue accessing this experiment.
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
