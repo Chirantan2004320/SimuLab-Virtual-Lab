@@ -31,9 +31,13 @@ export default function GraphCoding({
         <div>
           <h2 className="sorting-sim-title">Coding Practice</h2>
           <p className="sorting-sim-subtitle">
-            Solve generated {traversalType.toUpperCase()} graph problems and test your implementation.
+            Solve {traversalType.toUpperCase()} graph traversal problems and test your implementation.
           </p>
         </div>
+      </div>
+
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Practice Mode:</strong> Generate graph traversal problems, run code, analyze logic, and correct mistakes.
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -64,7 +68,9 @@ export default function GraphCoding({
                 <label className="sorting-label">Language</label>
                 <select
                   value={selectedLanguage}
-                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  onChange={(e) =>
+                    handleLanguageChange(problem.id, e.target.value, problem)
+                  }
                   className="sorting-select"
                 >
                   {LANGUAGES.map((lang) => (
@@ -81,7 +87,7 @@ export default function GraphCoding({
               onChange={(e) =>
                 handleCodeChange(problem.id, selectedLanguage, e.target.value)
               }
-              placeholder="Write your code here..."
+              placeholder="Write your graph traversal solution here..."
               rows={14}
               className="coding-textarea-upgraded"
             />

@@ -1,5 +1,5 @@
 import React from "react";
-import { Code2, Play, Wand2, SearchCheck } from "lucide-react";
+import { Code2, Play, Sparkles, Wrench } from "lucide-react";
 
 const LANGUAGES = [
   { value: "javascript", label: "JavaScript" },
@@ -21,126 +21,118 @@ const LinkedListCoding = ({
   analyzeCode,
   correctCode
 }) => {
+  
+  
+  React.useEffect(() => {
+  if (currentProblems.length === 0) {
+    generateProblems();
+  }
+}, [currentProblems.length, generateProblems]);
+
+
   return (
-    <section className="sorting-sim-card">
-      <div className="sorting-sim-header">
-        <div className="sorting-sim-title-wrap">
-          <div className="sorting-sim-icon">
-            <Code2 size={18} />
-          </div>
-          <div>
-            <h2 className="sorting-sim-title">Coding Practice</h2>
-            <p className="sorting-sim-subtitle">
-              Practice linked list logic with implementation-based coding problems.
-            </p>
-          </div>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Code2 size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Coding Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Solve linked list problems and test your logic across languages.
+          </p>
         </div>
       </div>
 
-      <div className="sorting-info-box" style={{ marginBottom: "18px" }}>
-        Generate linked list problems, choose a language, write your solution, and test it.
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Practice Mode:</strong> Complete all problems below. JavaScript runs directly.
       </div>
 
-      <div style={{ marginBottom: "18px" }}>
-        <button className="sim-btn sim-btn-primary" onClick={generateProblems}>
-          Generate Problems
-        </button>
-      </div>
+      {currentProblems.map((problem, index) => {
+        const selectedLanguage = selectedLanguages[problem.id] || "javascript";
+        const codeKey = `${problem.id}_${selectedLanguage}`;
 
-      {currentProblems.length === 0 ? (
-        <div className="sorting-empty-state">
-          No problems generated yet. Click <strong>Generate Problems</strong> to begin.
-        </div>
-      ) : (
-        <div style={{ display: "grid", gap: "18px" }}>
-          {currentProblems.map((problem, index) => {
-            const selectedLanguage = selectedLanguages[problem.id] || "javascript";
-            const codeKey = `${problem.id}_${selectedLanguage}`;
-
-            return (
-              <div key={problem.id} className="modern-coding-card">
-                <div className="modern-coding-top">
-                  <div>
-                    <div className="modern-coding-badge">
-                      Problem {index + 1} • {problem.type}
-                    </div>
-                    <h3 className="modern-coding-title">{problem.title}</h3>
-                    <p className="modern-coding-desc">{problem.description}</p>
-                  </div>
-                </div>
-
-                <div className="modern-coding-controls">
-                  <div className="modern-coding-select-wrap">
-                    <label className="sorting-label">Select Language</label>
-                    <select
-                      value={selectedLanguage}
-                      onChange={(e) =>
-                        handleLanguageChange(problem.id, e.target.value, problem)
-                      }
-                      className="sorting-select"
-                    >
-                      {LANGUAGES.map((lang) => (
-                        <option key={lang.value} value={lang.value}>
-                          {lang.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <textarea
-                  value={codes[codeKey] || ""}
-                  onChange={(e) =>
-                    handleCodeChange(problem.id, selectedLanguage, e.target.value)
-                  }
-                  placeholder="Write your code here..."
-                  className="modern-coding-editor"
-                  rows={14}
-                />
-
-                <div className="modern-coding-actions">
-                  <button
-                    className="sim-btn sim-btn-primary"
-                    onClick={() => runCode(problem.id, selectedLanguage)}
-                  >
-                    <Play size={16} />
-                    Run Code
-                  </button>
-
-                  <button
-                    className="sim-btn sim-btn-muted"
-                    onClick={() => analyzeCode(problem.id, selectedLanguage)}
-                  >
-                    <SearchCheck size={16} />
-                    Analyze Code
-                  </button>
-
-                  <button
-                    className="sim-btn sim-btn-success"
-                    onClick={() => correctCode(problem.id, selectedLanguage)}
-                  >
-                    <Wand2 size={16} />
-                    Correct Code
-                  </button>
-                </div>
-
-                {selectedLanguage !== "javascript" && (
-                  <div className="modern-coding-note">
-                    Execution for {selectedLanguage.toUpperCase()} will be enabled later. For now,
-                    direct execution works in JavaScript only.
-                  </div>
-                )}
-
-                {results[problem.id] && (
-                  <div className="modern-coding-result">
-                    {results[problem.id]}
-                  </div>
-                )}
+        return (
+          <div key={problem.id} className="coding-card-upgraded">
+            {/* HEADER */}
+            <div className="coding-card-header">
+              <div>
+                <h3>Problem {index + 1} • {problem.type}</h3>
+                <p>{problem.description}</p>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              <div className="coding-language-wrap">
+                <label className="sorting-label">Language</label>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) =>
+                    handleLanguageChange(problem.id, e.target.value, problem)
+                  }
+                  className="sorting-select"
+                >
+                  {LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* CODE EDITOR */}
+            <textarea
+              value={codes[codeKey] || ""}
+              onChange={(e) =>
+                handleCodeChange(problem.id, selectedLanguage, e.target.value)
+              }
+              rows={14}
+              className="coding-textarea-upgraded"
+              placeholder="Write your solution here..."
+            />
+
+            {/* ACTIONS */}
+            <div className="coding-actions-upgraded">
+              <button
+                className="sim-btn sim-btn-primary"
+                onClick={() => runCode(problem.id, selectedLanguage)}
+              >
+                <Play size={16} />
+                Run Code
+              </button>
+
+              <button
+                className="sim-btn sim-btn-muted"
+                onClick={() => analyzeCode(problem.id, selectedLanguage)}
+              >
+                <Sparkles size={16} />
+                Analyze Code
+              </button>
+
+              <button
+                className="sim-btn sim-btn-danger"
+                onClick={() => correctCode(problem.id, selectedLanguage)}
+              >
+                <Wrench size={16} />
+                Correct Code
+              </button>
+            </div>
+
+            {/* NOTE */}
+            {selectedLanguage !== "javascript" && (
+              <div className="modern-coding-note">
+                Execution for {selectedLanguage.toUpperCase()} will be enabled later.
+              </div>
+            )}
+
+            {/* RESULT */}
+            {results[problem.id] && (
+              <div className="coding-result-box">
+                {results[problem.id]}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </section>
   );
 };

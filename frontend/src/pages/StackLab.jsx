@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FlaskConical } from "lucide-react";
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  Cpu
+} from "lucide-react";
 import "./SortingLab.css";
 import "./Lab.css";
 
@@ -374,10 +381,22 @@ public class Main {
 `;
 }
 
+
+const simulabLogo = "/assets/logo.png";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+];
+
 export default function StackLab() {
   const [stack, setStack] = useState([]);
   const [input, setInput] = useState("");
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [message, setMessage] = useState("Stack initialized. Ready to begin.");
   const [experimentRun, setExperimentRun] = useState(false);
   const [maxSize, setMaxSize] = useState(5);
@@ -395,6 +414,15 @@ export default function StackLab() {
   const [results, setResults] = useState({});
 
   const inputRef = useRef(null);
+
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 52
+      : activeSection === "quiz"
+      ? 78
+      : 95;
 
   useEffect(() => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
@@ -600,7 +628,6 @@ export default function StackLab() {
       for (const test of problem.tests) {
         const args = test.input.map((item) => (Array.isArray(item) ? [...item] : item));
 
-        // eslint-disable-next-line no-new-func
         const fn = new Function(
           ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
           `${code}; return ${problem.functionName}(${args
@@ -640,14 +667,16 @@ export default function StackLab() {
       return;
     }
 
-    const analysisData = {
-      code,
-      problemId,
-      topic: "stack",
-      language
-    };
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "stack",
+        language
+      })
+    );
 
-    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
     alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -660,48 +689,123 @@ export default function StackLab() {
       return;
     }
 
-    const correctionData = {
-      code,
-      problemId,
-      topic: "stack",
-      language,
-      action: "correct"
-    };
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "stack",
+        language,
+        action: "correct"
+      })
+    );
 
-    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
     alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive Stack Experiment
-            </span>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            Stack
-          </h1>
-
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Learn stack operations visually through push, pop, peek, size checks, quiz
-            practice, and coding exercises.
-          </p>
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSA Lab</div>
+            </div>
+          )}
         </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">Stack Configuration</h2>
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+          >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
 
-          <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "end" }}>
-            <div style={{ minWidth: "220px" }}>
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">Stack</h1>
+            <p className="er-page-subtitle">
+              Learn stack operations visually through push, pop, peek, size checks, quiz practice, and coding exercises.
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Stack Configuration</h2>
+              <p>Set stack capacity and observe LIFO behavior during operations.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>LIFO Stack</strong>
+                <span>
+                  Current size: {stack.length}/{maxSize}. Top index:{" "}
+                  {stack.length ? stack.length - 1 : "NULL"}.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
+            <div>
               <label className="sorting-label">Maximum Stack Size</label>
               <input
                 type="number"
@@ -711,94 +815,85 @@ export default function StackLab() {
                 className="sorting-input"
               />
             </div>
+
+            <div>
+              <label className="sorting-label">Current Status</label>
+              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+                {stack.length === 0
+                  ? "Empty Stack"
+                  : stack.length >= maxSize
+                  ? "Stack Full"
+                  : `${stack.length} item(s) active`}
+              </div>
+            </div>
+          </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Principle = LIFO</button>
+            <button className="er-chip active">Size = {stack.length}/{maxSize}</button>
+            <button className="er-chip active">
+              Top = {stack.length ? stack[stack.length - 1] : "NULL"}
+            </button>
+            <button className="er-chip active">Push/Pop = O(1)</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Experiment Run" : "Not Started"}
+            </button>
           </div>
         </section>
 
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && <StackOverview />}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
+            {activeSection === "simulation" && (
+              <StackSimulation
+                stack={stack}
+                input={input}
+                setInput={setInput}
+                pushElement={pushElement}
+                popElement={popElement}
+                peekElement={peekElement}
+                checkIsEmpty={checkIsEmpty}
+                showSize={showSize}
+                reset={reset}
+                message={message}
+                inputRef={inputRef}
+                maxSize={maxSize}
+                highlightedIndex={highlightedIndex}
+                lastOperation={lastOperation}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
+            {activeSection === "quiz" && (
+              <StackQuiz
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                experimentRun={experimentRun}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
-
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "overview" && <StackOverview />}
-
-              {activeSection === "simulation" && (
-                <StackSimulation
-                  stack={stack}
-                  input={input}
-                  setInput={setInput}
-                  pushElement={pushElement}
-                  popElement={popElement}
-                  peekElement={peekElement}
-                  checkIsEmpty={checkIsEmpty}
-                  showSize={showSize}
-                  reset={reset}
-                  message={message}
-                  inputRef={inputRef}
-                  maxSize={maxSize}
-                  highlightedIndex={highlightedIndex}
-                  lastOperation={lastOperation}
-                />
-              )}
-
-              {activeSection === "quiz" && (
-                <StackQuiz
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  experimentRun={experimentRun}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                  redoQuiz={redoQuiz}
-                />
-              )}
-
-              {activeSection === "coding" && (
-                <StackCoding
-                  currentProblems={currentProblems}
-                  selectedLanguages={selectedLanguages}
-                  codes={codes}
-                  results={results}
-                  generateProblems={generateProblems}
-                  handleLanguageChange={handleLanguageChange}
-                  handleCodeChange={handleCodeChange}
-                  runCode={runCode}
-                  analyzeCode={analyzeCode}
-                  correctCode={correctCode}
-                />
-              )}
-            </div>
-          </main>
+            {activeSection === "coding" && (
+              <StackCoding
+                currentProblems={currentProblems}
+                selectedLanguages={selectedLanguages}
+                codes={codes}
+                results={results}
+                generateProblems={generateProblems}
+                handleLanguageChange={handleLanguageChange}
+                handleCodeChange={handleCodeChange}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+              />
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

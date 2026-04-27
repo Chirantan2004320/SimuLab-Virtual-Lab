@@ -56,6 +56,13 @@ import DVLSIRingOscillatorLab from "./pages/labs/DVLSI/RingOscillator/DVLSIRingO
 import DVLSISRAMCellLab from "./pages/labs/DVLSI/SRAMCell/DVLSISRAMCellLab.jsx";
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from './context/AuthContext';
+import MicrocontrollerLabIndex from "./pages/MicrocontrollerLabIndex.jsx";
+import GPIOLEDLab from "./pages/labs/Microcontrollers/GPIO/GPIOLEDLab.jsx";
+import ButtonInputLab from "./pages/labs/Microcontrollers/ButtonInput/ButtonInputLab.jsx";
+import LEDBlinkLab from "./pages/labs/Microcontrollers/LEDBlink/LEDBlinkLab.jsx";
+import TrafficLightLab from "./pages/labs/Microcontrollers/TrafficLight/TrafficLightLab.jsx";
+import SevenSegmentLab from "./pages/labs/Microcontrollers/SevenSegment/SevenSegmentLab.jsx";
+import PWMLedLab from "./pages/labs/Microcontrollers/PWMLED/PWMLedLab.jsx";
 
 // Public Pages
 import Home from "./pages/Home.jsx";
@@ -235,6 +242,17 @@ function AppContent() {
         <Route path="/labs/dvlsi/ring-oscillator" element={<ProtectedRoute><DVLSIRingOscillatorLab /></ProtectedRoute>}/>
         <Route path="/labs/dvlsi/sram-cell" element={<ProtectedRoute><DVLSISRAMCellLab /></ProtectedRoute>}/>
         
+
+          {/* Microcontroller Lab index and experiments */}
+          <Route path="/labs/microcontroller" element={<ProtectedRoute><MicrocontrollerLabIndex /></ProtectedRoute>}/>
+          <Route path="/labs/microcontroller/gpio-led"element={<ProtectedRoute><GPIOLEDLab /></ProtectedRoute>}/>
+          <Route path="/labs/microcontroller/button-input" element={<ProtectedRoute><ButtonInputLab /></ProtectedRoute>} />
+          <Route path="/labs/microcontroller/led-blink" element={<ProtectedRoute><LEDBlinkLab /></ProtectedRoute>} />
+          <Route path="/labs/microcontroller/traffic-light" element={<ProtectedRoute><TrafficLightLab /></ProtectedRoute>} />
+          <Route path="/labs/microcontroller/seven-segment" element={<ProtectedRoute><SevenSegmentLab /></ProtectedRoute>} />
+          <Route path="/labs/microcontroller/pwm-led" element={<ProtectedRoute><PWMLedLab /></ProtectedRoute>} />
+
+
         {/* 🚫 Fallback Route (optional) */}
         <Route path="*" element={<h2 style={{ textAlign: "center", marginTop: "50px" }}>404 - Page Not Found</h2>} />
 

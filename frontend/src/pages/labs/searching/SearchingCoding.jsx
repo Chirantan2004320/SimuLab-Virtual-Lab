@@ -31,10 +31,13 @@ export default function SearchingCoding({
         <div>
           <h2 className="sorting-sim-title">Coding Practice</h2>
           <p className="sorting-sim-subtitle">
-            Solve generated {searchType === "binary" ? "Binary Search" : "Linear Search"} problems
-            and test your implementation in code.
+            Solve {searchType === "binary" ? "Binary Search" : "Linear Search"} problems and test your implementation.
           </p>
         </div>
+      </div>
+
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Practice Mode:</strong> Generate problems, write your solution, run code, analyze, and correct it.
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -65,7 +68,9 @@ export default function SearchingCoding({
                 <label className="sorting-label">Language</label>
                 <select
                   value={selectedLanguage}
-                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  onChange={(e) =>
+                    handleLanguageChange(problem.id, e.target.value, problem)
+                  }
                   className="sorting-select"
                 >
                   {LANGUAGES.map((lang) => (

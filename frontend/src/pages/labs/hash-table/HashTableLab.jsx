@@ -1,33 +1,43 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FlaskConical } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  Cpu,
+  GitCompare
+} from "lucide-react";
+
 import "../../Lab.css";
 import "../../SortingLab.css";
+
 import HashTableOverview from "./HashTableOverview";
 import HashTableSimulation from "./HashTableSimulation";
 import HashTableQuiz from "./HashTableQuiz";
 import HashTableCoding from "./HashTableCoding";
+import HashTableComparison from "./HashTableComparison";
 
 const TABLE_SIZE = 7;
+const simulabLogo = "/assets/logo.png";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "comparison", label: "Comparison", icon: GitCompare },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+];
 
 const hashQuizQuestions = [
   {
     question: "What is the main purpose of a hash function?",
-    options: [
-      "To sort values",
-      "To map keys to table indices",
-      "To reverse strings",
-      "To balance trees"
-    ],
+    options: ["To sort values", "To map keys to table indices", "To reverse strings", "To balance trees"],
     correct: 1
   },
   {
     question: "What is a collision in a hash table?",
-    options: [
-      "When two keys map to the same index",
-      "When a key is deleted",
-      "When the table is empty",
-      "When values are sorted"
-    ],
+    options: ["When two keys map to the same index", "When a key is deleted", "When the table is empty", "When values are sorted"],
     correct: 0
   },
   {
@@ -51,8 +61,7 @@ const problemBank = [
   {
     id: 1,
     title: "Implement hashInsert(table, key, size)",
-    description:
-      "Write a function hashInsert(table, key, size) that inserts a numeric key into a hash table using separate chaining.",
+    description: "Write a function hashInsert(table, key, size) that inserts a numeric key into a hash table using separate chaining.",
     functionName: "hashInsert",
     tests: [
       { input: [[[], [], [], [], [], [], []], 10, 7], expected: [[], [], [], [10], [], [], []] },
@@ -62,8 +71,7 @@ const problemBank = [
   {
     id: 2,
     title: "Implement hashSearch(table, key, size)",
-    description:
-      "Write a function hashSearch(table, key, size) that returns true if the key exists in the appropriate chain, otherwise false.",
+    description: "Write a function hashSearch(table, key, size) that returns true if the key exists in the appropriate chain, otherwise false.",
     functionName: "hashSearch",
     tests: [
       { input: [[[7, 14], [], [], [], [], [], []], 14, 7], expected: true },
@@ -73,8 +81,7 @@ const problemBank = [
   {
     id: 3,
     title: "Implement hashDelete(table, key, size)",
-    description:
-      "Write a function hashDelete(table, key, size) that removes the key from the chain if present and returns the updated table.",
+    description: "Write a function hashDelete(table, key, size) that removes the key from the chain if present and returns the updated table.",
     functionName: "hashDelete",
     tests: [
       { input: [[[7, 14], [], [], [], [], [], []], 14, 7], expected: [[7], [], [], [], [], [], []] },
@@ -84,8 +91,7 @@ const problemBank = [
   {
     id: 4,
     title: "Implement getBucketIndex(key, size)",
-    description:
-      "Write a function getBucketIndex(key, size) that returns the bucket index using the hash rule from this lab.",
+    description: "Write a function getBucketIndex(key, size) that returns the bucket index using the hash rule from this lab.",
     functionName: "getBucketIndex",
     tests: [
       { input: [10, 7], expected: 3 },
@@ -96,8 +102,7 @@ const problemBank = [
   {
     id: 5,
     title: "Implement bucketLength(table, index)",
-    description:
-      "Write a function bucketLength(table, index) that returns the number of elements stored in a given chain.",
+    description: "Write a function bucketLength(table, index) that returns the number of elements stored in a given chain.",
     functionName: "bucketLength",
     tests: [
       { input: [[[7, 14], [], [], [], [], [], []], 0], expected: 2 },
@@ -105,32 +110,6 @@ const problemBank = [
     ]
   }
 ];
-
-const hashCodeTemplates = {
-  javascript: `function hashInsert(table, key, size) {
-  const index = key % size;
-  table[index].push(key);
-  return table;
-}`,
-  python: `def hash_insert(table, key, size):
-    index = key % size
-    table[index].append(key)
-    return table`,
-  cpp: `vector<vector<int>> hashInsert(vector<vector<int>> table, int key, int size) {
-    int index = key % size;
-    table[index].push_back(key);
-    return table;
-}`,
-  c: `void hashInsert(int key, int size, struct Node* table[]) {
-    int index = key % size;
-    // Insert key into linked list at table[index]
-}`,
-  java: `static List<List<Integer>> hashInsert(List<List<Integer>> table, int key, int size) {
-    int index = key % size;
-    table.get(index).add(key);
-    return table;
-}`
-};
 
 const createEmptyTable = () => Array.from({ length: TABLE_SIZE }, () => []);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -222,6 +201,8 @@ export default function HashTableLab() {
   const [table, setTable] = useState(createEmptyTable());
   const [input, setInput] = useState("");
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [message, setMessage] = useState("Hash Table initialized.");
   const [activeBucket, setActiveBucket] = useState(null);
   const [activeValue, setActiveValue] = useState(null);
@@ -243,6 +224,21 @@ export default function HashTableLab() {
   const [results, setResults] = useState({});
 
   const hash = (value) => value % TABLE_SIZE;
+
+  const filledBuckets = table.filter((bucket) => bucket.length > 0).length;
+  const storedKeys = table.reduce((sum, bucket) => sum + bucket.length, 0);
+  const collisionBuckets = table.filter((bucket) => bucket.length > 1).length;
+
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 45
+      : activeSection === "comparison"
+      ? 65
+      : activeSection === "quiz"
+      ? 82
+      : 95;
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
@@ -458,6 +454,7 @@ export default function HashTableLab() {
 
   const submitQuiz = () => {
     let score = 0;
+
     quizQuestions.forEach((q, i) => {
       if (quizAnswers[i] === q.correct) score++;
     });
@@ -541,8 +538,7 @@ export default function HashTableLab() {
     if (language !== "javascript") {
       setResults((prev) => ({
         ...prev,
-        [problemId]:
-          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+        [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
       }));
       return;
     }
@@ -593,14 +589,16 @@ export default function HashTableLab() {
       return;
     }
 
-    const analysisData = {
-      code: currentCode,
-      problemId,
-      topic: "hash-table",
-      language
-    };
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({
+        code: currentCode,
+        problemId,
+        topic: "hash-table",
+        language
+      })
+    );
 
-    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
     alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -613,47 +611,120 @@ export default function HashTableLab() {
       return;
     }
 
-    const correctionData = {
-      code: currentCode,
-      problemId,
-      topic: "hash-table",
-      language,
-      action: "correct"
-    };
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({
+        code: currentCode,
+        problemId,
+        topic: "hash-table",
+        language,
+        action: "correct"
+      })
+    );
 
-    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
     alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive Hash Table Experiment
-            </span>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            Hash Table
-          </h1>
-
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Explore hashing, collisions, separate chaining, insertion, search, and deletion through interactive bucket visualization.
-          </p>
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSA Lab</div>
+            </div>
+          )}
         </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">Settings</h2>
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+          >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
 
-          <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "end" }}>
-            <div style={{ minWidth: "220px" }}>
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">Hash Table</h1>
+            <p className="er-page-subtitle">
+              Explore hashing, collisions, separate chaining, insertion, search, deletion, quiz, and coding practice.
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Hash Table Configuration</h2>
+              <p>Use modulo hashing and separate chaining to understand bucket-based lookup.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>Separate Chaining</strong>
+                <span>Hash rule: key % {TABLE_SIZE}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
+            <div>
               <label className="sorting-label">Animation Speed</label>
               <select
                 value={animationSpeed}
@@ -666,92 +737,82 @@ export default function HashTableLab() {
                 <option value={350}>Fast</option>
               </select>
             </div>
+
+            <div>
+              <label className="sorting-label">Table Size</label>
+              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+                {TABLE_SIZE} Buckets
+              </div>
+            </div>
+          </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Hash = key % {TABLE_SIZE}</button>
+            <button className="er-chip active">Stored Keys = {storedKeys}</button>
+            <button className="er-chip active">Filled Buckets = {filledBuckets}</button>
+            <button className="er-chip active">Collisions = {collisionBuckets}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
           </div>
         </section>
 
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && <HashTableOverview tableSize={TABLE_SIZE} />}
 
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "overview" && <HashTableOverview tableSize={TABLE_SIZE} />}
+            {activeSection === "simulation" && (
+              <HashTableSimulation
+                table={table}
+                input={input}
+                setInput={setInput}
+                insert={insert}
+                search={search}
+                remove={remove}
+                reset={reset}
+                loadSample={loadSample}
+                message={message}
+                activeBucket={activeBucket}
+                activeValue={activeValue}
+                inputRef={inputRef}
+                stepHistory={stepHistory}
+                tableSize={TABLE_SIZE}
+                isRunning={isRunning}
+              />
+            )}
 
-              {activeSection === "simulation" && (
-                <HashTableSimulation
-                  table={table}
-                  input={input}
-                  setInput={setInput}
-                  insert={insert}
-                  search={search}
-                  remove={remove}
-                  reset={reset}
-                  loadSample={loadSample}
-                  message={message}
-                  activeBucket={activeBucket}
-                  activeValue={activeValue}
-                  inputRef={inputRef}
-                  stepHistory={stepHistory}
-                  tableSize={TABLE_SIZE}
-                  isRunning={isRunning}
-                />
-              )}
+            {activeSection === "comparison" && <HashTableComparison />}
 
-              {activeSection === "quiz" && (
-                <HashTableQuiz
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  experimentRun={experimentRun}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                  redoQuiz={redoQuiz}
-                />
-              )}
+            {activeSection === "quiz" && (
+              <HashTableQuiz
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                experimentRun={experimentRun}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
+            )}
 
-              {activeSection === "coding" && (
-                <HashTableCoding
-                  currentProblems={currentProblems}
-                  selectedLanguages={selectedLanguages}
-                  codes={codes}
-                  results={results}
-                  generateProblems={generateProblems}
-                  handleLanguageChange={handleLanguageChange}
-                  handleCodeChange={handleCodeChange}
-                  runCode={runCode}
-                  analyzeCode={analyzeCode}
-                  correctCode={correctCode}
-                />
-              )}
-            </div>
-          </main>
+            {activeSection === "coding" && (
+              <HashTableCoding
+                currentProblems={currentProblems}
+                selectedLanguages={selectedLanguages}
+                codes={codes}
+                results={results}
+                generateProblems={generateProblems}
+                handleLanguageChange={handleLanguageChange}
+                handleCodeChange={handleCodeChange}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+              />
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

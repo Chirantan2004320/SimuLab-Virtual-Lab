@@ -1,5 +1,46 @@
 import React from "react";
-import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight, Activity } from "lucide-react";
+import {
+  Play,
+  Pause,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Activity,
+  Gauge,
+  MemoryStick,
+  Layers,
+  Sparkles
+} from "lucide-react";
+
+const algorithmMeta = {
+  bubble: {
+    name: "Bubble Sort",
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: "Stable",
+    insight: "Larger values repeatedly bubble toward the end after every pass."
+  },
+  selection: {
+    name: "Selection Sort",
+    best: "O(n²)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: "Not Stable",
+    insight: "The minimum element is selected from the unsorted portion and placed at the front."
+  },
+  insertion: {
+    name: "Insertion Sort",
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    stable: "Stable",
+    insight: "Each key is inserted into its correct position inside the sorted left portion."
+  }
+};
 
 const SortingSimulation = ({
   selectedAlgorithm,
@@ -21,6 +62,35 @@ const SortingSimulation = ({
 }) => {
   const arr = current.array || [];
   const maxVal = arr.length ? Math.max(...arr) : 1;
+  const meta = algorithmMeta[selectedAlgorithm];
+
+  // ✅ NEW: actual complexity logic
+  const isCompleted = steps.length > 0 && idx >= steps.length - 1;
+  const inputSize = arr.length;
+
+  const actualComplexity = isCompleted
+    ? `${comparisons} comparisons + ${swaps} operations`
+    : "Run full simulation to calculate";
+
+  const getBlockClass = (i) => {
+    if (selectedAlgorithm === "selection") {
+      if (i === current.minIndex) return "bar-min";
+      if (i === current.j) return "bar-scan";
+      if (i === current.i) return "bar-current";
+    }
+
+    if (selectedAlgorithm === "insertion") {
+      if (i === current.keyIndex) return "bar-current";
+      if (i === current.j) return "bar-scan";
+      if (i <= current.sortedEnd && current.sortedEnd !== undefined) return "bar-sorted";
+    }
+
+    if (selectedAlgorithm === "bubble") {
+      if (i === current.j || i === current.j + 1) return "bar-active";
+    }
+
+    return "";
+  };
 
   return (
     <section className="sorting-sim-card">
@@ -32,10 +102,57 @@ const SortingSimulation = ({
           <div>
             <h2 className="sorting-sim-title">Simulation</h2>
             <p className="sorting-sim-subtitle">
-              Visualize each comparison, shift, and swap step by step.
+              Visualize comparisons, swaps, shifts, sorted sections, and complexity.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* ✅ THEORY COMPLEXITY */}
+      <div className="overview-grid" style={{ marginBottom: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>Time Complexity</h4>
+          </div>
+          <p>
+            Best: <strong>{meta.best}</strong> · Average: <strong>{meta.average}</strong> · Worst:{" "}
+            <strong>{meta.worst}</strong>
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <MemoryStick size={18} />
+            <h4>Space + Stability</h4>
+          </div>
+          <p>
+            Space: <strong>{meta.space}</strong> · <strong>{meta.stable}</strong>
+          </p>
+        </div>
+      </div>
+
+      {/* ✅ NEW: ACTUAL COMPLEXITY */}
+      <div className="overview-card" style={{ marginBottom: 18 }}>
+        <div className="overview-card-head">
+          <Gauge size={18} />
+          <h4>Actual Complexity (Your Input)</h4>
+        </div>
+
+        <p>{actualComplexity}</p>
+
+        {isCompleted && (
+          <p style={{ marginTop: 8 }}>
+            For <strong>n = {inputSize}</strong>, algorithm performed{" "}
+            <strong>{comparisons}</strong> comparisons and{" "}
+            <strong>{swaps}</strong> swaps/shifts.
+          </p>
+        )}
+      </div>
+
+      <div className="sorting-info-box">
+        <Sparkles size={16} style={{ marginRight: 10 }} />
+        {meta.insight}
       </div>
 
       <div className="sorting-input-row">
@@ -92,40 +209,40 @@ const SortingSimulation = ({
       </div>
 
       <div className="sorting-info-box">
+        <Layers size={16} style={{ marginRight: 10 }} />
         {info || "Click Start to begin the experiment."}
       </div>
 
       <div className="sorting-visualizer-wrap">
         <div className="sorting-bars-area">
           {arr.map((value, i) => {
-            let extraClass = "";
-
-            if (selectedAlgorithm === "selection") {
-              if (i === current.minIndex) extraClass = "bar-min";
-              else if (i === current.j) extraClass = "bar-scan";
-              else if (i === current.i) extraClass = "bar-current";
-            } else if (selectedAlgorithm === "insertion") {
-              if (i === current.keyIndex) extraClass = "bar-current";
-              else if (i === current.j) extraClass = "bar-scan";
-              else if (i <= current.sortedEnd && current.sortedEnd !== undefined) extraClass = "bar-sorted";
-            } else {
-              if (i === current.j || i === current.j + 1) extraClass = "bar-active";
-            }
-
+            const extraClass = getBlockClass(i);
             const heightPercent = Math.max(14, (value / maxVal) * 100);
 
             return (
-              <div key={i} className="sorting-bar-column">
+              <div key={`${value}-${i}`} className="sorting-bar-column">
                 <div className="sorting-bar-value">{value}</div>
+
                 <div
                   className={`sorting-bar ${extraClass}`}
-                  style={{ height: `${heightPercent}%` }}
+                  style={{
+                    height: `${heightPercent}%`,
+                    transform: extraClass ? "scale(1.08) translateY(-6px)" : undefined
+                  }}
                 />
-                <div className="sorting-bar-index">{i}</div>
+
+                <div className="sorting-bar-index">idx {i}</div>
               </div>
             );
           })}
         </div>
+      </div>
+
+      <div className="er-chip-row" style={{ marginBottom: 18 }}>
+        <button className="er-chip active">Blue = Normal</button>
+        <button className="er-chip active">Orange = Comparing</button>
+        <button className="er-chip active">Purple = Scanning</button>
+        <button className="er-chip active">Green = Sorted / Minimum</button>
       </div>
 
       <div className="sorting-bottom-controls">

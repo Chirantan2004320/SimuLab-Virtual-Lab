@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { FlaskConical } from "lucide-react";
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  Cpu,
+  GitCompare
+} from "lucide-react";
+
 import "./Lab.css";
 import "./SortingLab.css";
 
@@ -7,6 +16,17 @@ import LinkedListOverview from "./labs/linked-list/LinkedListOverview.jsx";
 import LinkedListSimulation from "./labs/linked-list/LinkedListSimulation.jsx";
 import LinkedListQuiz from "./labs/linked-list/LinkedListQuiz.jsx";
 import LinkedListCoding from "./labs/linked-list/LinkedListCoding.jsx";
+import LinkedListComparison from "./labs/linked-list/LinkedListComparison.jsx";
+
+const simulabLogo = "/assets/logo.png";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "comparison", label: "Comparison", icon: GitCompare },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+];
 
 const singlyQuizQuestions = [
   {
@@ -122,6 +142,7 @@ export default function LinkedListLab() {
   const [scanningIndex, setScanningIndex] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [message, setMessage] = useState("Linked list initialized.");
   const [experimentRun, setExperimentRun] = useState(false);
 
@@ -141,6 +162,20 @@ export default function LinkedListLab() {
 
   const inputRef = useRef(null);
 
+  const listModeLabel =
+    listType === "doubly" ? "Doubly Linked List" : "Singly Linked List";
+
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 50
+      : activeSection === "comparison"
+      ? 65
+      : activeSection === "quiz"
+      ? 80
+      : 95;
+
   useEffect(() => {
     setNodes([]);
     setInput("");
@@ -153,14 +188,11 @@ export default function LinkedListLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-  }, [listType, quizQuestions.length]);
-
-  useEffect(() => {
     setCurrentProblems([]);
     setCodes({});
     setSelectedLanguages({});
     setResults({});
-  }, [listType]);
+  }, [listType, quizQuestions.length]);
 
   const createNode = (value) => ({
     id: `${Date.now()}-${Math.random()}`,
@@ -319,6 +351,7 @@ export default function LinkedListLab() {
 
   const submitQuiz = () => {
     let score = 0;
+
     quizQuestions.forEach((q, i) => {
       if (quizAnswers[i] === q.correct) score++;
     });
@@ -337,117 +370,25 @@ export default function LinkedListLab() {
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
   };
 
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+  };
+
   const getStarterCode = (problem, language) => {
     if (problem.title === "Insert at Head" && listType === "singly") {
       if (language === "python") {
         return `def insertAtHead(head, value):
     return {"value": value, "next": head}`;
       }
-      if (language === "cpp") {
-        return `struct Node {
-    int value;
-    Node* next;
-    Node(int v) : value(v), next(nullptr) {}
-};
 
-Node* insertAtHead(Node* head, int value) {
-    Node* node = new Node(value);
-    node->next = head;
-    return node;
-}`;
-      }
-      if (language === "c") {
-        return `typedef struct Node {
-    int value;
-    struct Node* next;
-} Node;
-
-Node* insertAtHead(Node* head, int value) {
-    Node* node = (Node*)malloc(sizeof(Node));
-    node->value = value;
-    node->next = head;
-    return node;
-}`;
-      }
-      if (language === "java") {
-        return `class Node {
-    int value;
-    Node next;
-    Node(int value) { this.value = value; }
-}
-
-static Node insertAtHead(Node head, int value) {
-    Node node = new Node(value);
-    node.next = head;
-    return node;
-}`;
-      }
       return `function insertAtHead(head, value) {
   return { value, next: head };
 }`;
     }
 
     if (problem.title === "Insert at Tail" && listType === "singly") {
-      if (language === "python") {
-        return `def insertAtTail(head, value):
-    node = {"value": value, "next": None}
-    if head is None:
-        return node
-    curr = head
-    while curr["next"] is not None:
-        curr = curr["next"]
-    curr["next"] = node
-    return head`;
-      }
-      if (language === "cpp") {
-        return `struct Node {
-    int value;
-    Node* next;
-    Node(int v) : value(v), next(nullptr) {}
-};
-
-Node* insertAtTail(Node* head, int value) {
-    Node* node = new Node(value);
-    if (!head) return node;
-    Node* curr = head;
-    while (curr->next) curr = curr->next;
-    curr->next = node;
-    return head;
-}`;
-      }
-      if (language === "c") {
-        return `typedef struct Node {
-    int value;
-    struct Node* next;
-} Node;
-
-Node* insertAtTail(Node* head, int value) {
-    Node* node = (Node*)malloc(sizeof(Node));
-    node->value = value;
-    node->next = NULL;
-    if (!head) return node;
-    Node* curr = head;
-    while (curr->next) curr = curr->next;
-    curr->next = node;
-    return head;
-}`;
-      }
-      if (language === "java") {
-        return `class Node {
-    int value;
-    Node next;
-    Node(int value) { this.value = value; }
-}
-
-static Node insertAtTail(Node head, int value) {
-    Node node = new Node(value);
-    if (head == null) return node;
-    Node curr = head;
-    while (curr.next != null) curr = curr.next;
-    curr.next = node;
-    return head;
-}`;
-      }
       return `function insertAtTail(head, value) {
   const node = { value, next: null };
   if (!head) return node;
@@ -459,74 +400,18 @@ static Node insertAtTail(Node head, int value) {
 }`;
     }
 
+    if (problem.title === "Search in Linked List") {
+      return `function searchNode(head, value) {
+  let curr = head;
+  while (curr) {
+    if (curr.value === value) return true;
+    curr = curr.next;
+  }
+  return false;
+}`;
+    }
+
     if (problem.title === "Insert at Tail" && listType === "doubly") {
-      if (language === "python") {
-        return `def insertAtTail(head, value):
-    node = {"value": value, "prev": None, "next": None}
-    if head is None:
-        return node
-    curr = head
-    while curr["next"] is not None:
-        curr = curr["next"]
-    curr["next"] = node
-    node["prev"] = curr
-    return head`;
-      }
-      if (language === "cpp") {
-        return `struct Node {
-    int value;
-    Node* prev;
-    Node* next;
-    Node(int v) : value(v), prev(nullptr), next(nullptr) {}
-};
-
-Node* insertAtTail(Node* head, int value) {
-    Node* node = new Node(value);
-    if (!head) return node;
-    Node* curr = head;
-    while (curr->next) curr = curr->next;
-    curr->next = node;
-    node->prev = curr;
-    return head;
-}`;
-      }
-      if (language === "c") {
-        return `typedef struct Node {
-    int value;
-    struct Node* prev;
-    struct Node* next;
-} Node;
-
-Node* insertAtTail(Node* head, int value) {
-    Node* node = (Node*)malloc(sizeof(Node));
-    node->value = value;
-    node->prev = NULL;
-    node->next = NULL;
-    if (!head) return node;
-    Node* curr = head;
-    while (curr->next) curr = curr->next;
-    curr->next = node;
-    node->prev = curr;
-    return head;
-}`;
-      }
-      if (language === "java") {
-        return `class Node {
-    int value;
-    Node prev, next;
-    Node(int value) { this.value = value; }
-}
-
-static Node insertAtTail(Node head, int value) {
-    Node node = new Node(value);
-    if (head == null) return node;
-    Node curr = head;
-    while (curr.next != null) curr = curr.next;
-    curr.next = node;
-    node.prev = curr;
-    return head;
-}`;
-      }
       return `function insertAtTail(head, value) {
   const node = { value, prev: null, next: null };
   if (!head) return node;
@@ -540,53 +425,11 @@ static Node insertAtTail(Node head, int value) {
 }`;
     }
 
-    if (problem.title === "Search in Linked List") {
-      if (language === "python") {
-        return `def searchNode(head, value):
-    curr = head
-    while curr is not None:
-        if curr["value"] == value:
-            return True
-        curr = curr["next"]
-    return False`;
-      }
-      if (language === "cpp") {
-        return `bool searchNode(Node* head, int value) {
-    Node* curr = head;
-    while (curr) {
-        if (curr->value == value) return true;
-        curr = curr->next;
-    }
-    return false;
-}`;
-      }
-      if (language === "c") {
-        return `int searchNode(Node* head, int value) {
-    Node* curr = head;
-    while (curr) {
-        if (curr->value == value) return 1;
-        curr = curr->next;
-    }
-    return 0;
-}`;
-      }
-      if (language === "java") {
-        return `static boolean searchNode(Node head, int value) {
-    Node curr = head;
-    while (curr != null) {
-        if (curr.value == value) return true;
-        curr = curr.next;
-    }
-    return false;
-}`;
-      }
-      return `function searchNode(head, value) {
-  let curr = head;
-  while (curr) {
-    if (curr.value === value) return true;
-    curr = curr.next;
-  }
-  return false;
+    if (problem.title === "Insert at Head" && listType === "doubly") {
+      return `function insertAtHead(head, value) {
+  const node = { value, prev: null, next: head };
+  if (head) head.prev = node;
+  return node;
 }`;
     }
 
@@ -599,14 +442,6 @@ static Node insertAtTail(Node head, int value) {
     curr = curr.prev;
   }
   return result;
-}`;
-    }
-
-    if (problem.title === "Insert at Head" && listType === "doubly") {
-      return `function insertAtHead(head, value) {
-  const node = { value, prev: null, next: head };
-  if (head) head.prev = node;
-  return node;
 }`;
     }
 
@@ -658,7 +493,7 @@ static Node insertAtTail(Node head, int value) {
     const codeKey = `${problemId}_${language}`;
     const userCode = codes[codeKey];
 
-    if (!userCode) {
+    if (!userCode || !problem) {
       setResults((prev) => ({ ...prev, [problemId]: "Please enter code." }));
       return;
     }
@@ -666,8 +501,7 @@ static Node insertAtTail(Node head, int value) {
     if (language !== "javascript") {
       setResults((prev) => ({
         ...prev,
-        [problemId]:
-          `${language.toUpperCase()} execution will be added later. For now, use JavaScript.`
+        [problemId]: `${language.toUpperCase()} execution will be added later. For now, use JavaScript.`
       }));
       return;
     }
@@ -681,15 +515,18 @@ static Node insertAtTail(Node head, int value) {
       } else if (problem.title === "Insert at Tail" && listType === "singly") {
         const fn = new Function("head", "value", `${userCode}; return insertAtTail(head, value);`);
         result = fn({ value: 10, next: { value: 20, next: null } }, 30);
-      } else if (problem.title === "Insert at Tail" && listType === "doubly") {
-        const fn = new Function("head", "value", `${userCode}; return insertAtTail(head, value);`);
-        result = fn({ value: 10, prev: null, next: null }, 20);
       } else if (problem.title === "Search in Linked List") {
         const fn = new Function("head", "value", `${userCode}; return searchNode(head, value);`);
         result = fn(
           { value: 10, next: { value: 20, next: { value: 30, next: null } } },
           20
         );
+      } else if (problem.title === "Insert at Tail" && listType === "doubly") {
+        const fn = new Function("head", "value", `${userCode}; return insertAtTail(head, value);`);
+        result = fn({ value: 10, prev: null, next: null }, 20);
+      } else if (problem.title === "Insert at Head" && listType === "doubly") {
+        const fn = new Function("head", "value", `${userCode}; return insertAtHead(head, value);`);
+        result = fn({ value: 20, prev: null, next: null }, 10);
       } else if (problem.title === "Backward Traversal") {
         const tail = {
           value: 30,
@@ -704,14 +541,12 @@ static Node insertAtTail(Node head, int value) {
           },
           next: null
         };
+
         tail.prev.next = tail;
         tail.prev.prev.next = tail.prev;
 
         const fn = new Function("tail", `${userCode}; return backwardTraversal(tail);`);
         result = fn(tail);
-      } else if (problem.title === "Insert at Head" && listType === "doubly") {
-        const fn = new Function("head", "value", `${userCode}; return insertAtHead(head, value);`);
-        result = fn({ value: 20, prev: null, next: null }, 10);
       }
 
       setResults((prev) => ({
@@ -735,14 +570,16 @@ static Node insertAtTail(Node head, int value) {
       return;
     }
 
-    const analysisData = {
-      code: userCode,
-      problemId,
-      topic: "linked-list",
-      language
-    };
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({
+        code: userCode,
+        problemId,
+        topic: "linked-list",
+        language
+      })
+    );
 
-    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
     alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback.");
   };
 
@@ -755,155 +592,217 @@ static Node insertAtTail(Node head, int value) {
       return;
     }
 
-    const correctionData = {
-      code: userCode,
-      problemId,
-      topic: "linked-list",
-      language,
-      action: "correct"
-    };
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({
+        code: userCode,
+        problemId,
+        topic: "linked-list",
+        language,
+        action: "correct"
+      })
+    );
 
-    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
     alert("Code correction request sent to AI Assistant. Check the AI chat for corrected code.");
   };
 
-  const redoQuiz = () => {
-  setQuizAnswers(Array(quizQuestions.length).fill(null));
-  setQuizSubmitted(false);
-  setQuizScore(0);
-};
-
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive Linked List Experiment
-            </span>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            Linked List
-          </h1>
-
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Explore linked list operations visually through theory, simulation, quiz, and coding practice.
-          </p>
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSA Lab</div>
+            </div>
+          )}
         </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">List Type</h2>
-
-          <select
-            value={listType}
-            onChange={(e) => setListType(e.target.value)}
-            className="sorting-select"
-            style={{ maxWidth: "280px" }}
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
           >
-            <option value="singly">Singly Linked List</option>
-            <option value="doubly">Doubly Linked List</option>
-          </select>
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">Linked List</h1>
+            <p className="er-page-subtitle">
+              Explore singly and doubly linked list operations through simulation, comparison, quiz, and coding practice.
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Linked List Configuration</h2>
+              <p>Select list type and observe how node connections change.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>{listModeLabel}</strong>
+                <span>
+                  Current nodes: {nodes.length}. Insert, delete, search, and traverse linked nodes.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
+            <div>
+              <label className="sorting-label">List Type</label>
+              <select
+                value={listType}
+                onChange={(e) => setListType(e.target.value)}
+                className="sorting-select"
+              >
+                <option value="singly">Singly Linked List</option>
+                <option value="doubly">Doubly Linked List</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="sorting-label">Current Status</label>
+              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+                {nodes.length === 0 ? "Empty List" : `${nodes.length} node(s) active`}
+              </div>
+            </div>
+          </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Type = {listModeLabel}</button>
+            <button className="er-chip active">Nodes = {nodes.length}</button>
+            <button className="er-chip active">
+              Head = {nodes.length ? nodes[0].value : "NULL"}
+            </button>
+            <button className="er-chip active">
+              Tail = {nodes.length ? nodes[nodes.length - 1].value : "NULL"}
+            </button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Experiment Run" : "Not Started"}
+            </button>
+          </div>
         </section>
 
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && <LinkedListOverview listType={listType} />}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
+            {activeSection === "simulation" && (
+              <LinkedListSimulation
+                listType={listType}
+                nodes={nodes}
+                input={input}
+                setInput={setInput}
+                searchValue={searchValue}
+                setSearchValue={setSearchValue}
+                insertHead={insertHead}
+                insertTail={insertTail}
+                deleteHead={deleteHead}
+                deleteTail={deleteTail}
+                traverseForward={traverseForward}
+                traverseBackward={traverseBackward}
+                searchNode={searchNode}
+                reset={reset}
+                message={message}
+                inputRef={inputRef}
+                highlightedIndex={highlightedIndex}
+                scanningIndex={scanningIndex}
+                isSearching={isSearching}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
+            {activeSection === "comparison" && <LinkedListComparison />}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
+            {activeSection === "quiz" && (
+              <LinkedListQuiz
+                listType={listType}
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                experimentRun={experimentRun}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
+            )}
 
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "overview" && (
-                <LinkedListOverview listType={listType} />
-              )}
-
-              {activeSection === "simulation" && (
-                <LinkedListSimulation
-                  listType={listType}
-                  nodes={nodes}
-                  input={input}
-                  setInput={setInput}
-                  searchValue={searchValue}
-                  setSearchValue={setSearchValue}
-                  insertHead={insertHead}
-                  insertTail={insertTail}
-                  deleteHead={deleteHead}
-                  deleteTail={deleteTail}
-                  traverseForward={traverseForward}
-                  traverseBackward={traverseBackward}
-                  searchNode={searchNode}
-                  reset={reset}
-                  message={message}
-                  inputRef={inputRef}
-                  highlightedIndex={highlightedIndex}
-                  scanningIndex={scanningIndex}
-                  isSearching={isSearching}
-                />
-              )}
-
-              {activeSection === "quiz" && (
-                <LinkedListQuiz
-                  listType={listType}
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  experimentRun={experimentRun}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                  redoQuiz={redoQuiz}
-                />
-              )}
-
-              {activeSection === "coding" && (
-                <LinkedListCoding
-                  currentProblems={currentProblems}
-                  codes={codes}
-                  selectedLanguages={selectedLanguages}
-                  results={results}
-                  generateProblems={generateProblems}
-                  handleLanguageChange={handleLanguageChange}
-                  handleCodeChange={handleCodeChange}
-                  runCode={runCode}
-                  analyzeCode={analyzeCode}
-                  correctCode={correctCode}
-                />
-              )}
-            </div>
-          </main>
+            {activeSection === "coding" && (
+              <LinkedListCoding
+                currentProblems={currentProblems}
+                codes={codes}
+                selectedLanguages={selectedLanguages}
+                results={results}
+                generateProblems={generateProblems}
+                handleLanguageChange={handleLanguageChange}
+                handleCodeChange={handleCodeChange}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+              />
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
