@@ -1,111 +1,406 @@
-import React, { useMemo, useState } from "react";
-import { FileCode2, CheckCircle2, Lightbulb, RefreshCcw } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  FileCode2,
+  Play,
+  Wrench,
+  Sparkles,
+  CheckCircle2,
+  XCircle
+} from "lucide-react";
+import { saveCodingSubmission } from "../../../../API/progressApi";
 
-const problemBank = [
+const LANGUAGES = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "cpp", label: "C++" },
+  { value: "c", label: "C" },
+  { value: "java", label: "Java" }
+];
+
+const problems = [
   {
     id: 1,
-    title: "Predict the next state",
+    title: "2-bit Counter Next State",
     description:
-      "If a 2-bit counter is currently at state 10, what will be the next state after one clock pulse?",
-    answer: "11",
-    placeholder: "Write the next binary state here..."
+      "Write a function nextCounterState(count) that returns the next count value for a 2-bit up counter.",
+    functionName: "nextCounterState",
+    tests: [
+      { input: [0], expected: 1 },
+      { input: [1], expected: 2 },
+      { input: [2], expected: 3 },
+      { input: [3], expected: 0 }
+    ]
   },
   {
     id: 2,
-    title: "Write the full count sequence",
+    title: "Counter Binary Output",
     description:
-      "Write the full sequence of a 2-bit binary up counter starting from 00.",
-    answer: "00 → 01 → 10 → 11 → 00",
-    placeholder: "Write the full counter sequence here..."
+      "Write a function counterBinary(count) that returns the 2-bit binary output string Q1Q0.",
+    functionName: "counterBinary",
+    tests: [
+      { input: [0], expected: "00" },
+      { input: [1], expected: "01" },
+      { input: [2], expected: "10" },
+      { input: [3], expected: "11" }
+    ]
   },
   {
     id: 3,
-    title: "Identify Q1 and Q0",
+    title: "Counter Result Object",
     description:
-      "For decimal count 3 in a 2-bit counter, write the values of Q1 and Q0.",
-    answer: "Q1 = 1, Q0 = 1",
-    placeholder: "Write Q1 and Q0 values here..."
-  },
-  {
-    id: 4,
-    title: "Explain reset operation",
-    description:
-      "Explain what happens when the counter reset is applied.",
-    answer:
-      "Reset brings the counter back to the initial state 00 regardless of the current count.",
-    placeholder: "Write your explanation here..."
+      "Write a function counterResult(count) that returns { q1, q0, binary, nextBinary }.",
+    functionName: "counterResult",
+    tests: [
+      {
+        input: [0],
+        expected: { q1: 0, q0: 0, binary: "00", nextBinary: "01" }
+      },
+      {
+        input: [1],
+        expected: { q1: 0, q0: 1, binary: "01", nextBinary: "10" }
+      },
+      {
+        input: [2],
+        expected: { q1: 1, q0: 0, binary: "10", nextBinary: "11" }
+      },
+      {
+        input: [3],
+        expected: { q1: 1, q0: 1, binary: "11", nextBinary: "00" }
+      }
+    ]
   }
 ];
 
-function normalizeText(value) {
-  return value
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .replace(/->/g, "→")
-    .trim();
+const templates = {
+  javascript: [
+    `function nextCounterState(count) {
+  return (count + 1) % 4;
+}`,
+    `function counterBinary(count) {
+  return count.toString(2).padStart(2, "0");
+}`,
+    `function counterResult(count) {
+  const q1 = Math.floor(count / 2);
+  const q0 = count % 2;
+  const binary = count.toString(2).padStart(2, "0");
+
+  const nextCount = (count + 1) % 4;
+  const nextBinary = nextCount.toString(2).padStart(2, "0");
+
+  return {
+    q1,
+    q0,
+    binary,
+    nextBinary
+  };
+}`
+  ],
+  python: [
+    `def nextCounterState(count):
+    return (count + 1) % 4`,
+    `def counterBinary(count):
+    return format(count, "02b")`,
+    `def counterResult(count):
+    q1 = count // 2
+    q0 = count % 2
+    binary = format(count, "02b")
+
+    next_count = (count + 1) % 4
+    next_binary = format(next_count, "02b")
+
+    return {
+        "q1": q1,
+        "q0": q0,
+        "binary": binary,
+        "nextBinary": next_binary
+    }`
+  ],
+  cpp: [
+    `int nextCounterState(int count) {
+  return (count + 1) % 4;
+}`,
+    `string counterBinary(int count) {
+  return bitset<2>(count).to_string();
+}`,
+    `// Return q1, q0, binary, and nextBinary using a struct in your compiler setup.
+string counterResult(int count) {
+  int q1 = count / 2;
+  int q0 = count % 2;
+  int nextCount = (count + 1) % 4;
+
+  return bitset<2>(count).to_string() + " -> " + bitset<2>(nextCount).to_string();
+}`
+  ],
+  c: [
+    `int nextCounterState(int count) {
+  return (count + 1) % 4;
+}`,
+    `// Store binary output in q1 and q0 pointers
+void counterBinary(int count, int *q1, int *q0) {
+  *q1 = count / 2;
+  *q0 = count % 2;
+}`,
+    `// Store q1, q0, nextQ1, and nextQ0 using pointers
+void counterResult(int count, int *q1, int *q0, int *nextQ1, int *nextQ0) {
+  int nextCount = (count + 1) % 4;
+
+  *q1 = count / 2;
+  *q0 = count % 2;
+  *nextQ1 = nextCount / 2;
+  *nextQ0 = nextCount % 2;
+}`
+  ],
+  java: [
+    `public static int nextCounterState(int count) {
+  return (count + 1) % 4;
+}`,
+    `public static String counterBinary(int count) {
+  return String.format("%2s", Integer.toBinaryString(count)).replace(' ', '0');
+}`,
+    `public static Map<String, Object> counterResult(int count) {
+  Map<String, Object> result = new HashMap<>();
+
+  int q1 = count / 2;
+  int q0 = count % 2;
+  String binary = String.format("%2s", Integer.toBinaryString(count)).replace(' ', '0');
+
+  int nextCount = (count + 1) % 4;
+  String nextBinary = String.format("%2s", Integer.toBinaryString(nextCount)).replace(' ', '0');
+
+  result.put("q1", q1);
+  result.put("q0", q0);
+  result.put("binary", binary);
+  result.put("nextBinary", nextBinary);
+
+  return result;
+}`
+  ]
+};
+
+function deepEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function runJavascript(problem, code) {
+  // eslint-disable-next-line no-new-func
+  const fn = new Function(`${code}; return ${problem.functionName};`)();
+
+  const testResults = problem.tests.map((test) => {
+    const actual = fn(...test.input);
+    const passed = deepEqual(actual, test.expected);
+
+    return {
+      input: test.input,
+      expected: test.expected,
+      actual,
+      passed
+    };
+  });
+
+  return {
+    passed: testResults.every((test) => test.passed),
+    testResults
+  };
+}
+
+function TestCaseTable({ testResults }) {
+  if (!testResults?.length) return null;
+
+  return (
+    <div style={{ marginTop: 14, overflowX: "auto" }}>
+      <table className="dbms-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Input</th>
+            <th>Expected</th>
+            <th>Actual</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {testResults.map((test, index) => (
+            <tr key={index}>
+              <td>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    color: test.passed ? "#22c55e" : "#ef4444",
+                    fontWeight: 800
+                  }}
+                >
+                  {test.passed ? (
+                    <CheckCircle2 size={15} />
+                  ) : (
+                    <XCircle size={15} />
+                  )}
+                  {test.passed ? "Passed" : "Failed"}
+                </span>
+              </td>
+              <td>{JSON.stringify(test.input)}</td>
+              <td>
+                <code>{JSON.stringify(test.expected)}</code>
+              </td>
+              <td>
+                <code>{JSON.stringify(test.actual)}</code>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export default function DSDCounterCoding({ count, clockPulses, analysis }) {
-  const [responses, setResponses] = useState(() =>
-    problemBank.reduce((acc, item) => {
-      acc[item.id] = "";
-      return acc;
-    }, {})
-  );
+  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
+  const [codes, setCodes] = useState([]);
+  const [results, setResults] = useState([]);
+  const [codingSaveStatus, setCodingSaveStatus] = useState([]);
 
-  const [feedback, setFeedback] = useState({});
+  useEffect(() => {
+    setCodes(templates[selectedLanguage]);
+    setResults(Array(problems.length).fill(null));
+    setCodingSaveStatus(Array(problems.length).fill(""));
+  }, [selectedLanguage]);
 
   const currentInsight = useMemo(() => {
     return `Current state: Count = ${count}, Q1Q0 = ${analysis.binary}, next state = ${analysis.nextBinary}, clock pulses = ${clockPulses}.`;
   }, [count, clockPulses, analysis]);
 
-  const handleChange = (id, value) => {
-    setResponses((prev) => ({ ...prev, [id]: value }));
+  const handleCodeChange = (index, value) => {
+    setCodes((prev) => prev.map((item, i) => (i === index ? value : item)));
   };
 
-  const checkAnswer = (problem) => {
-    const userValue = normalizeText(responses[problem.id] || "");
-    const correctValue = normalizeText(problem.answer);
+  const setResultAt = (index, value) => {
+    setResults((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
 
-    let result = "";
-    if (!userValue) {
-      result = "Please write your answer first.";
-    } else if (
-      userValue === correctValue ||
-      userValue.includes(correctValue) ||
-      correctValue.includes(userValue)
-    ) {
-      result = "Correct. Your counter design answer matches the expected concept.";
-    } else {
-      result = "Partially correct or incorrect. Review the counter sequence and try again.";
+  const setSaveStatusAt = (index, value) => {
+    setCodingSaveStatus((prev) =>
+      prev.map((item, i) => (i === index ? value : item))
+    );
+  };
+
+  const saveSubmission = async ({ index, problem, code, result }) => {
+    setSaveStatusAt(index, "Saving submission...");
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dsd",
+        experimentSlug: "counter",
+        problemTitle: problem.title,
+        language: selectedLanguage,
+        code,
+        result
+      });
+
+      setSaveStatusAt(index, "Submission saved to dashboard.");
+    } catch (error) {
+      console.error("Counter coding save failed:", error);
+      setSaveStatusAt(index, "Code checked, but backend save failed.");
+    }
+  };
+
+  const runCode = async (index) => {
+    const problem = problems[index];
+    const code = codes[index];
+
+    if (!code?.trim()) {
+      setResultAt(index, {
+        message: "Please enter code first.",
+        passed: false,
+        testResults: []
+      });
+      return;
     }
 
-    setFeedback((prev) => ({
-      ...prev,
-      [problem.id]: result
-    }));
+    if (selectedLanguage !== "javascript") {
+      setResultAt(index, {
+        message: `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Saved as attempted submission.`,
+        passed: null,
+        testResults: []
+      });
+
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: "attempted"
+      });
+
+      return;
+    }
+
+    try {
+      const output = runJavascript(problem, code);
+
+      setResultAt(index, {
+        message: output.passed
+          ? "All test cases passed."
+          : "Some test cases failed. Check the table below.",
+        passed: output.passed,
+        testResults: output.testResults
+      });
+
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: output.passed ? "passed" : "failed"
+      });
+    } catch (error) {
+      setResultAt(index, {
+        message: `Error: ${error.message}`,
+        passed: false,
+        testResults: []
+      });
+
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: "failed"
+      });
+    }
   };
 
-  const showModelAnswer = (problem) => {
-    setResponses((prev) => ({
-      ...prev,
-      [problem.id]: problem.answer
-    }));
+  const analyzeCode = (index) => {
+    const content = (codes[index] || "").toLowerCase();
 
-    setFeedback((prev) => ({
-      ...prev,
-      [problem.id]: "Model answer loaded."
-    }));
+    const expected =
+      index === 0
+        ? ["return", "%", "4"]
+        : index === 1
+        ? ["return", "tostring", "padstart"]
+        : ["q1", "q0", "binary", "nextbinary"];
+
+    const score = expected.filter((token) => content.includes(token)).length;
+
+    setResultAt(index, {
+      message:
+        score >= Math.max(2, expected.length - 1)
+          ? "Analysis: Your solution includes the expected counter state logic."
+          : "Analysis: Your answer is partially correct, but it should include modulo-4 counting and binary state conversion.",
+      passed: null,
+      testResults: []
+    });
   };
 
-  const clearAll = () => {
-    setResponses(
-      problemBank.reduce((acc, item) => {
-        acc[item.id] = "";
-        return acc;
-      }, {})
+  const correctCode = (index) => {
+    setCodes((prev) =>
+      prev.map((item, i) =>
+        i === index ? templates[selectedLanguage][index] : item
+      )
     );
-    setFeedback({});
+
+    setResultAt(index, {
+      message: "Model answer loaded for this problem.",
+      passed: null,
+      testResults: []
+    });
   };
 
   return (
@@ -117,7 +412,7 @@ export default function DSDCounterCoding({ count, clockPulses, analysis }) {
         <div>
           <h2 className="sorting-sim-title">Design Practice</h2>
           <p className="sorting-sim-subtitle">
-            Practice counter state prediction, sequence writing, and reset interpretation.
+            Practice counter state logic with real test cases.
           </p>
         </div>
       </div>
@@ -126,46 +421,122 @@ export default function DSDCounterCoding({ count, clockPulses, analysis }) {
         <strong>Live Hint:</strong> {currentInsight}
       </div>
 
-      <div className="coding-actions-upgraded" style={{ marginBottom: 18 }}>
-        <button className="sim-btn sim-btn-muted" onClick={clearAll}>
-          <RefreshCcw size={16} />
-          Reset Practice
-        </button>
+      <div className="coding-card-upgraded" style={{ marginBottom: 18 }}>
+        <div className="coding-card-header">
+          <div>
+            <h3>Counter Test Case Workspace</h3>
+            <p>
+              Run JavaScript solutions against test cases. Other languages are
+              saved as attempted submissions for now.
+            </p>
+          </div>
+
+          <div className="coding-language-wrap">
+            <label className="sorting-label">Language</label>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="sorting-select"
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {problemBank.map((problem, index) => (
+      {problems.map((problem, index) => (
         <div key={problem.id} className="coding-card-upgraded">
           <div className="coding-card-header">
             <div>
-              <h3>
-                Task {index + 1}: {problem.title}
-              </h3>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 10,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "rgba(56,189,248,0.10)",
+                  border: "1px solid rgba(56,189,248,0.18)",
+                  color: "#38bdf8",
+                  fontWeight: 700,
+                  fontSize: "0.82rem"
+                }}
+              >
+                <Sparkles size={14} />
+                <span>Sequential Logic Problem</span>
+              </div>
+
+              <h3>{problem.title}</h3>
               <p>{problem.description}</p>
             </div>
           </div>
 
           <textarea
+            value={codes[index] || ""}
+            onChange={(e) => handleCodeChange(index, e.target.value)}
+            rows={12}
             className="coding-textarea-upgraded"
-            rows={7}
-            value={responses[problem.id]}
-            onChange={(e) => handleChange(problem.id, e.target.value)}
-            placeholder={problem.placeholder}
+            placeholder="Write your code here..."
           />
 
           <div className="coding-actions-upgraded">
-            <button className="sim-btn sim-btn-primary" onClick={() => checkAnswer(problem)}>
-              <CheckCircle2 size={16} />
-              Check Answer
+            <button
+              className="sim-btn sim-btn-primary"
+              onClick={() => runCode(index)}
+            >
+              <Play size={16} />
+              Run Tests
             </button>
 
-            <button className="sim-btn sim-btn-muted" onClick={() => showModelAnswer(problem)}>
-              <Lightbulb size={16} />
-              Show Model Answer
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={() => analyzeCode(index)}
+            >
+              <Wrench size={16} />
+              Analyze
+            </button>
+
+            <button
+              className="sim-btn sim-btn-success"
+              onClick={() => correctCode(index)}
+            >
+              Load Correct
             </button>
           </div>
 
-          {feedback[problem.id] && (
-            <div className="coding-result-box">{feedback[problem.id]}</div>
+          {selectedLanguage !== "javascript" && (
+            <div className="coding-result-box" style={{ marginTop: 14 }}>
+              Execution for {selectedLanguage.toUpperCase()} will be enabled
+              later. For now, direct execution works in JavaScript.
+            </div>
+          )}
+
+          {results[index] && (
+            <div className="coding-result-box">
+              <strong
+                style={{
+                  color:
+                    results[index].passed === true
+                      ? "#22c55e"
+                      : results[index].passed === false
+                      ? "#ef4444"
+                      : "#e2e8f0"
+                }}
+              >
+                {results[index].message}
+              </strong>
+
+              <TestCaseTable testResults={results[index].testResults} />
+            </div>
+          )}
+
+          {codingSaveStatus[index] && (
+            <div className="coding-result-box">{codingSaveStatus[index]}</div>
           )}
         </div>
       ))}

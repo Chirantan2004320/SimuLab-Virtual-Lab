@@ -8,6 +8,7 @@ const SortingQuiz = ({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   handleQuizAnswer,
   submitQuiz,
   redoQuiz,
@@ -103,6 +104,12 @@ const SortingQuiz = ({
               </p>
             </div>
           </div>
+
+          {quizSaveStatus && (
+  <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+    {quizSaveStatus}
+  </p>
+)}
 
           <div className="quiz-list">
             {quizQuestions[selectedAlgorithm].map((q, i) => (

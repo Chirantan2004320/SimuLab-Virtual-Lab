@@ -1,4 +1,5 @@
 import React from "react";
+import { Brain, RotateCcw, CheckCircle2, Lock } from "lucide-react";
 
 export default function DTSPLinearCircularConvolutionQuiz({
   experimentRun,
@@ -6,71 +7,144 @@ export default function DTSPLinearCircularConvolutionQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   handleQuizAnswer,
   submitQuiz,
   redoQuiz
 }) {
+  const total = quizQuestions.length;
+  const percentage = total ? Math.round((quizScore / total) * 100) : 0;
+
+  if (!experimentRun) {
+    return (
+      <section className="quiz-shell">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <Brain size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Quiz</h2>
+            <p className="sorting-sim-subtitle">
+              Test your understanding after running the experiment.
+            </p>
+          </div>
+        </div>
+
+        <div className="quiz-locked-box">
+          <Lock size={18} />
+          <span>Please run the simulation at least once before attempting the quiz.</span>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="card">
-      <h2>Quiz</h2>
-
-      {!experimentRun ? (
-        <p>Please run the simulation at least once before attempting the quiz.</p>
-      ) : (
+    <section className="quiz-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Brain size={18} />
+        </div>
         <div>
-          {quizQuestions.map((q, i) => (
-            <div key={i} className="quiz-question">
-              <p>
-                <strong>
-                  {i + 1}. {q.question}
-                </strong>
-              </p>
+          <h2 className="sorting-sim-title">Quiz</h2>
+          <p className="sorting-sim-subtitle">
+            Answer the questions below for linear and circular convolution.
+          </p>
+        </div>
+      </div>
 
-              {q.options.map((opt, j) => (
-                <label
-                  key={j}
-                  className={`quiz-option ${
-                    quizSubmitted
-                      ? j === q.correct
-                        ? "correct"
-                        : quizAnswers[i] === j
-                        ? "wrong"
-                        : ""
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q${i}`}
-                    value={j}
-                    checked={quizAnswers[i] === j}
-                    onChange={() => handleQuizAnswer(i, j)}
-                    disabled={quizSubmitted}
-                  />
-                  {opt}
-                </label>
-              ))}
+      {!quizSubmitted ? (
+        <div className="quiz-list">
+          {quizQuestions.map((q, i) => (
+            <div key={i} className="quiz-card-upgraded">
+              <div className="quiz-question-title">
+                {i + 1}. {q.question}
+              </div>
+
+              <div className="quiz-options-grid">
+                {q.options.map((opt, j) => (
+                  <label
+                    key={j}
+                    className={`quiz-option-card ${
+                      quizAnswers[i] === j ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q${i}`}
+                      value={j}
+                      checked={quizAnswers[i] === j}
+                      onChange={() => handleQuizAnswer(i, j)}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
 
-          {!quizSubmitted ? (
-            <button
-              className="btn primary"
-              onClick={submitQuiz}
-              disabled={quizAnswers.includes(null)}
-            >
-              Submit Quiz
-            </button>
-          ) : (
+          <button
+            className="sim-btn sim-btn-primary"
+            onClick={submitQuiz}
+            disabled={quizAnswers.includes(null)}
+          >
+            Submit Quiz
+          </button>
+        </div>
+      ) : (
+        <div className="quiz-result-shell">
+          <div className="quiz-score-box">
+            <CheckCircle2 size={22} />
             <div>
+              <h3>Quiz Submitted</h3>
               <p>
-                Score: {quizScore} / {quizQuestions.length}
+                Score: <b>{quizScore}</b> / {total} ({percentage}%)
               </p>
-              <button className="btn secondary" onClick={redoQuiz}>
-                Redo Quiz
-              </button>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p
+              className="text-sm text-muted-foreground"
+              style={{ marginTop: 8 }}
+            >
+              {quizSaveStatus}
+            </p>
           )}
+
+          <div className="quiz-list">
+            {quizQuestions.map((q, i) => (
+              <div key={i} className="quiz-card-upgraded">
+                <div className="quiz-question-title">
+                  {i + 1}. {q.question}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect = j === q.correct;
+                    const isChosen = quizAnswers[i] === j;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect ? "correct" : isChosen ? "wrong" : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="quiz-actions-row">
+            <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+              <RotateCcw size={16} />
+              Redo Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>

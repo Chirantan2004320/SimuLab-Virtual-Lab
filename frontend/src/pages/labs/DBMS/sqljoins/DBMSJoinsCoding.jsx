@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Code2, Play, Sparkles, Wrench } from "lucide-react";
+import { saveCodingSubmission } from "../../../../API/progressApi";
 
 const JOIN_PROBLEM_BANK = {
   inner: [
@@ -158,6 +159,7 @@ function renderTable(rows) {
   if (!rows || rows.length === 0) {
     return "No rows returned.";
   }
+
   return JSON.stringify(rows, null, 2);
 }
 
@@ -165,6 +167,7 @@ export default function DBMSJoinsCoding({ joinType }) {
   const [currentProblems, setCurrentProblems] = useState([]);
   const [queries, setQueries] = useState({});
   const [results, setResults] = useState({});
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   const problemBank = useMemo(() => JOIN_PROBLEM_BANK[joinType] || [], [joinType]);
 
@@ -172,15 +175,18 @@ export default function DBMSJoinsCoding({ joinType }) {
     const selected = shuffleArray(problemBank).slice(0, Math.min(3, problemBank.length));
     const initialQueries = {};
     const initialResults = {};
+    const initialSaveStatus = {};
 
     selected.forEach((problem) => {
       initialQueries[problem.id] = "-- Write your SQL query here\n";
       initialResults[problem.id] = "";
+      initialSaveStatus[problem.id] = "";
     });
 
     setCurrentProblems(selected);
     setQueries(initialQueries);
     setResults(initialResults);
+    setCodingSaveStatus(initialSaveStatus);
   };
 
   const handleQueryChange = (problemId, value) => {
@@ -190,7 +196,7 @@ export default function DBMSJoinsCoding({ joinType }) {
     }));
   };
 
-  const runQuery = (problem) => {
+  const runQuery = async (problem) => {
     const userQuery = queries[problem.id] || "";
 
     if (!userQuery.trim()) {
@@ -203,17 +209,40 @@ export default function DBMSJoinsCoding({ joinType }) {
 
     const normalizedUserQuery = normalizeSql(userQuery);
     const normalizedExpectedQuery = normalizeSql(problem.expectedQuery);
+    const isCorrect = normalizedUserQuery === normalizedExpectedQuery;
 
-    if (normalizedUserQuery === normalizedExpectedQuery) {
-      setResults((prev) => ({
+    setResults((prev) => ({
+      ...prev,
+      [problem.id]: isCorrect
+        ? `Correct Query!\n\nResult:\n${renderTable(problem.expectedResult)}`
+        : `Incorrect Query.\n\nCheck your ${joinType.toUpperCase()} JOIN syntax, selected columns, table aliases, and ON condition.`
+    }));
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problem.id]: "Saving submission..."
+    }));
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dbms",
+        experimentSlug: "sql-joins",
+        problemTitle: `${joinType.toUpperCase()} JOIN - ${problem.title}`,
+        language: "sql",
+        code: userQuery,
+        result: isCorrect ? "passed" : "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problem.id]: `Correct Query!\n\nResult:\n${renderTable(problem.expectedResult)}`
+        [problem.id]: "Submission saved to dashboard."
       }));
-    } else {
-      setResults((prev) => ({
+    } catch (error) {
+      console.error("SQL joins coding save failed:", error);
+
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problem.id]:
-          `Incorrect Query.\n\nCheck your ${joinType.toUpperCase()} JOIN syntax, selected columns, table aliases, and ON condition.`
+        [problem.id]: "Query checked, but backend save failed."
       }));
     }
   };
@@ -226,17 +255,19 @@ export default function DBMSJoinsCoding({ joinType }) {
       return;
     }
 
-    const analysisData = {
-      type: "sql_join_query_analysis",
-      experiment: "sql-joins",
-      joinType,
-      problemId: problem.id,
-      title: problem.title,
-      description: problem.description,
-      query
-    };
+    localStorage.setItem(
+      "vlab_sql_join_query_analysis",
+      JSON.stringify({
+        type: "sql_join_query_analysis",
+        experiment: "sql-joins",
+        joinType,
+        problemId: problem.id,
+        title: problem.title,
+        description: problem.description,
+        query
+      })
+    );
 
-    localStorage.setItem("vlab_sql_join_query_analysis", JSON.stringify(analysisData));
     alert("Query analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -248,18 +279,20 @@ export default function DBMSJoinsCoding({ joinType }) {
       return;
     }
 
-    const correctionData = {
-      type: "sql_join_query_correction",
-      experiment: "sql-joins",
-      joinType,
-      problemId: problem.id,
-      title: problem.title,
-      description: problem.description,
-      query,
-      expectedQuery: problem.expectedQuery
-    };
+    localStorage.setItem(
+      "vlab_sql_join_query_correction",
+      JSON.stringify({
+        type: "sql_join_query_correction",
+        experiment: "sql-joins",
+        joinType,
+        problemId: problem.id,
+        title: problem.title,
+        description: problem.description,
+        query,
+        expectedQuery: problem.expectedQuery
+      })
+    );
 
-    localStorage.setItem("vlab_sql_join_query_correction", JSON.stringify(correctionData));
     alert("Query correction request sent to AI Assistant. Check the AI chat for the corrected query!");
   };
 
@@ -283,14 +316,14 @@ export default function DBMSJoinsCoding({ joinType }) {
         </button>
       </div>
 
-      {currentProblems.length === 0 ? (
+      {currentProblems.length === 0 && (
         <div className="coding-empty-state">
           No problems generated yet. Click <b>Generate Problems</b> to begin.
         </div>
-      ) : null}
+      )}
 
       {currentProblems.map((problem, index) => (
-        <div key={problem.id} className="coding-card-upgraded">
+        <div key={`${joinType}-${problem.id}`} className="coding-card-upgraded">
           <div className="coding-card-header">
             <div>
               <h3>Problem {index + 1}</h3>
@@ -347,6 +380,12 @@ export default function DBMSJoinsCoding({ joinType }) {
               >
                 {results[problem.id]}
               </pre>
+            </div>
+          )}
+
+          {codingSaveStatus[problem.id] && (
+            <div className="coding-result-box">
+              {codingSaveStatus[problem.id]}
             </div>
           )}
         </div>

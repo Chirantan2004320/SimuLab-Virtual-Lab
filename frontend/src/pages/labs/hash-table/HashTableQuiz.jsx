@@ -6,6 +6,7 @@ export default function HashTableQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
@@ -94,6 +95,13 @@ export default function HashTableQuiz({
               </p>
             </div>
           </div>
+
+          {/* ✅ NEW: Save Status */}
+          {quizSaveStatus && (
+            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
+          )}
 
           <div className="quiz-list">
             {quizQuestions.map((q, i) => (

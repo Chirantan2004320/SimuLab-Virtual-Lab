@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../../../SortingLab.css";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../../context/AuthContext.js";
+import MarkCompleteButton from "../../../../components/MarkCompleteButton.jsx";
+import {
+  saveQuizResult,
+  saveCodingSubmission
+} from "../../../../API/progressApi.js";
 import {
   BookOpen,
   Activity,
@@ -23,6 +30,17 @@ import DBMSERDiagram from "./DBMSERDiagram";
 import DBMSERBuilder from "./DBMSERBuilder";
 
 const simulabLogo = "/assets/logo.png";
+const experimentSlug = "er-modeling";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: Activity },
+  { key: "comparison", label: "Comparison", icon: GitCompare },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding", icon: Code2 },
+  { key: "diagram", label: "ER Diagram", icon: Network },
+  { key: "builder", label: "ER Builder", icon: Hammer }
+];
 
 const erQuizQuestionsByMode = {
   entities: [
@@ -65,12 +83,7 @@ const erQuizQuestionsByMode = {
     },
     {
       question: "Student enrolls in Course is an example of:",
-      options: [
-        "An attribute",
-        "A relationship",
-        "A data type",
-        "A transaction"
-      ],
+      options: ["An attribute", "A relationship", "A data type", "A transaction"],
       correct: 1
     },
     {
@@ -310,17 +323,10 @@ const relationalTables = [
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const sidebarItems = [
-  { key: "overview", label: "Overview", icon: BookOpen },
-  { key: "simulation", label: "Simulation", icon: Activity },
-  { key: "comparison", label: "Comparison", icon: GitCompare },
-  { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Coding", icon: Code2 },
-  { key: "diagram", label: "ER Diagram", icon: Network },
-  { key: "builder", label: "ER Builder", icon: Hammer }
-];
-
 export default function DBMSERModelingLab() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
   const [mode, setMode] = useState("entities");
   const [activeSection, setActiveSection] = useState("diagram");
   const [message, setMessage] = useState("ER Modelling lab initialized.");
@@ -338,13 +344,21 @@ export default function DBMSERModelingLab() {
 
   const quizQuestions = useMemo(() => erQuizQuestionsByMode[mode], [mode]);
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
+  const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [codes, setCodes] = useState([erCodeTemplates.entities.javascript]);
   const [results, setResults] = useState([""]);
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login");
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     setStepHistory([]);
@@ -359,21 +373,22 @@ export default function DBMSERModelingLab() {
     setQuizAnswers(Array(erQuizQuestionsByMode[mode].length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
+    setCodingSaveStatus({});
 
     const starter = erCodeTemplates[mode][selectedLanguage];
     const problemCount = codingProblemsByMode[mode].length;
     setCodes(Array(problemCount).fill(starter));
     setResults(Array(problemCount).fill(""));
-  }, [mode]);
+  }, [mode, selectedLanguage]);
 
   useEffect(() => {
     const starter = erCodeTemplates[mode][selectedLanguage];
     const problemCount = codingProblemsByMode[mode].length;
-    setCodes((prev) => {
-      if (!prev.length) return Array(problemCount).fill(starter);
-      return prev.map(() => starter);
-    });
+
+    setCodes(Array(problemCount).fill(starter));
     setResults(Array(problemCount).fill(""));
+    setCodingSaveStatus({});
   }, [selectedLanguage, mode]);
 
   const addStep = (text) => {
@@ -447,9 +462,7 @@ export default function DBMSERModelingLab() {
         await sleep(animationSpeed);
 
         setCurrentStage("Mapping Strong Entities");
-        setObservationText(
-          "Each strong entity becomes its own table with a primary key."
-        );
+        setObservationText("Each strong entity becomes its own table with a primary key.");
         setMessage("Mapping entities into relational tables...");
         addStep("Mapped strong entities Student, Course, and Instructor into tables.");
         setMappingRows(relationalTables.slice(0, 3));
@@ -468,6 +481,11 @@ export default function DBMSERModelingLab() {
       setCurrentStage("Complete");
       setMessage(`${mode.toUpperCase()} simulation completed.`);
       addStep(`${mode.toUpperCase()} simulation completed successfully.`);
+
+      localStorage.setItem(
+        "vlab_last_experiment",
+        JSON.stringify({ name: "dbms-er-modeling", time: Date.now() })
+      );
     } finally {
       setIsRunning(false);
       setHighlightedEntity(null);
@@ -487,6 +505,7 @@ export default function DBMSERModelingLab() {
     setMappingRows(mode === "mapping" ? relationalTables.slice(0, 1) : []);
     setStepHistory([`Sample loaded for ${mode.toUpperCase()} demo.`]);
     setMessage(`Sample loaded for ${mode.toUpperCase()} demo.`);
+    setExperimentRun(true);
   };
 
   const reset = () => {
@@ -508,14 +527,40 @@ export default function DBMSERModelingLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
+
     quizQuestions.forEach((q, i) => {
       if (quizAnswers[i] === q.correct) score++;
     });
 
+    const percentage = quizQuestions.length
+      ? Math.round((score / quizQuestions.length) * 100)
+      : 0;
+
     setQuizScore(score);
     setQuizSubmitted(true);
+
+    try {
+      await saveQuizResult({
+        experimentSlug,
+        correctAnswers: score,
+        totalQuestions: quizQuestions.length,
+        scorePercentage: percentage
+      });
+
+      setQuizSaveStatus("Quiz result saved successfully.");
+    } catch (error) {
+      console.error("Quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted locally, but database save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const updateCodeAt = (index, value) => {
@@ -526,7 +571,7 @@ export default function DBMSERModelingLab() {
     setResults((prev) => prev.map((item, i) => (i === index ? value : item)));
   };
 
-  const runCode = (problemIndex) => {
+  const runCode = async (problemIndex) => {
     if (selectedLanguage !== "javascript") {
       setResultAt(
         problemIndex,
@@ -536,16 +581,55 @@ export default function DBMSERModelingLab() {
     }
 
     try {
+      // eslint-disable-next-line no-new-func
       const fn = new Function(`${codes[problemIndex]}; return answer;`);
       const result = fn();
+
       setResultAt(problemIndex, `Output:\n${JSON.stringify(result, null, 2)}`);
+
+      try {
+        await saveCodingSubmission({
+          experimentSlug,
+          problemTitle: codingProblemsByMode[mode][problemIndex].title,
+          language: selectedLanguage,
+          code: codes[problemIndex],
+          result: "passed",
+          points: 10
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemIndex]: "Coding submission saved successfully."
+        }));
+      } catch (saveError) {
+        console.error("Coding submission save failed:", saveError);
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemIndex]: "Code ran, but database save failed."
+        }));
+      }
     } catch (error) {
       setResultAt(problemIndex, `Error: ${error.message}`);
+
+      try {
+        await saveCodingSubmission({
+          experimentSlug,
+          problemTitle: codingProblemsByMode[mode][problemIndex].title,
+          language: selectedLanguage,
+          code: codes[problemIndex],
+          result: "failed",
+          points: 0
+        });
+      } catch (saveError) {
+        console.error("Failed coding submission save failed:", saveError);
+      }
     }
   };
 
   const analyzeCode = (problemIndex) => {
-    const content = codes[problemIndex].toLowerCase();
+    const content = (codes[problemIndex] || "").toLowerCase();
+
     const modeChecks = {
       entities: ["entity", "entities", "attributes", "student", "course"],
       relationships: ["relationship", "enroll", "teach", "many", "one"],
@@ -575,12 +659,20 @@ export default function DBMSERModelingLab() {
   };
 
   const progressPercent =
-    activeSection === "diagram"
-      ? 65
-      : activeSection === "builder"
-      ? 75
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 45
+      : activeSection === "comparison"
+      ? 58
       : activeSection === "coding"
-      ? 55
+      ? 72
+      : activeSection === "diagram"
+      ? 85
+      : activeSection === "builder"
+      ? 92
+      : activeSection === "quiz"
+      ? 95
       : 50;
 
   const modeMeta = {
@@ -602,6 +694,22 @@ export default function DBMSERModelingLab() {
   };
 
   const ActiveModeIcon = modeMeta[mode].icon;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Please log in to access the lab.
+      </div>
+    );
+  }
 
   return (
     <div className="er-shell">
@@ -639,6 +747,7 @@ export default function DBMSERModelingLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
@@ -675,7 +784,8 @@ export default function DBMSERModelingLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "ER Modelling"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "ER Modelling"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -692,13 +802,17 @@ export default function DBMSERModelingLab() {
               Learn entities, attributes, relationships, ER diagrams, and relational mapping through visual exploration. ✨
             </p>
           </div>
+
+          <MarkCompleteButton experimentSlug={experimentSlug} />
         </div>
 
         <section className="er-config-card">
           <div className="er-config-top">
             <div>
               <h2>ER Configuration</h2>
-              <p>Choose the concept mode and control the animation flow for the simulation.</p>
+              <p>
+                Choose the concept mode and control the animation flow for the simulation.
+              </p>
             </div>
 
             <div className="er-mode-pill">
@@ -746,23 +860,32 @@ export default function DBMSERModelingLab() {
             <button
               className={`er-chip ${mode === "entities" ? "active" : ""}`}
               onClick={() => setMode("entities")}
+              type="button"
             >
               <Database size={14} />
               Entities
             </button>
+
             <button
               className={`er-chip ${mode === "relationships" ? "active" : ""}`}
               onClick={() => setMode("relationships")}
+              type="button"
             >
               <Link2 size={14} />
               Relationships
             </button>
+
             <button
               className={`er-chip ${mode === "mapping" ? "active" : ""}`}
               onClick={() => setMode("mapping")}
+              type="button"
             >
               <Table2 size={14} />
               Mapping
+            </button>
+
+            <button className={`er-chip ${experimentRun ? "active" : ""}`} type="button">
+              {experimentRun ? "Simulation Run" : "Not Started"}
             </button>
           </div>
         </section>
@@ -807,9 +930,11 @@ export default function DBMSERModelingLab() {
                 quizAnswers={quizAnswers}
                 quizSubmitted={quizSubmitted}
                 quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
                 experimentRun={experimentRun}
                 handleQuizAnswer={handleQuizAnswer}
                 submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
               />
             )}
 
@@ -820,6 +945,7 @@ export default function DBMSERModelingLab() {
                 setSelectedLanguage={setSelectedLanguage}
                 codes={codes}
                 results={results}
+                codingSaveStatus={codingSaveStatus}
                 handleCodeChange={updateCodeAt}
                 runCode={runCode}
                 analyzeCode={analyzeCode}

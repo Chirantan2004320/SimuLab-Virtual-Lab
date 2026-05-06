@@ -7,14 +7,21 @@ export default function DBMSConcurrencyQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
-  submitQuiz
+  submitQuiz,
+  redoQuiz
 }) {
   const total = quizQuestions.length;
   const percentage = total ? Math.round((quizScore / total) * 100) : 0;
 
-  const redoQuiz = () => window.location.reload();
+  const demoLabel =
+    demoType === "lost-update"
+      ? "Lost Update"
+      : demoType === "dirty-read"
+      ? "Dirty Read"
+      : "Locking";
 
   if (!experimentRun) {
     return (
@@ -48,7 +55,7 @@ export default function DBMSConcurrencyQuiz({
         <div>
           <h2 className="sorting-sim-title">Quiz</h2>
           <p className="sorting-sim-subtitle">
-            Answer the questions below for {demoType.toUpperCase()}.
+            Answer the questions below for {demoLabel}.
           </p>
         </div>
       </div>
@@ -65,7 +72,9 @@ export default function DBMSConcurrencyQuiz({
                 {q.options.map((opt, j) => (
                   <label
                     key={j}
-                    className={`quiz-option-card ${quizAnswers[i] === j ? "selected" : ""}`}
+                    className={`quiz-option-card ${
+                      quizAnswers[i] === j ? "selected" : ""
+                    }`}
                   >
                     <input
                       type="radio"
@@ -98,6 +107,7 @@ export default function DBMSConcurrencyQuiz({
               <p>
                 Score: <b>{quizScore}</b> / {total} ({percentage}%)
               </p>
+              {quizSaveStatus && <p>{quizSaveStatus}</p>}
             </div>
           </div>
 

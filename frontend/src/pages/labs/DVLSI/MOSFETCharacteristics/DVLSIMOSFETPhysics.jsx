@@ -1,88 +1,104 @@
 import React from "react";
+import { Atom, Activity, Cpu } from "lucide-react";
 
 export default function DVLSIMOSFETPhysics({ analysis, vgs, vds, vt, formatNumber }) {
   return (
-    <section className="card experiment">
-      <h2>Device Physics</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        This section explains what physically happens inside the MOSFET channel for the
-        current operating point.
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px",
-          marginBottom: "1rem"
-        }}
-      >
-        <div className="stat-card">
-          <strong>VGS</strong>
-          <div>{formatNumber(vgs)} V</div>
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Atom size={18} />
         </div>
-        <div className="stat-card">
-          <strong>VDS</strong>
-          <div>{formatNumber(vds)} V</div>
-        </div>
-        <div className="stat-card">
-          <strong>VT</strong>
-          <div>{formatNumber(vt)} V</div>
-        </div>
-        <div className="stat-card">
-          <strong>VOV = VGS − VT</strong>
-          <div>{formatNumber(Math.max(0, analysis.overdrive))} V</div>
+        <div>
+          <h2 className="sorting-sim-title">Device Physics</h2>
+          <p className="sorting-sim-subtitle">
+            Understand what physically happens inside the MOSFET channel.
+          </p>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Physical Interpretation</h3>
+      <div className="sorting-info-box">
+        <Activity size={16} style={{ marginRight: 10 }} />
+        This section explains the physical behavior for the current operating point.
+      </div>
+
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">VGS</span>
+          <span className="sorting-stat-value">{formatNumber(vgs)} V</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">VDS</span>
+          <span className="sorting-stat-value">{formatNumber(vds)} V</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">VT</span>
+          <span className="sorting-stat-value">{formatNumber(vt)} V</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">VOV = VGS − VT</span>
+          <span className="sorting-stat-value">{formatNumber(Math.max(0, analysis.overdrive))} V</span>
+        </div>
+      </div>
+
+      <div className="overview-card" style={{ marginBottom: 18 }}>
+        <div className="overview-card-head">
+          <Atom size={18} />
+          <h4>Physical Interpretation</h4>
+        </div>
 
         {analysis.region === "Cutoff" && (
           <>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              Since VGS is below threshold voltage, a strong inversion layer is not created under the gate oxide.
-              As a result, there is no continuous channel connecting source and drain.
+            <p>
+              Since VGS is below threshold voltage, a strong inversion layer is not created
+              under the gate oxide. Therefore, there is no continuous channel connecting
+              source and drain.
             </p>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              Only a very small leakage current may exist in practice, but in this educational model
-              the drain current is taken as zero.
+            <p>
+              In real devices, a very small leakage current may exist, but in this educational
+              model the drain current is considered zero.
             </p>
           </>
         )}
 
         {analysis.region === "Triode" && (
           <>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              Because VGS exceeds VT, an inversion channel forms. Since VDS is still small compared
-              to the overdrive voltage, the channel exists throughout the device length.
+            <p>
+              Because VGS exceeds VT, an inversion channel forms. Since VDS is still small
+              compared to the overdrive voltage, the channel exists throughout the device length.
             </p>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              The MOSFET behaves like a voltage-controlled resistor, and current increases with VDS.
+            <p>
+              The MOSFET behaves like a voltage-controlled resistor, and current increases
+              with VDS.
             </p>
           </>
         )}
 
         {analysis.region === "Saturation" && (
           <>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              In saturation, the drain-side channel narrows until pinch-off occurs. Beyond this point,
-              increasing VDS does not strongly increase the current in the ideal model.
+            <p>
+              In saturation, the drain-side channel narrows until pinch-off occurs. Beyond this
+              point, increasing VDS does not strongly increase current in the ideal model.
             </p>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              In practical devices, channel-length modulation causes a slight current increase with VDS,
-              which is why the output resistance is finite.
+            <p>
+              In practical devices, channel-length modulation causes a slight current increase
+              with VDS, which is why output resistance becomes finite.
             </p>
           </>
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Engineering Insight</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Cpu size={18} />
+          <h4>Engineering Insight</h4>
+        </div>
+
+        <p>
           Triode operation is commonly used when the MOSFET acts like a switch or resistor.
-          Saturation is the region typically used in analog amplification and current-source behavior.
+          Saturation is typically used in analog amplification and current-source behavior.
         </p>
       </div>
     </section>

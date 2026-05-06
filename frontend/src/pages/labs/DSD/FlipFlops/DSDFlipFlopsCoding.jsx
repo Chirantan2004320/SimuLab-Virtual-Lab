@@ -1,93 +1,462 @@
-import React, { useMemo, useState } from "react";
-import { FileCode2, CheckCircle2, Lightbulb, RefreshCcw } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  FileCode2,
+  Play,
+  Wrench,
+  Sparkles,
+  CheckCircle2,
+  XCircle
+} from "lucide-react";
+import { saveCodingSubmission } from "../../../../API/progressApi";
 
-const practiceBank = [
+const LANGUAGES = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "cpp", label: "C++" },
+  { value: "c", label: "C" },
+  { value: "java", label: "Java" }
+];
+
+const problems = [
   {
     id: 1,
-    title: "State Prediction",
+    title: "D Flip-Flop Next State",
     description:
-      "For a JK Flip-Flop with J = 1, K = 1, and active clock, what happens to the output Q?",
-    answer: "The output toggles.",
-    placeholder: "Write your answer here..."
+      "Write a function dFlipFlop(D, CLK, Q) that returns the next value of Q. If CLK = 1, Q becomes D. If CLK = 0, Q holds previous Q.",
+    functionName: "dFlipFlop",
+    tests: [
+      { input: [0, 1, 1], expected: 0 },
+      { input: [1, 1, 0], expected: 1 },
+      { input: [0, 0, 1], expected: 1 },
+      { input: [1, 0, 0], expected: 0 }
+    ]
   },
   {
     id: 2,
-    title: "Clocked Data Transfer",
+    title: "JK Flip-Flop Next State",
     description:
-      "In a D Flip-Flop, explain what happens to Q when CLK = 1 and D = 0.",
-    answer: "Q becomes 0 because the D Flip-Flop copies D to Q when the clock is active.",
-    placeholder: "Explain the output transition..."
+      "Write a function jkFlipFlop(J, K, CLK, Q) that returns the next Q based on JK flip-flop rules.",
+    functionName: "jkFlipFlop",
+    tests: [
+      { input: [0, 0, 1, 1], expected: 1 },
+      { input: [1, 0, 1, 0], expected: 1 },
+      { input: [0, 1, 1, 1], expected: 0 },
+      { input: [1, 1, 1, 0], expected: 1 },
+      { input: [1, 1, 1, 1], expected: 0 },
+      { input: [1, 0, 0, 0], expected: 0 }
+    ]
   },
   {
     id: 3,
-    title: "Invalid Condition",
+    title: "T Flip-Flop Toggle Logic",
     description:
-      "Write the invalid input condition of a basic SR latch and explain why it is problematic.",
-    answer: "The invalid condition is S = 1 and R = 1 because both set and reset are requested at the same time.",
-    placeholder: "Write the condition and explanation..."
+      "Write a function tFlipFlop(T, CLK, Q) that returns the next Q. If T = 1 and CLK = 1, toggle Q. Otherwise hold Q.",
+    functionName: "tFlipFlop",
+    tests: [
+      { input: [0, 1, 0], expected: 0 },
+      { input: [0, 1, 1], expected: 1 },
+      { input: [1, 1, 0], expected: 1 },
+      { input: [1, 1, 1], expected: 0 },
+      { input: [1, 0, 1], expected: 1 }
+    ]
   }
 ];
 
-function normalizeText(value) {
-  return value.toLowerCase().replace(/\s+/g, " ").trim();
+const templates = {
+  javascript: [
+    `function dFlipFlop(D, CLK, Q) {
+  if (CLK === 1) {
+    return D;
+  }
+
+  return Q;
+}`,
+    `function jkFlipFlop(J, K, CLK, Q) {
+  if (CLK === 0) {
+    return Q;
+  }
+
+  if (J === 0 && K === 0) {
+    return Q;
+  }
+
+  if (J === 1 && K === 0) {
+    return 1;
+  }
+
+  if (J === 0 && K === 1) {
+    return 0;
+  }
+
+  return Q === 1 ? 0 : 1;
+}`,
+    `function tFlipFlop(T, CLK, Q) {
+  if (CLK === 1 && T === 1) {
+    return Q === 1 ? 0 : 1;
+  }
+
+  return Q;
+}`
+  ],
+  python: [
+    `def dFlipFlop(D, CLK, Q):
+    if CLK == 1:
+        return D
+
+    return Q`,
+    `def jkFlipFlop(J, K, CLK, Q):
+    if CLK == 0:
+        return Q
+
+    if J == 0 and K == 0:
+        return Q
+
+    if J == 1 and K == 0:
+        return 1
+
+    if J == 0 and K == 1:
+        return 0
+
+    return 0 if Q == 1 else 1`,
+    `def tFlipFlop(T, CLK, Q):
+    if CLK == 1 and T == 1:
+        return 0 if Q == 1 else 1
+
+    return Q`
+  ],
+  cpp: [
+    `int dFlipFlop(int D, int CLK, int Q) {
+  if (CLK == 1) {
+    return D;
+  }
+
+  return Q;
+}`,
+    `int jkFlipFlop(int J, int K, int CLK, int Q) {
+  if (CLK == 0) {
+    return Q;
+  }
+
+  if (J == 0 && K == 0) {
+    return Q;
+  }
+
+  if (J == 1 && K == 0) {
+    return 1;
+  }
+
+  if (J == 0 && K == 1) {
+    return 0;
+  }
+
+  return Q == 1 ? 0 : 1;
+}`,
+    `int tFlipFlop(int T, int CLK, int Q) {
+  if (CLK == 1 && T == 1) {
+    return Q == 1 ? 0 : 1;
+  }
+
+  return Q;
+}`
+  ],
+  c: [
+    `int dFlipFlop(int D, int CLK, int Q) {
+  if (CLK == 1) {
+    return D;
+  }
+
+  return Q;
+}`,
+    `int jkFlipFlop(int J, int K, int CLK, int Q) {
+  if (CLK == 0) {
+    return Q;
+  }
+
+  if (J == 0 && K == 0) {
+    return Q;
+  }
+
+  if (J == 1 && K == 0) {
+    return 1;
+  }
+
+  if (J == 0 && K == 1) {
+    return 0;
+  }
+
+  return Q == 1 ? 0 : 1;
+}`,
+    `int tFlipFlop(int T, int CLK, int Q) {
+  if (CLK == 1 && T == 1) {
+    return Q == 1 ? 0 : 1;
+  }
+
+  return Q;
+}`
+  ],
+  java: [
+    `public static int dFlipFlop(int D, int CLK, int Q) {
+  if (CLK == 1) {
+    return D;
+  }
+
+  return Q;
+}`,
+    `public static int jkFlipFlop(int J, int K, int CLK, int Q) {
+  if (CLK == 0) {
+    return Q;
+  }
+
+  if (J == 0 && K == 0) {
+    return Q;
+  }
+
+  if (J == 1 && K == 0) {
+    return 1;
+  }
+
+  if (J == 0 && K == 1) {
+    return 0;
+  }
+
+  return Q == 1 ? 0 : 1;
+}`,
+    `public static int tFlipFlop(int T, int CLK, int Q) {
+  if (CLK == 1 && T == 1) {
+    return Q == 1 ? 0 : 1;
+  }
+
+  return Q;
+}`
+  ]
+};
+
+function deepEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function runJavascript(problem, code) {
+  // eslint-disable-next-line no-new-func
+  const fn = new Function(`${code}; return ${problem.functionName};`)();
+
+  const testResults = problem.tests.map((test) => {
+    const actual = fn(...test.input);
+    const passed = deepEqual(actual, test.expected);
+
+    return {
+      input: test.input,
+      expected: test.expected,
+      actual,
+      passed
+    };
+  });
+
+  return {
+    passed: testResults.every((test) => test.passed),
+    testResults
+  };
+}
+
+function TestCaseTable({ testResults }) {
+  if (!testResults?.length) return null;
+
+  return (
+    <div style={{ marginTop: 14, overflowX: "auto" }}>
+      <table className="dbms-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Input</th>
+            <th>Expected</th>
+            <th>Actual</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {testResults.map((test, index) => (
+            <tr key={index}>
+              <td>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    color: test.passed ? "#22c55e" : "#ef4444",
+                    fontWeight: 800
+                  }}
+                >
+                  {test.passed ? (
+                    <CheckCircle2 size={15} />
+                  ) : (
+                    <XCircle size={15} />
+                  )}
+                  {test.passed ? "Passed" : "Failed"}
+                </span>
+              </td>
+              <td>{test.input.join(", ")}</td>
+              <td>
+                <code>{JSON.stringify(test.expected)}</code>
+              </td>
+              <td>
+                <code>{JSON.stringify(test.actual)}</code>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 export default function DSDFlipFlopsCoding({ selectedType, analysis, q }) {
-  const [responses, setResponses] = useState(() =>
-    practiceBank.reduce((acc, item) => {
-      acc[item.id] = "";
-      return acc;
-    }, {})
-  );
+  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
+  const [codes, setCodes] = useState([]);
+  const [results, setResults] = useState([]);
+  const [codingSaveStatus, setCodingSaveStatus] = useState([]);
 
-  const [feedback, setFeedback] = useState({});
+  useEffect(() => {
+    setCodes(templates[selectedLanguage]);
+    setResults(Array(problems.length).fill(null));
+    setCodingSaveStatus(Array(problems.length).fill(""));
+  }, [selectedLanguage]);
 
   const currentInsight = useMemo(() => {
-    return `Current lab state: type = ${selectedType.toUpperCase()}, Q = ${q}, Next Q = ${analysis.nextQ}, operation = ${analysis.stateName}.`;
+    return `Current state: type = ${selectedType.toUpperCase()}, present Q = ${q}, next Q = ${
+      analysis.nextQ
+    }, operation = ${analysis.stateName}.`;
   }, [selectedType, q, analysis]);
 
-  const handleChange = (id, value) => {
-    setResponses((prev) => ({ ...prev, [id]: value }));
+  const handleCodeChange = (index, value) => {
+    setCodes((prev) => prev.map((item, i) => (i === index ? value : item)));
   };
 
-  const checkAnswer = (problem) => {
-    const userValue = normalizeText(responses[problem.id] || "");
-    const correctValue = normalizeText(problem.answer);
+  const setResultAt = (index, value) => {
+    setResults((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
 
-    let result = "";
-    if (!userValue) {
-      result = "Please write your answer first.";
-    } else if (userValue === correctValue || userValue.includes(correctValue) || correctValue.includes(userValue)) {
-      result = "Correct. Your design answer matches the expected concept.";
-    } else {
-      result = "Partially correct or incorrect. Review the flip-flop rule and try again.";
+  const setSaveStatusAt = (index, value) => {
+    setCodingSaveStatus((prev) =>
+      prev.map((item, i) => (i === index ? value : item))
+    );
+  };
+
+  const saveSubmission = async ({ index, problem, code, result }) => {
+    setSaveStatusAt(index, "Saving submission...");
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dsd",
+        experimentSlug: "flip-flops",
+        problemTitle: problem.title,
+        language: selectedLanguage,
+        code,
+        result
+      });
+
+      setSaveStatusAt(index, "Submission saved to dashboard.");
+    } catch (error) {
+      console.error("Flip-Flops coding save failed:", error);
+      setSaveStatusAt(index, "Code checked, but backend save failed.");
+    }
+  };
+
+  const runCode = async (index) => {
+    const problem = problems[index];
+    const code = codes[index];
+
+    if (!code?.trim()) {
+      setResultAt(index, {
+        message: "Please enter code first.",
+        passed: false,
+        testResults: []
+      });
+      return;
     }
 
-    setFeedback((prev) => ({
-      ...prev,
-      [problem.id]: result
-    }));
+    if (selectedLanguage !== "javascript") {
+      setResultAt(index, {
+        message: `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Saved as attempted submission.`,
+        passed: null,
+        testResults: []
+      });
+
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: "attempted"
+      });
+
+      return;
+    }
+
+    try {
+      const output = runJavascript(problem, code);
+
+      setResultAt(index, {
+        message: output.passed
+          ? "All test cases passed."
+          : "Some test cases failed. Check the table below.",
+        passed: output.passed,
+        testResults: output.testResults
+      });
+
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: output.passed ? "passed" : "failed"
+      });
+    } catch (error) {
+      setResultAt(index, {
+        message: `Error: ${error.message}`,
+        passed: false,
+        testResults: []
+      });
+
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: "failed"
+      });
+    }
   };
 
-  const showModelAnswer = (problem) => {
-    setResponses((prev) => ({
-      ...prev,
-      [problem.id]: problem.answer
-    }));
-    setFeedback((prev) => ({
-      ...prev,
-      [problem.id]: "Model answer loaded."
-    }));
+  const analyzeCode = (index) => {
+    const content = (codes[index] || "").toLowerCase();
+
+    const expected =
+      index === 0
+        ? ["clk", "d", "return"]
+        : index === 1
+        ? ["j", "k", "clk", "return"]
+        : ["t", "clk", "return"];
+
+    const score = expected.filter((token) => content.includes(token)).length;
+
+    setResultAt(index, {
+      message:
+        score >= Math.max(2, expected.length - 1)
+          ? "Analysis: Your solution includes the expected flip-flop state logic."
+          : "Analysis: Your answer is partially correct, but it should include clock/state based conditions.",
+      passed: null,
+      testResults: []
+    });
   };
 
-  const clearAll = () => {
-    setResponses(
-      practiceBank.reduce((acc, item) => {
-        acc[item.id] = "";
-        return acc;
-      }, {})
+  const correctCode = (index) => {
+    setCodes((prev) =>
+      prev.map((item, i) =>
+        i === index ? templates[selectedLanguage][index] : item
+      )
     );
-    setFeedback({});
+
+    setResultAt(index, {
+      message: "Model answer loaded for this problem.",
+      passed: null,
+      testResults: []
+    });
   };
 
   return (
@@ -99,7 +468,7 @@ export default function DSDFlipFlopsCoding({ selectedType, analysis, q }) {
         <div>
           <h2 className="sorting-sim-title">Design Practice</h2>
           <p className="sorting-sim-subtitle">
-            Practice state prediction, rule interpretation, and sequential logic reasoning instead of software programming.
+            Practice flip-flop next-state logic using real test cases.
           </p>
         </div>
       </div>
@@ -108,46 +477,124 @@ export default function DSDFlipFlopsCoding({ selectedType, analysis, q }) {
         <strong>Live Hint:</strong> {currentInsight}
       </div>
 
-      <div className="coding-actions-upgraded" style={{ marginBottom: 18 }}>
-        <button className="sim-btn sim-btn-muted" onClick={clearAll}>
-          <RefreshCcw size={16} />
-          Reset Practice
-        </button>
+      <div className="coding-card-upgraded" style={{ marginBottom: 18 }}>
+        <div className="coding-card-header">
+          <div>
+            <h3>Flip-Flop Test Case Workspace</h3>
+            <p>
+              Run JavaScript solutions against test cases. Other languages are
+              saved as attempted submissions for now.
+            </p>
+          </div>
+
+          <div className="coding-language-wrap">
+            <label className="sorting-label">Language</label>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="sorting-select"
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {practiceBank.map((problem, index) => (
+      {problems.map((problem, index) => (
         <div key={problem.id} className="coding-card-upgraded">
           <div className="coding-card-header">
             <div>
-              <h3>
-                Task {index + 1}: {problem.title}
-              </h3>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 10,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "rgba(56,189,248,0.10)",
+                  border: "1px solid rgba(56,189,248,0.18)",
+                  color: "#38bdf8",
+                  fontWeight: 700,
+                  fontSize: "0.82rem"
+                }}
+              >
+                <Sparkles size={14} />
+                <span>Sequential Logic Problem</span>
+              </div>
+
+              <h3>{problem.title}</h3>
               <p>{problem.description}</p>
             </div>
           </div>
 
           <textarea
+            value={codes[index] || ""}
+            onChange={(e) => handleCodeChange(index, e.target.value)}
+            rows={12}
             className="coding-textarea-upgraded"
-            rows={7}
-            value={responses[problem.id]}
-            onChange={(e) => handleChange(problem.id, e.target.value)}
-            placeholder={problem.placeholder}
+            placeholder="Write your code here..."
           />
 
           <div className="coding-actions-upgraded">
-            <button className="sim-btn sim-btn-primary" onClick={() => checkAnswer(problem)}>
-              <CheckCircle2 size={16} />
-              Check Answer
+            <button
+              className="sim-btn sim-btn-primary"
+              onClick={() => runCode(index)}
+            >
+              <Play size={16} />
+              Run Tests
             </button>
 
-            <button className="sim-btn sim-btn-muted" onClick={() => showModelAnswer(problem)}>
-              <Lightbulb size={16} />
-              Show Model Answer
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={() => analyzeCode(index)}
+            >
+              <Wrench size={16} />
+              Analyze
+            </button>
+
+            <button
+              className="sim-btn sim-btn-success"
+              onClick={() => correctCode(index)}
+            >
+              Load Correct
             </button>
           </div>
 
-          {feedback[problem.id] && (
-            <div className="coding-result-box">{feedback[problem.id]}</div>
+          {selectedLanguage !== "javascript" && (
+            <div className="coding-result-box" style={{ marginTop: 14 }}>
+              Execution for {selectedLanguage.toUpperCase()} will be enabled later.
+              For now, direct execution works in JavaScript.
+            </div>
+          )}
+
+          {results[index] && (
+            <div className="coding-result-box">
+              <strong
+                style={{
+                  color:
+                    results[index].passed === true
+                      ? "#22c55e"
+                      : results[index].passed === false
+                      ? "#ef4444"
+                      : "#e2e8f0"
+                }}
+              >
+                {results[index].message}
+              </strong>
+
+              <TestCaseTable testResults={results[index].testResults} />
+            </div>
+          )}
+
+          {codingSaveStatus[index] && (
+            <div className="coding-result-box">
+              {codingSaveStatus[index]}
+            </div>
           )}
         </div>
       ))}

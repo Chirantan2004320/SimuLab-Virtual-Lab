@@ -14,6 +14,9 @@ import HeapSimulation from "./HeapSimulation";
 import HeapQuiz from "./HeapQuiz";
 import HeapCoding from "./HeapCoding";
 
+import MarkCompleteButton from "../../../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../../../API/progressApi";
+
 const simulabLogo = "/assets/logo.png";
 
 const sidebarItems = [
@@ -217,6 +220,7 @@ const binaryProblemBankMin = [
   }
 ];
 
+//eslint-disable-next-line no-unused-vars
 const heapCodeTemplates = {
   javascript: `function insertHeap(heap, value, isMinHeap = false) {
   heap.push(value);
@@ -426,6 +430,8 @@ export default function HeapLab() {
   const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState({});
@@ -710,25 +716,31 @@ export default function HeapLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+  const submitQuiz = async () => {
+  let score = 0;
+
+  quizQuestions.forEach((q, i) => {
+    if (quizAnswers[i] === q.correct) score++;
+  });
+
+  setQuizScore(score);
+  setQuizSubmitted(true);
+  setQuizSaveStatus("Saving quiz result...");
+
+  try {
+    await saveQuizResult({
+      labSlug: "dsa",
+      experimentSlug: "heap",
+      correctAnswers: score,
+      totalQuestions: quizQuestions.length,
     });
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
-
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: `${heapType}-heap`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
-  };
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error("Heap quiz save failed:", error);
+    setQuizSaveStatus("Quiz submitted, but backend save failed.");
+  }
+};
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
@@ -780,62 +792,146 @@ export default function HeapLab() {
     }));
   };
 
-  const runCode = (problemId, language) => {
-    const problem = currentProblems.find((p) => p.id === problemId);
-    const codeKey = `${problemId}_${language}`;
-    const code = codes[codeKey];
+  const runCode = async (problemId, language) => {
+  const problem = currentProblems.find((p) => p.id === problemId);
+  const codeKey = `${problemId}_${language}`;
+  const code = codes[codeKey];
 
-    if (!problem || !code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code."
-      }));
-      return;
-    }
+  if (!problem || !code) {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: "Please enter code."
+    }));
+    return;
+  }
 
-    if (language !== "javascript") {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]:
-          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      }));
-      return;
-    }
+  if (language !== "javascript") {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+    }));
 
     try {
-      let allCorrect = true;
-      const outputs = [];
-
-      for (const test of problem.tests) {
-        const args = test.input.map((item) => (Array.isArray(item) ? [...item] : item));
-
-        const fn = new Function(
-          ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
-          `${code}; return ${problem.functionName}(${args.map((_, i) => `arg${i}`).join(", ")});`
-        );
-
-        const result = fn(...args);
-        outputs.push(result);
-
-        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
-          allCorrect = false;
-          break;
-        }
-      }
-
-      setResults((prev) => ({
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problemId]: allCorrect
-          ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
-          : "Incorrect Output"
+        [problemId]: "Saving submission..."
+      }));
+
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "heap",
+        problemTitle: problem.title,
+        language,
+        code,
+        result: "attempted"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Submission saved to dashboard."
       }));
     } catch (error) {
-      setResults((prev) => ({
+      console.error("Heap coding save failed:", error);
+
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problemId]: `Error: ${error.message}`
+        [problemId]: "Code attempt recorded locally, but backend save failed."
       }));
     }
-  };
+
+    return;
+  }
+
+  try {
+    let allCorrect = true;
+    const outputs = [];
+
+    for (const test of problem.tests) {
+      const args = test.input.map((item) =>
+        Array.isArray(item) ? [...item] : item
+      );
+
+      // eslint-disable-next-line no-new-func
+      const fn = new Function(
+        ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
+        `${code}; return ${problem.functionName}(${args
+          .map((_, i) => `arg${i}`)
+          .join(", ")});`
+      );
+
+      const result = fn(...args);
+      outputs.push(result);
+
+      if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
+        allCorrect = false;
+        break;
+      }
+    }
+
+    const resultText = allCorrect
+      ? `Correct! Your outputs: ${outputs
+          .map((output) => JSON.stringify(output))
+          .join(", ")}`
+      : "Incorrect Output";
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: resultText
+    }));
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Saving submission..."
+    }));
+
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "heap",
+      problemTitle: problem.title,
+      language,
+      code,
+      result: allCorrect ? "passed" : "failed"
+    });
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Submission saved to dashboard."
+    }));
+  } catch (error) {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: `Error: ${error.message}`
+    }));
+
+    try {
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Saving failed submission..."
+      }));
+
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "heap",
+        problemTitle: problem?.title || `Heap Problem ${problemId}`,
+        language,
+        code,
+        result: "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Failed submission saved to dashboard."
+      }));
+    } catch (saveError) {
+      console.error("Heap coding save failed:", saveError);
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Code ran, but backend save failed."
+      }));
+    }
+  }
+};
 
   const analyzeCode = (problemId, language) => {
     const codeKey = `${problemId}_${language}`;
@@ -973,6 +1069,7 @@ export default function HeapLab() {
             <p>Select heap type, animation speed, and observe heap operations step by step.</p>
           </div>
 
+
           <div className="er-mode-pill">
             <div className="er-mode-pill-icon">
               <Cpu size={18} />
@@ -1023,6 +1120,14 @@ export default function HeapLab() {
             {experimentRun ? "Experiment Run" : "Not Started"}
           </button>
         </div>
+
+        <div style={{ marginTop: 18 }}>
+  <MarkCompleteButton
+    labSlug="dsa"
+    experimentSlug="heap"
+    points={10}
+  />
+</div>
       </section>
 
       <div className="er-content-layout">
@@ -1052,32 +1157,34 @@ export default function HeapLab() {
 
           {activeSection === "quiz" && (
             <HeapQuiz
-              heapType={heapType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-              redoQuiz={redoQuiz}
-            />
+  heapType={heapType}
+  quizQuestions={quizQuestions}
+  quizAnswers={quizAnswers}
+  quizSubmitted={quizSubmitted}
+  quizScore={quizScore}
+  quizSaveStatus={quizSaveStatus}
+  experimentRun={experimentRun}
+  handleQuizAnswer={handleQuizAnswer}
+  submitQuiz={submitQuiz}
+  redoQuiz={redoQuiz}
+/>
           )}
 
           {activeSection === "coding" && (
             <HeapCoding
-              heapType={heapType}
-              currentProblems={currentProblems}
-              selectedLanguages={selectedLanguages}
-              codes={codes}
-              results={results}
-              generateProblems={generateProblems}
-              handleLanguageChange={handleLanguageChange}
-              handleCodeChange={handleCodeChange}
-              runCode={runCode}
-              analyzeCode={analyzeCode}
-              correctCode={correctCode}
-            />
+  heapType={heapType}
+  currentProblems={currentProblems}
+  selectedLanguages={selectedLanguages}
+  codes={codes}
+  results={results}
+  codingSaveStatus={codingSaveStatus}
+  generateProblems={generateProblems}
+  handleLanguageChange={handleLanguageChange}
+  handleCodeChange={handleCodeChange}
+  runCode={runCode}
+  analyzeCode={analyzeCode}
+  correctCode={correctCode}
+/>
           )}
         </section>
       </div>

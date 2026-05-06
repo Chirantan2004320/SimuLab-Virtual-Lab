@@ -1,4 +1,13 @@
 import React, { useEffect } from "react";
+import {
+  Activity,
+  Gauge,
+  Zap,
+  Timer,
+  SlidersHorizontal,
+  Sparkles,
+  Cpu
+} from "lucide-react";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -24,171 +33,161 @@ export default function DVLSICMOSInverterSimulationSimulation({
   }, [vin, vdd, switchPoint, tpd, loadCap, setExperimentRun]);
 
   return (
-    <section className="card experiment">
-      <h2>Simulation</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              Adjust inverter parameters and observe output logic, transistor states, delay, and power trend.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px",
-          marginTop: "1rem"
-        }}
-      >
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Vin (V): <strong>{formatNumber(vin)}</strong>
-          </label>
-          <input
-            type="range"
+      <div className="overview-grid" style={{ marginBottom: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>Operating Region</h4>
+          </div>
+          <p>
+            <strong>{analysis.logicRegion}</strong> — {analysis.regionLabel}
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Zap size={18} />
+            <h4>Conduction Path</h4>
+          </div>
+          <p>{analysis.conductingPath}</p>
+        </div>
+      </div>
+
+      <div className="sorting-info-box">
+        <Sparkles size={16} style={{ marginRight: 10 }} />
+        {analysis.note}
+      </div>
+
+      <div className="overview-card" style={{ marginBottom: 18 }}>
+        <div className="overview-card-head">
+          <SlidersHorizontal size={18} />
+          <h4>Input Parameters</h4>
+        </div>
+
+        <div className="er-config-grid">
+          <SliderControl
+            label={`Vin: ${formatNumber(vin)} V`}
             min="0"
             max={Math.max(vdd, 0.5)}
             step="0.1"
             value={vin}
-            onChange={(e) => setVin(clamp(parseFloat(e.target.value || 0), 0, 10))}
-            style={{ width: "100%" }}
+            onChange={(value) => setVin(clamp(value, 0, 10))}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            VDD (V): <strong>{formatNumber(vdd)}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`VDD: ${formatNumber(vdd)} V`}
             min="0.5"
             max="10"
             step="0.1"
             value={vdd}
-            onChange={(e) => setVdd(clamp(parseFloat(e.target.value || 0), 0.5, 10))}
-            style={{ width: "100%" }}
+            onChange={(value) => setVdd(clamp(value, 0.5, 10))}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Switching Point VM (V): <strong>{formatNumber(switchPoint)}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Switching Point VM: ${formatNumber(switchPoint)} V`}
             min="0"
             max={Math.max(vdd, 0.5)}
             step="0.1"
             value={switchPoint}
-            onChange={(e) =>
-              setSwitchPoint(clamp(parseFloat(e.target.value || 0), 0, 10))
-            }
-            style={{ width: "100%" }}
+            onChange={(value) => setSwitchPoint(clamp(value, 0, 10))}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Propagation Delay (ns): <strong>{formatNumber(tpd)}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Propagation Delay: ${formatNumber(tpd)} ns`}
             min="0.1"
             max="20"
             step="0.1"
             value={tpd}
-            onChange={(e) => setTpd(clamp(parseFloat(e.target.value || 0), 0.1, 20))}
-            style={{ width: "100%" }}
+            onChange={(value) => setTpd(clamp(value, 0.1, 20))}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Load Capacitance (fF): <strong>{formatNumber(loadCap)}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Load Capacitance: ${formatNumber(loadCap)} fF`}
             min="0.1"
             max="100"
             step="0.1"
             value={loadCap}
-            onChange={(e) =>
-              setLoadCap(clamp(parseFloat(e.target.value || 0), 0.1, 100))
-            }
-            style={{ width: "100%" }}
+            onChange={(value) => setLoadCap(clamp(value, 0.1, 100))}
           />
         </div>
       </div>
 
-      <div
-        style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px"
-        }}
-      >
-        <div className="stat-card">
-          <strong>Output Voltage</strong>
-          <div>{formatNumber(analysis.vout)} V</div>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Output Voltage</span>
+          <span className="sorting-stat-value">{formatNumber(analysis.vout)} V</span>
         </div>
 
-        <div className="stat-card">
-          <strong>Operating Region</strong>
-          <div>{analysis.logicRegion}</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">pMOS State</span>
+          <span className="sorting-stat-value">{analysis.pmosState}</span>
         </div>
 
-        <div className="stat-card">
-          <strong>nMOS State</strong>
-          <div>{analysis.nmosState}</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">nMOS State</span>
+          <span className="sorting-stat-value">{analysis.nmosState}</span>
         </div>
 
-        <div className="stat-card">
-          <strong>pMOS State</strong>
-          <div>{analysis.pmosState}</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Dynamic Power</span>
+          <span className="sorting-stat-value">{formatNumber(analysis.dynamicPower)}</span>
         </div>
       </div>
 
-      <div className="info-box" style={{ marginTop: "1rem" }}>
-        {analysis.note}
-      </div>
+      <div className="overview-grid" style={{ marginTop: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Timer size={18} />
+            <h4>Delay Analysis</h4>
+          </div>
+          <p>
+            Propagation Delay: <strong>{formatNumber(analysis.delay)} ns</strong>
+          </p>
+        </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>CMOS Inverter Output Analysis</h3>
-        <table
-          className="dbms-table"
-          style={{ width: "100%", marginTop: "0.75rem" }}
-        >
-          <tbody>
-            <tr>
-              <td>Input Voltage Vin</td>
-              <td>{formatNumber(vin)} V</td>
-            </tr>
-            <tr>
-              <td>Output Voltage Vout</td>
-              <td>{formatNumber(analysis.vout)} V</td>
-            </tr>
-            <tr>
-              <td>Propagation Delay</td>
-              <td>{formatNumber(analysis.delay)} ns</td>
-            </tr>
-            <tr>
-              <td>Dynamic Power Trend</td>
-              <td>{formatNumber(analysis.dynamicPower)} arb. units</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Noise Margin Interpretation</h3>
-        <p style={{ marginTop: "0.5rem" }}>
-          <strong>Noise Margin Low (approx): </strong>
-          <span className="lab-output-value">{formatNumber(analysis.noiseMarginLow)} V</span>
-        </p>
-        <p style={{ marginTop: "0.5rem" }}>
-          <strong>Noise Margin High (approx): </strong>
-          <span className="lab-output-value">{formatNumber(analysis.noiseMarginHigh)} V</span>
-        </p>
-        <p style={{ marginTop: "0.75rem", color: "#9ca3af" }}>
-          These are simplified educational estimates based on the switching point and supply voltage.
-        </p>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>Noise Margin Estimate</h4>
+          </div>
+          <p>
+            NML ≈ <strong>{formatNumber(analysis.noiseMarginLow)} V</strong> · NMH ≈{" "}
+            <strong>{formatNumber(analysis.noiseMarginHigh)} V</strong>
+          </p>
+        </div>
       </div>
     </section>
+  );
+}
+
+function SliderControl({ label, min, max, step, value, onChange }) {
+  return (
+    <div>
+      <label className="sorting-label">{label}</label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="sorting-range"
+      />
+    </div>
   );
 }

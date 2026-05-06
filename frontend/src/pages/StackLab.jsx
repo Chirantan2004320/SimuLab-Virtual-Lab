@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
@@ -9,6 +10,9 @@ import {
 } from "lucide-react";
 import "./SortingLab.css";
 import "./Lab.css";
+
+import MarkCompleteButton from "../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../API/progressApi";
 
 import StackOverview from "./labs/stack/StackOverview.jsx";
 import StackSimulation from "./labs/stack/StackSimulation.jsx";
@@ -43,12 +47,7 @@ const stackQuizQuestions = [
   },
   {
     question: "Which of the following is a common application of a stack?",
-    options: [
-      "Printer queue",
-      "CPU scheduling",
-      "Undo operation",
-      "Round robin processing"
-    ],
+    options: ["Printer queue", "CPU scheduling", "Undo operation", "Round robin processing"],
     correct: 2
   }
 ];
@@ -128,207 +127,16 @@ const problemBank = [
   }
 ];
 
-const LANGUAGES = ["javascript", "python", "cpp", "c", "java"];
-
 function getStarterCode(problem, language) {
   const fn = problem.functionName;
 
-  if (language === "python") {
-    if (fn === "push") {
-      return `def push(stack, value):
-    # Write your solution here
-    stack.append(value)
-    return stack
-`;
-    }
-
-    if (fn === "popElement") {
-      return `def popElement(stack):
-    # Write your solution here
-    return stack
-`;
-    }
-
-    if (fn === "peek") {
-      return `def peek(stack):
-    # Write your solution here
-    return None
-`;
-    }
-
-    if (fn === "isEmpty") {
-      return `def isEmpty(stack):
-    # Write your solution here
-    return len(stack) == 0
-`;
-    }
-
-    if (fn === "size") {
-      return `def size(stack):
-    # Write your solution here
-    return len(stack)
-`;
-    }
-
-    if (fn === "pushTwice") {
-      return `def pushTwice(stack, a, b):
-    # Write your solution here
-    return stack
-`;
-    }
-  }
-
-  if (language === "cpp") {
-    if (fn === "push") {
-      return `#include <vector>
-using namespace std;
-
-vector<int> push(vector<int> stack, int value) {
-    // Write your solution here
-    stack.push_back(value);
-    return stack;
-}
-`;
-    }
-
-    if (fn === "popElement") {
-      return `#include <vector>
-using namespace std;
-
-vector<int> popElement(vector<int> stack) {
-    // Write your solution here
-    return stack;
-}
-`;
-    }
-
-    if (fn === "peek") {
-      return `#include <vector>
-using namespace std;
-
-int peek(vector<int> stack) {
-    // Write your solution here
-    return -1;
-}
-`;
-    }
-
-    if (fn === "isEmpty") {
-      return `#include <vector>
-using namespace std;
-
-bool isEmpty(vector<int> stack) {
-    // Write your solution here
-    return stack.empty();
-}
-`;
-    }
-
-    if (fn === "size") {
-      return `#include <vector>
-using namespace std;
-
-int size(vector<int> stack) {
-    // Write your solution here
-    return stack.size();
-}
-`;
-    }
-
-    if (fn === "pushTwice") {
-      return `#include <vector>
-using namespace std;
-
-vector<int> pushTwice(vector<int> stack, int a, int b) {
-    // Write your solution here
-    return stack;
-}
-`;
-    }
-  }
-
-  if (language === "c") {
-    return `/* C execution template only. Browser execution is available for JavaScript for now. */`;
-  }
-
-  if (language === "java") {
-    if (fn === "push") {
-      return `import java.util.*;
-
-public class Main {
-    public static List<Integer> push(List<Integer> stack, int value) {
-        // Write your solution here
-        stack.add(value);
-        return stack;
-    }
-}
-`;
-    }
-
-    if (fn === "popElement") {
-      return `import java.util.*;
-
-public class Main {
-    public static List<Integer> popElement(List<Integer> stack) {
-        // Write your solution here
-        return stack;
-    }
-}
-`;
-    }
-
-    if (fn === "peek") {
-      return `import java.util.*;
-
-public class Main {
-    public static Integer peek(List<Integer> stack) {
-        // Write your solution here
-        return null;
-    }
-}
-`;
-    }
-
-    if (fn === "isEmpty") {
-      return `import java.util.*;
-
-public class Main {
-    public static boolean isEmpty(List<Integer> stack) {
-        // Write your solution here
-        return stack.isEmpty();
-    }
-}
-`;
-    }
-
-    if (fn === "size") {
-      return `import java.util.*;
-
-public class Main {
-    public static int size(List<Integer> stack) {
-        // Write your solution here
-        return stack.size();
-    }
-}
-`;
-    }
-
-    if (fn === "pushTwice") {
-      return `import java.util.*;
-
-public class Main {
-    public static List<Integer> pushTwice(List<Integer> stack, int a, int b) {
-        // Write your solution here
-        return stack;
-    }
-}
-`;
-    }
+  if (language !== "javascript") {
+    return `// ${language.toUpperCase()} execution will be enabled later with Judge0.
+// For now, JavaScript runs directly in the browser.`;
   }
 
   if (fn === "push") {
     return `function push(stack, value) {
-  // Write your solution here
   stack.push(value);
   return stack;
 }
@@ -337,7 +145,8 @@ public class Main {
 
   if (fn === "popElement") {
     return `function popElement(stack) {
-  // Write your solution here
+  if (stack.length === 0) return stack;
+  stack.pop();
   return stack;
 }
 `;
@@ -345,15 +154,14 @@ public class Main {
 
   if (fn === "peek") {
     return `function peek(stack) {
-  // Write your solution here
-  return null;
+  if (stack.length === 0) return null;
+  return stack[stack.length - 1];
 }
 `;
   }
 
   if (fn === "isEmpty") {
     return `function isEmpty(stack) {
-  // Write your solution here
   return stack.length === 0;
 }
 `;
@@ -361,7 +169,6 @@ public class Main {
 
   if (fn === "size") {
     return `function size(stack) {
-  // Write your solution here
   return stack.length;
 }
 `;
@@ -369,7 +176,8 @@ public class Main {
 
   if (fn === "pushTwice") {
     return `function pushTwice(stack, a, b) {
-  // Write your solution here
+  stack.push(a);
+  stack.push(b);
   return stack;
 }
 `;
@@ -380,7 +188,6 @@ public class Main {
 }
 `;
 }
-
 
 const simulabLogo = "/assets/logo.png";
 
@@ -407,11 +214,14 @@ export default function StackLab() {
   const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState({});
   const [codes, setCodes] = useState({});
   const [results, setResults] = useState({});
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+  const [codingAttempted, setCodingAttempted] = useState(false);
 
   const inputRef = useRef(null);
 
@@ -428,14 +238,11 @@ export default function StackLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
   }, [quizQuestions.length]);
 
   const persistRun = () => {
     setExperimentRun(true);
-    localStorage.setItem(
-      "vlab_last_experiment",
-      JSON.stringify({ name: "stack", time: Date.now() })
-    );
   };
 
   const pushElement = () => {
@@ -530,30 +337,37 @@ export default function StackLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
+
     quizQuestions.forEach((q, i) => {
       if (quizAnswers[i] === q.correct) score++;
     });
 
     setQuizScore(score);
     setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: "stack",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+    try {
+      await saveQuizResult({
+        labSlug: "dsa",
+        experimentSlug: "stack",
+        correctAnswers: score,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Stack quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
   };
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const generateProblems = () => {
@@ -572,6 +386,7 @@ export default function StackLab() {
     setSelectedLanguages(initialLanguages);
     setCodes(initialCodes);
     setResults({});
+    setCodingSaveStatus({});
   };
 
   const handleLanguageChange = (problemId, language, problem) => {
@@ -599,10 +414,23 @@ export default function StackLab() {
     }));
   };
 
-  const runCode = (problemId, language) => {
+  const saveStackCoding = async ({ problem, language, code, result }) => {
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "stack",
+      problemTitle: problem?.title || "Stack Problem",
+      language,
+      code,
+      result
+    });
+  };
+
+  const runCode = async (problemId, language) => {
     const problem = currentProblems.find((p) => p.id === problemId);
     const codeKey = `${problemId}_${language}`;
     const code = codes[codeKey];
+
+    setCodingAttempted(true);
 
     if (!problem || !code) {
       setResults((prev) => ({
@@ -615,9 +443,34 @@ export default function StackLab() {
     if (language !== "javascript") {
       setResults((prev) => ({
         ...prev,
-        [problemId]:
-          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+        [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving coding attempt..."
+        }));
+
+        await saveStackCoding({
+          problem,
+          language,
+          code,
+          result: "attempted"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempt saved to dashboard."
+        }));
+      } catch (error) {
+        console.error("Stack coding save failed:", error);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempted, but backend save failed."
+        }));
+      }
+
       return;
     }
 
@@ -650,11 +503,55 @@ export default function StackLab() {
           ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
           : "Incorrect Output"
       }));
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Saving coding submission..."
+      }));
+
+      await saveStackCoding({
+        problem,
+        language,
+        code,
+        result: allCorrect ? "passed" : "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? "Coding submission saved to dashboard."
+          : "Failed coding submission saved to dashboard."
+      }));
     } catch (error) {
       setResults((prev) => ({
         ...prev,
         [problemId]: `Error: ${error.message}`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving failed coding submission..."
+        }));
+
+        await saveStackCoding({
+          problem,
+          language,
+          code,
+          result: "failed"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Failed coding submission saved to dashboard."
+        }));
+      } catch (saveError) {
+        console.error("Stack coding save failed:", saveError);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding failed, and backend save also failed."
+        }));
+      }
     }
   };
 
@@ -839,6 +736,16 @@ export default function StackLab() {
               {experimentRun ? "Experiment Run" : "Not Started"}
             </button>
           </div>
+
+          {experimentRun && quizSubmitted && codingAttempted && (
+            <div style={{ marginTop: 18 }}>
+              <MarkCompleteButton
+                labSlug="dsa"
+                experimentSlug="stack"
+                points={10}
+              />
+            </div>
+          )}
         </section>
 
         <div className="er-content-layout">
@@ -870,6 +777,7 @@ export default function StackLab() {
                 quizAnswers={quizAnswers}
                 quizSubmitted={quizSubmitted}
                 quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
                 experimentRun={experimentRun}
                 handleQuizAnswer={handleQuizAnswer}
                 submitQuiz={submitQuiz}
@@ -883,6 +791,7 @@ export default function StackLab() {
                 selectedLanguages={selectedLanguages}
                 codes={codes}
                 results={results}
+                codingSaveStatus={codingSaveStatus}
                 generateProblems={generateProblems}
                 handleLanguageChange={handleLanguageChange}
                 handleCodeChange={handleCodeChange}

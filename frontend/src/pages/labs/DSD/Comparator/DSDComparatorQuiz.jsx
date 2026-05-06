@@ -1,59 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { Brain, Lock, Trophy, RotateCcw } from "lucide-react";
 
-const questions = [
-  {
-    q: "A comparator is mainly used to:",
-    options: ["Store binary data", "Compare binary values", "Generate clock pulses", "Encode analog input"],
-    correct: 1
-  },
-  {
-    q: "If A = 1 and B = 0, which output becomes active?",
-    options: ["A < B", "A = B", "A > B", "None"],
-    correct: 2
-  },
-  {
-    q: "If A = 0 and B = 0, the active output is:",
-    options: ["A > B", "A = B", "A < B", "All outputs"],
-    correct: 1
-  },
-  {
-    q: "A 1-bit comparator has how many comparison outputs?",
-    options: ["1", "2", "3", "4"],
-    correct: 2
-  },
-  {
-    q: "The expression for A > B in a 1-bit comparator is:",
-    options: ["A · B̅", "A̅ · B", "A + B", "A̅B̅ + AB"],
-    correct: 0
-  }
-];
-
-export default function DSDComparatorQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const handleAnswer = (index, value) => {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+export default function DSDComparatorQuiz({
+  experimentRun,
+  questions,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total = questions.length;
+  const percentage = total ? Math.round((score / total) * 100) : 0;
 
   return (
     <section className="quiz-shell">
@@ -72,7 +32,9 @@ export default function DSDComparatorQuiz({ experimentRun }) {
       {!experimentRun ? (
         <div className="quiz-locked-box">
           <Lock size={18} />
-          <span>Please interact with the comparator simulation before attempting the quiz.</span>
+          <span>
+            Please interact with the comparator simulation before attempting the quiz.
+          </span>
         </div>
       ) : !submitted ? (
         <div className="quiz-list">
@@ -86,7 +48,9 @@ export default function DSDComparatorQuiz({ experimentRun }) {
                 {q.options.map((opt, j) => (
                   <label
                     key={j}
-                    className={`quiz-option-card ${answers[i] === j ? "selected" : ""}`}
+                    className={`quiz-option-card ${
+                      answers[i] === j ? "selected" : ""
+                    }`}
                   >
                     <input
                       type="radio"
@@ -102,7 +66,11 @@ export default function DSDComparatorQuiz({ experimentRun }) {
           ))}
 
           <div className="quiz-actions-row">
-            <button className="sim-btn sim-btn-primary" onClick={submitQuiz} disabled={answers.includes(null)}>
+            <button
+              className="sim-btn sim-btn-primary"
+              onClick={submitQuiz}
+              disabled={answers.includes(null)}
+            >
               Submit Quiz
             </button>
           </div>
@@ -114,9 +82,46 @@ export default function DSDComparatorQuiz({ experimentRun }) {
             <div>
               <h3>Quiz Completed</h3>
               <p>
-                Your score: <strong>{score} / {questions.length}</strong>
+                Score: <strong>{score} / {total}</strong> ({percentage}%)
               </p>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p
+              className="text-sm text-muted-foreground"
+              style={{ marginTop: 8 }}
+            >
+              {quizSaveStatus}
+            </p>
+          )}
+
+          <div className="quiz-list">
+            {questions.map((q, i) => (
+              <div key={i} className="quiz-card-upgraded">
+                <div className="quiz-question-title">
+                  {i + 1}. {q.q}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect = j === q.correct;
+                    const isWrong = answers[i] === j && j !== q.correct;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect ? "correct" : isWrong ? "wrong" : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="quiz-actions-row">

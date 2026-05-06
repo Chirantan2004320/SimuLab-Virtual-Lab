@@ -11,14 +11,16 @@ import {
   TimerReset
 } from "lucide-react";
 
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
+
 import DSDCounterOverview from "./DSDCounterOverview";
 import DSDCounterSimulation from "./DSDCounterSimulation";
 import DSDCounterCircuits from "./DSDCounterCircuits";
 import DSDCounterTruthTable from "./DSDCounterTruthTable";
 import DSDCounterQuiz from "./DSDCounterQuiz";
 import DSDCounterCoding from "./DSDCounterCoding";
-
-const simulabLogo = "/assets/logo.png";
 
 const sidebarItems = [
   { key: "overview", label: "Overview", icon: BookOpen },
@@ -29,6 +31,49 @@ const sidebarItems = [
   { key: "coding", label: "Design Practice", icon: FileCode2 }
 ];
 
+const quizQuestions = [
+  {
+    q: "A counter is mainly a:",
+    options: [
+      "Combinational circuit only",
+      "Sequential circuit",
+      "Pure analog circuit",
+      "Power supply device"
+    ],
+    correct: 1
+  },
+  {
+    q: "A 2-bit binary counter has how many states?",
+    options: ["2", "3", "4", "8"],
+    correct: 2
+  },
+  {
+    q: "After state 01, a 2-bit binary counter goes to:",
+    options: ["00", "10", "11", "01"],
+    correct: 1
+  },
+  {
+    q: "Counters usually advance on:",
+    options: [
+      "Temperature change",
+      "Clock pulse",
+      "Mouse click only",
+      "Voltage drop only"
+    ],
+    correct: 1
+  },
+  {
+    q: "The counting sequence for a 2-bit up counter is:",
+    options: [
+      "00 → 10 → 01 → 11",
+      "00 → 01 → 10 → 11",
+      "11 → 10 → 01 → 00 only",
+      "00 → 11 → 10 → 01"
+    ],
+    correct: 1
+  }
+];
+
 export default function DSDCounterLab() {
   const [activeSection, setActiveSection] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,6 +81,13 @@ export default function DSDCounterLab() {
   const [count, setCount] = useState(0);
   const [clockPulses, setClockPulses] = useState(0);
   const [experimentRun, setExperimentRun] = useState(false);
+
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(quizQuestions.length).fill(null)
+  );
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const analysis = useMemo(() => {
     const q1 = Math.floor(count / 2);
@@ -70,6 +122,45 @@ export default function DSDCounterLab() {
     setExperimentRun(true);
   };
 
+  const handleQuizAnswer = (index, value) => {
+    const updated = [...quizAnswers];
+    updated[index] = value;
+    setQuizAnswers(updated);
+  };
+
+  const submitQuiz = async () => {
+    let total = 0;
+
+    quizQuestions.forEach((question, index) => {
+      if (quizAnswers[index] === question.correct) total++;
+    });
+
+    setQuizScore(total);
+    setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
+
+    try {
+      await saveQuizResult({
+        labSlug: "dsd",
+        experimentSlug: "counter",
+        correctAnswers: total,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Counter quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
+  };
+
   const progressPercent =
     activeSection === "overview"
       ? 20
@@ -87,14 +178,8 @@ export default function DSDCounterLab() {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+          <div className="er-brand-logo simulab-sidebar-logo">
+            <SimuLabLogo size={58} showText={false} variant="default" />
           </div>
 
           {!sidebarCollapsed && (
@@ -119,10 +204,13 @@ export default function DSDCounterLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
-                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                className={`er-nav-item ${
+                  activeSection === item.key ? "active" : ""
+                }`}
                 onClick={() => setActiveSection(item.key)}
                 title={item.label}
               >
@@ -155,7 +243,8 @@ export default function DSDCounterLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Counter"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "Counter"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -169,7 +258,8 @@ export default function DSDCounterLab() {
           <div>
             <h1 className="er-page-title">Counter</h1>
             <p className="er-page-subtitle">
-              Explore how a 2-bit binary counter advances through 00, 01, 10, and 11 using clock pulses. ✨
+              Explore how a 2-bit binary counter advances through 00, 01, 10,
+              and 11 using clock pulses.
             </p>
           </div>
         </div>
@@ -179,7 +269,8 @@ export default function DSDCounterLab() {
             <div>
               <h2>Counter Configuration</h2>
               <p>
-                Apply clock pulses, observe Q1 and Q0, and track the current and next binary state.
+                Apply clock pulses, observe Q1 and Q0, and track the current and
+                next binary state.
               </p>
             </div>
 
@@ -197,14 +288,20 @@ export default function DSDCounterLab() {
           <div className="er-config-grid">
             <div>
               <label className="sorting-label">Current Binary State</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 Q1Q0 = {analysis.binary}
               </div>
             </div>
 
             <div>
               <label className="sorting-label">Next Binary State</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 Next = {analysis.nextBinary}
               </div>
             </div>
@@ -214,14 +311,31 @@ export default function DSDCounterLab() {
             <button className="er-chip active">Count = {count}</button>
             <button className="er-chip active">Q1 = {analysis.q1}</button>
             <button className="er-chip active">Q0 = {analysis.q0}</button>
-            <button className="er-chip active">Clock Pulses = {clockPulses}</button>
-            <button className="er-chip active">Sequence: {analysis.sequence}</button>
+            <button className="er-chip active">
+              Clock Pulses = {clockPulses}
+            </button>
+            <button className="er-chip active">
+              Sequence: {analysis.sequence}
+            </button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <MarkCompleteButton
+              labSlug="dsd"
+              experimentSlug="counter"
+              points={10}
+            />
           </div>
         </section>
 
         <div className="er-content-layout">
           <section className="er-content-card">
-            {activeSection === "overview" && <DSDCounterOverview analysis={analysis} />}
+            {activeSection === "overview" && (
+              <DSDCounterOverview analysis={analysis} />
+            )}
 
             {activeSection === "simulation" && (
               <DSDCounterSimulation
@@ -247,7 +361,17 @@ export default function DSDCounterLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DSDCounterQuiz experimentRun={experimentRun} />
+              <DSDCounterQuiz
+                experimentRun={experimentRun}
+                questions={quizQuestions}
+                answers={quizAnswers}
+                submitted={quizSubmitted}
+                score={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                handleAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
             )}
 
             {activeSection === "coding" && (

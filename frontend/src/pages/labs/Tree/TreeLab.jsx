@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
@@ -7,13 +8,17 @@ import {
   ChevronsLeft,
   Cpu
 } from "lucide-react";
+
 import "../../Lab.css";
 import "../../SortingLab.css";
+
+import MarkCompleteButton from "../../../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../../../API/progressApi";
+
 import TreeOverview from "./TreeOverview";
 import TreeSimulation from "./TreeSimulation";
 import TreeQuiz from "./TreeQuiz";
 import TreeCoding from "./TreeCoding";
-
 
 const simulabLogo = "/assets/logo.png";
 
@@ -359,16 +364,16 @@ const insertLevelOrder = (root, value) => {
     if (!current.left) {
       current.left = newNode;
       return clonedRoot;
-    } else {
-      queue.push(current.left);
     }
+
+    queue.push(current.left);
 
     if (!current.right) {
       current.right = newNode;
       return clonedRoot;
-    } else {
-      queue.push(current.right);
     }
+
+    queue.push(current.right);
   }
 
   return clonedRoot;
@@ -413,23 +418,21 @@ const deleteBST = (root, value) => {
   const target = Number(value);
   const clonedRoot = cloneTree(root);
   let deleted = false;
-  let replacementDeletionDone = false;
 
-  const removeNode = (node, val, ignoreDeleteFlag = false) => {
+  const removeNode = (node, val) => {
     if (!node) return null;
 
     if (val < Number(node.value)) {
-      node.left = removeNode(node.left, val, ignoreDeleteFlag);
+      node.left = removeNode(node.left, val);
       return node;
     }
 
     if (val > Number(node.value)) {
-      node.right = removeNode(node.right, val, ignoreDeleteFlag);
+      node.right = removeNode(node.right, val);
       return node;
     }
 
-    if (!ignoreDeleteFlag && !deleted) deleted = true;
-    if (ignoreDeleteFlag) replacementDeletionDone = true;
+    deleted = true;
 
     if (!node.left && !node.right) return null;
     if (!node.left) return node.right;
@@ -439,12 +442,12 @@ const deleteBST = (root, value) => {
     while (successor.left) successor = successor.left;
 
     node.value = successor.value;
-    node.right = removeNode(node.right, Number(successor.value), true);
+    node.right = removeNode(node.right, Number(successor.value));
     return node;
   };
 
   const updatedRoot = removeNode(clonedRoot, target);
-  return { root: updatedRoot, deleted: deleted || replacementDeletionDone };
+  return { root: updatedRoot, deleted };
 };
 
 const buildPreorderNodes = (root, result = []) => {
@@ -476,9 +479,11 @@ const buildLevelOrderNodes = (root) => {
   if (!root) return result;
 
   const queue = [root];
+
   while (queue.length > 0) {
     const node = queue.shift();
     result.push(node);
+
     if (node.left) queue.push(node.left);
     if (node.right) queue.push(node.right);
   }
@@ -489,113 +494,99 @@ const buildLevelOrderNodes = (root) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function getStarterCode(problem, language) {
-  const fn = problem.functionName;
-
-  if (language === "python") {
-    const map = {
-      inorderTraversal: `def inorderTraversal(root):
-    # Write your solution here
-    return []
-`,
-      preorderTraversal: `def preorderTraversal(root):
-    # Write your solution here
-    return []
-`,
-      postorderTraversal: `def postorderTraversal(root):
-    # Write your solution here
-    return []
-`,
-      countNodes: `def countNodes(root):
-    # Write your solution here
-    return 0
-`,
-      countLeafNodes: `def countLeafNodes(root):
-    # Write your solution here
-    return 0
-`,
-      searchBST: `def searchBST(root, target):
-    # Write your solution here
-    return False
-`,
-      findMinBST: `def findMinBST(root):
-    # Write your solution here
-    return None
-`,
-      findMaxBST: `def findMaxBST(root):
-    # Write your solution here
-    return None
-`
-    };
-    return map[fn] || `def solve():
-    pass
-`;
-  }
-
-  if (language === "cpp") {
-    return `#include <bits/stdc++.h>
-using namespace std;
-
-// Write your solution here
-`;
-  }
-
-  if (language === "c") {
-    return `/* C execution template only. Browser execution is available for JavaScript for now. */`;
-  }
-
-  if (language === "java") {
-    return `import java.util.*;
-
-public class Main {
-    // Write your solution here
-}
-`;
+  if (language !== "javascript") {
+    return `// ${language.toUpperCase()} execution will be enabled later with Judge0.
+// For now, JavaScript runs directly in the browser.`;
   }
 
   const map = {
     inorderTraversal: `function inorderTraversal(root) {
-  // Write your solution here
-  return [];
+  const result = [];
+
+  function dfs(node) {
+    if (!node) return;
+    dfs(node.left);
+    result.push(node.value);
+    dfs(node.right);
+  }
+
+  dfs(root);
+  return result;
 }
 `,
     preorderTraversal: `function preorderTraversal(root) {
-  // Write your solution here
-  return [];
+  const result = [];
+
+  function dfs(node) {
+    if (!node) return;
+    result.push(node.value);
+    dfs(node.left);
+    dfs(node.right);
+  }
+
+  dfs(root);
+  return result;
 }
 `,
     postorderTraversal: `function postorderTraversal(root) {
-  // Write your solution here
-  return [];
+  const result = [];
+
+  function dfs(node) {
+    if (!node) return;
+    dfs(node.left);
+    dfs(node.right);
+    result.push(node.value);
+  }
+
+  dfs(root);
+  return result;
 }
 `,
     countNodes: `function countNodes(root) {
-  // Write your solution here
-  return 0;
+  if (!root) return 0;
+  return 1 + countNodes(root.left) + countNodes(root.right);
 }
 `,
     countLeafNodes: `function countLeafNodes(root) {
-  // Write your solution here
-  return 0;
+  if (!root) return 0;
+  if (!root.left && !root.right) return 1;
+  return countLeafNodes(root.left) + countLeafNodes(root.right);
 }
 `,
     searchBST: `function searchBST(root, target) {
-  // Write your solution here
-  return false;
+  if (!root) return false;
+
+  if (root.value === target) return true;
+  if (target < root.value) return searchBST(root.left, target);
+
+  return searchBST(root.right, target);
 }
 `,
     findMinBST: `function findMinBST(root) {
-  // Write your solution here
-  return null;
+  if (!root) return null;
+
+  let current = root;
+  while (current.left) {
+    current = current.left;
+  }
+
+  return current.value;
 }
 `,
     findMaxBST: `function findMaxBST(root) {
-  // Write your solution here
-  return null;
+  if (!root) return null;
+
+  let current = root;
+  while (current.right) {
+    current = current.right;
+  }
+
+  return current.value;
 }
 `
   };
 
-  return map[fn] || `function solve() {\n  // Write your solution here\n}\n`;
+  return map[problem.functionName] || `function solve() {\n  // Write your solution here\n}\n`;
 }
 
 export default function TreeLab() {
@@ -620,11 +611,14 @@ export default function TreeLab() {
   const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState({});
   const [codes, setCodes] = useState({});
   const [results, setResults] = useState({});
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+  const [codingAttempted, setCodingAttempted] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const inputRef = useRef(null);
@@ -633,6 +627,7 @@ export default function TreeLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
   }, [quizQuestions.length]);
 
   useEffect(() => {
@@ -650,6 +645,8 @@ export default function TreeLab() {
     setSelectedLanguages({});
     setCodes({});
     setResults({});
+    setCodingSaveStatus({});
+    setCodingAttempted(false);
   }, [treeMode]);
 
   useEffect(() => {
@@ -699,11 +696,6 @@ export default function TreeLab() {
     clearHighlights();
     setExperimentRun(true);
     inputRef.current?.focus();
-
-    localStorage.setItem(
-      "vlab_last_experiment",
-      JSON.stringify({ name: treeMode === "bst" ? "bst" : "binary-tree", time: Date.now() })
-    );
   };
 
   const stopTraversal = () => {
@@ -872,12 +864,7 @@ export default function TreeLab() {
     setVisitedNodeIds([]);
     setLastTraversal([]);
 
-    if (result.deleted) {
-      setMessage(`Deleted ${target} from BST.`);
-    } else {
-      setMessage(`${target} was not deleted.`);
-    }
-
+    setMessage(result.deleted ? `Deleted ${target} from BST.` : `${target} was not deleted.`);
     setExperimentRun(true);
   };
 
@@ -938,30 +925,37 @@ export default function TreeLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
+
     quizQuestions.forEach((q, i) => {
       if (quizAnswers[i] === q.correct) score++;
     });
 
     setQuizScore(score);
     setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: treeMode === "bst" ? "bst" : "binary-tree",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+    try {
+      await saveQuizResult({
+        labSlug: "dsa",
+        experimentSlug: "tree",
+        correctAnswers: score,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Tree quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
   };
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const generateProblems = () => {
@@ -981,6 +975,7 @@ export default function TreeLab() {
     setSelectedLanguages(initialLanguages);
     setCodes(initialCodes);
     setResults({});
+    setCodingSaveStatus({});
   };
 
   const handleLanguageChange = (problemId, language, problem) => {
@@ -1008,10 +1003,23 @@ export default function TreeLab() {
     }));
   };
 
-  const runCode = (problemId, language) => {
+  const saveTreeCoding = async ({ problem, language, code, result }) => {
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "tree",
+      problemTitle: problem?.title || "Tree Problem",
+      language,
+      code,
+      result
+    });
+  };
+
+  const runCode = async (problemId, language) => {
     const problem = currentProblems.find((p) => p.id === problemId);
     const codeKey = `${problemId}_${language}`;
     const code = codes[codeKey];
+
+    setCodingAttempted(true);
 
     if (!problem || !code) {
       setResults((prev) => ({
@@ -1024,9 +1032,34 @@ export default function TreeLab() {
     if (language !== "javascript") {
       setResults((prev) => ({
         ...prev,
-        [problemId]:
-          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+        [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving coding attempt..."
+        }));
+
+        await saveTreeCoding({
+          problem,
+          language,
+          code,
+          result: "attempted"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempt saved to dashboard."
+        }));
+      } catch (error) {
+        console.error("Tree coding save failed:", error);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempted, but backend save failed."
+        }));
+      }
+
       return;
     }
 
@@ -1036,12 +1069,16 @@ export default function TreeLab() {
 
       for (const test of problem.tests) {
         const args = test.input.map((item) =>
-          typeof item === "object" && item !== null ? JSON.parse(JSON.stringify(item)) : item
+          typeof item === "object" && item !== null
+            ? JSON.parse(JSON.stringify(item))
+            : item
         );
 
         const fn = new Function(
           ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
-          `${code}; return ${problem.functionName}(${args.map((_, i) => `arg${i}`).join(", ")});`
+          `${code}; return ${problem.functionName}(${args
+            .map((_, i) => `arg${i}`)
+            .join(", ")});`
         );
 
         const result = fn(...args);
@@ -1059,11 +1096,55 @@ export default function TreeLab() {
           ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
           : "Incorrect Output"
       }));
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Saving coding submission..."
+      }));
+
+      await saveTreeCoding({
+        problem,
+        language,
+        code,
+        result: allCorrect ? "passed" : "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? "Coding submission saved to dashboard."
+          : "Failed coding submission saved to dashboard."
+      }));
     } catch (error) {
       setResults((prev) => ({
         ...prev,
         [problemId]: `Error: ${error.message}`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving failed coding submission..."
+        }));
+
+        await saveTreeCoding({
+          problem,
+          language,
+          code,
+          result: "failed"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Failed coding submission saved to dashboard."
+        }));
+      } catch (saveError) {
+        console.error("Tree coding save failed:", saveError);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding failed, and backend save also failed."
+        }));
+      }
     }
   };
 
@@ -1076,15 +1157,17 @@ export default function TreeLab() {
       return;
     }
 
-    const analysisData = {
-      code,
-      problemId,
-      topic: "tree",
-      treeMode,
-      language
-    };
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "tree",
+        treeMode,
+        language
+      })
+    );
 
-    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
     alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -1097,245 +1180,259 @@ export default function TreeLab() {
       return;
     }
 
-    const correctionData = {
-      code,
-      problemId,
-      topic: "tree",
-      treeMode,
-      language,
-      action: "correct"
-    };
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "tree",
+        treeMode,
+        language,
+        action: "correct"
+      })
+    );
 
-    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
     alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   };
 
   const progressPercent =
-  activeSection === "overview"
-    ? 20
-    : activeSection === "simulation"
-    ? 52
-    : activeSection === "quiz"
-    ? 78
-    : 95;
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 52
+      : activeSection === "quiz"
+      ? 78
+      : 95;
 
-const treeModeLabel =
-  treeMode === "bst" ? "Binary Search Tree" : "Binary Tree";
+  const treeModeLabel =
+    treeMode === "bst" ? "Binary Search Tree" : "Binary Tree";
 
-const complexityLabel =
-  treeMode === "bst" ? "Avg O(log n), Worst O(n)" : "Traversal O(n)";
+  const complexityLabel =
+    treeMode === "bst" ? "Avg O(log n), Worst O(n)" : "Traversal O(n)";
 
   return (
-  <div className="er-shell">
-    <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
-      <div className="er-brand">
-        <div className="er-brand-logo">
-          <img
-            src={simulabLogo}
-            alt="SimuLab"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSA Lab</div>
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+          >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
         </div>
 
         {!sidebarCollapsed && (
-          <div>
-            <div className="er-brand-title">SimuLab</div>
-            <div className="er-brand-subtitle">DSA Lab</div>
-          </div>
-        )}
-      </div>
-
-      <div className="er-collapse-wrap">
-        <button
-          type="button"
-          className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
-          onClick={() => setSidebarCollapsed((prev) => !prev)}
-        >
-          <ChevronsLeft size={18} />
-        </button>
-      </div>
-
-      <div className="er-nav">
-        {sidebarItems.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <button
-              key={item.key}
-              className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
-              onClick={() => setActiveSection(item.key)}
-              title={item.label}
-            >
-              <Icon size={18} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {!sidebarCollapsed && (
-        <div className="er-progress-card">
-          <div className="er-progress-title">Your Progress</div>
-          <div className="er-progress-ring">
-            <div
-              className="er-progress-circle"
-              style={{
-                background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
-              }}
-            >
-              <div className="er-progress-inner">
-                <div className="er-progress-value">{progressPercent}%</div>
-                <div className="er-progress-text">Complete</div>
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </aside>
+        )}
+      </aside>
 
-    <main className="er-main-area">
-      <div className="er-page-header">
-        <div>
-          <h1 className="er-page-title">{treeModeLabel}</h1>
-          <p className="er-page-subtitle">
-            Visualize tree insertion, traversal, BST search, deletion, and tree-based coding practice.
-          </p>
-        </div>
-      </div>
-
-      <section className="er-config-card">
-        <div className="er-config-top">
+      <main className="er-main-area">
+        <div className="er-page-header">
           <div>
-            <h2>Tree Configuration</h2>
-            <p>Select tree mode, animation speed, and observe tree operations step by step.</p>
+            <h1 className="er-page-title">{treeModeLabel}</h1>
+            <p className="er-page-subtitle">
+              Visualize tree insertion, traversal, BST search, deletion, and tree-based coding practice.
+            </p>
           </div>
+        </div>
 
-          <div className="er-mode-pill">
-            <div className="er-mode-pill-icon">
-              <Cpu size={18} />
-            </div>
+        <section className="er-config-card">
+          <div className="er-config-top">
             <div>
-              <strong>{treeModeLabel}</strong>
-              <span>
-                Complexity: {complexityLabel}. Current nodes: {nodeCount}.
-              </span>
+              <h2>Tree Configuration</h2>
+              <p>Select tree mode, animation speed, and observe tree operations step by step.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>{treeModeLabel}</strong>
+                <span>
+                  Complexity: {complexityLabel}. Current nodes: {nodeCount}.
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="er-config-grid">
-          <div>
-            <label className="sorting-label">Tree Mode</label>
-            <select
-              value={treeMode}
-              onChange={(e) => setTreeMode(e.target.value)}
-              className="sorting-select"
-              disabled={isRunning}
-            >
-              <option value="binary">Binary Tree</option>
-              <option value="bst">Binary Search Tree (BST)</option>
-            </select>
+          <div className="er-config-grid">
+            <div>
+              <label className="sorting-label">Tree Mode</label>
+              <select
+                value={treeMode}
+                onChange={(e) => setTreeMode(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="binary">Binary Tree</option>
+                <option value="bst">Binary Search Tree (BST)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="sorting-label">Animation Speed</label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="sorting-select"
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
+          <div className="er-chip-row">
+            <button className="er-chip active">Mode = {treeModeLabel}</button>
+            <button className="er-chip active">Nodes = {nodeCount}</button>
+            <button className="er-chip active">Visited = {visitedNodeIds.length}</button>
+            <button className="er-chip active">
+              Root = {treeRoot?.value ?? "NULL"}
+            </button>
+            <button className="er-chip active">Complexity = {complexityLabel}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Experiment Run" : "Not Started"}
+            </button>
           </div>
-        </div>
 
-        <div className="er-chip-row">
-          <button className="er-chip active">Mode = {treeModeLabel}</button>
-          <button className="er-chip active">Nodes = {nodeCount}</button>
-          <button className="er-chip active">Visited = {visitedNodeIds.length}</button>
-          <button className="er-chip active">
-            Root = {treeRoot?.value ?? "NULL"}
-          </button>
-          <button className="er-chip active">Complexity = {complexityLabel}</button>
-          <button className={`er-chip ${experimentRun ? "active" : ""}`}>
-            {experimentRun ? "Experiment Run" : "Not Started"}
-          </button>
-        </div>
-      </section>
-
-      <div className="er-content-layout">
-        <section className="er-content-card">
-          {activeSection === "overview" && (
-            <TreeOverview treeMode={treeMode} />
-          )}
-
-          {activeSection === "simulation" && (
-            <TreeSimulation
-              treeMode={treeMode}
-              treeRoot={treeRoot}
-              input={input}
-              setInput={setInput}
-              searchInput={searchInput}
-              setSearchInput={setSearchInput}
-              deleteInput={deleteInput}
-              setDeleteInput={setDeleteInput}
-              insertNode={insertNode}
-              runPreorder={runPreorder}
-              runInorder={runInorder}
-              runPostorder={runPostorder}
-              runLevelOrder={runLevelOrder}
-              searchBST={searchBST}
-              deleteNodeHandler={deleteNodeHandler}
-              stopTraversal={stopTraversal}
-              loadSampleTree={loadSampleTree}
-              reset={reset}
-              message={message}
-              inputRef={inputRef}
-              lastTraversal={lastTraversal}
-              visitedNodeIds={visitedNodeIds}
-              activeNodeId={activeNodeId}
-              isRunning={isRunning}
-              nodeCount={nodeCount}
-            />
-          )}
-
-          {activeSection === "quiz" && (
-            <TreeQuiz
-              treeMode={treeMode}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-              redoQuiz={redoQuiz}
-            />
-          )}
-
-          {activeSection === "coding" && (
-            <TreeCoding
-              treeMode={treeMode}
-              currentProblems={currentProblems}
-              selectedLanguages={selectedLanguages}
-              codes={codes}
-              results={results}
-              generateProblems={generateProblems}
-              handleLanguageChange={handleLanguageChange}
-              handleCodeChange={handleCodeChange}
-              runCode={runCode}
-              analyzeCode={analyzeCode}
-              correctCode={correctCode}
-            />
+          {experimentRun && quizSubmitted && codingAttempted && (
+            <div style={{ marginTop: 18 }}>
+              <MarkCompleteButton
+                labSlug="dsa"
+                experimentSlug="tree"
+                points={10}
+              />
+            </div>
           )}
         </section>
-      </div>
-    </main>
-  </div>
-);
+
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <TreeOverview treeMode={treeMode} />
+            )}
+
+            {activeSection === "simulation" && (
+              <TreeSimulation
+                treeMode={treeMode}
+                treeRoot={treeRoot}
+                input={input}
+                setInput={setInput}
+                searchInput={searchInput}
+                setSearchInput={setSearchInput}
+                deleteInput={deleteInput}
+                setDeleteInput={setDeleteInput}
+                insertNode={insertNode}
+                runPreorder={runPreorder}
+                runInorder={runInorder}
+                runPostorder={runPostorder}
+                runLevelOrder={runLevelOrder}
+                searchBST={searchBST}
+                deleteNodeHandler={deleteNodeHandler}
+                stopTraversal={stopTraversal}
+                loadSampleTree={loadSampleTree}
+                reset={reset}
+                message={message}
+                inputRef={inputRef}
+                lastTraversal={lastTraversal}
+                visitedNodeIds={visitedNodeIds}
+                activeNodeId={activeNodeId}
+                isRunning={isRunning}
+                nodeCount={nodeCount}
+              />
+            )}
+
+            {activeSection === "quiz" && (
+              <TreeQuiz
+                treeMode={treeMode}
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                experimentRun={experimentRun}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
+            )}
+
+            {activeSection === "coding" && (
+              <TreeCoding
+                treeMode={treeMode}
+                currentProblems={currentProblems}
+                selectedLanguages={selectedLanguages}
+                codes={codes}
+                results={results}
+                codingSaveStatus={codingSaveStatus}
+                generateProblems={generateProblems}
+                handleLanguageChange={handleLanguageChange}
+                handleCodeChange={handleCodeChange}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+              />
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
+  );
 }

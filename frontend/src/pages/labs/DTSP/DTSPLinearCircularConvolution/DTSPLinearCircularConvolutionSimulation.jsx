@@ -1,4 +1,5 @@
 import React from "react";
+import { Activity, Play, Layers, Gauge, Sparkles } from "lucide-react";
 
 function formatSequence(seq, formatNumber) {
   return seq.map((v, i) => (i === 0 ? formatNumber(v) : `, ${formatNumber(v)}`));
@@ -8,14 +9,17 @@ function ContributionTable({ title, steps, formatNumber, explanation }) {
   if (!steps.length) return null;
 
   return (
-    <div className="card" style={{ marginTop: "1rem" }}>
-      <h3>{title}</h3>
+    <div className="overview-card" style={{ marginBottom: 18 }}>
+      <div className="overview-card-head">
+        <Gauge size={18} />
+        <h4>{title}</h4>
+      </div>
 
-      {explanation ? (
-        <div className="info-box" style={{ marginTop: "0.75rem", marginBottom: "1rem" }}>
+      {explanation && (
+        <div className="sorting-info-box">
           {explanation}
         </div>
-      ) : null}
+      )}
 
       <div style={{ overflowX: "auto" }}>
         <table className="dbms-table">
@@ -77,135 +81,191 @@ export default function DTSPLinearCircularConvolutionSimulation({
   circularPaddedAnalysis
 }) {
   return (
-    <section className="card experiment">
-      <h2>Simulation</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              Compute linear, circular, and zero-padded circular convolution outputs.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div className="controls" style={{ flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 260 }}>
-          <label>x[n] (input sequence)</label>
+      <div className="overview-grid" style={{ marginBottom: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Layers size={18} />
+            <h4>Linear Output Length</h4>
+          </div>
+          <p>
+            Linear convolution length is <strong>N + M - 1</strong>.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>Wrap-Around</h4>
+          </div>
+          <p>
+            Circular convolution without padding may wrap tail values back to the beginning.
+          </p>
+        </div>
+      </div>
+
+      <div className="sorting-info-box">
+        <Sparkles size={16} style={{ marginRight: 10 }} />
+        Use the detailed output builder to inspect how each output sample is formed.
+      </div>
+
+      <div className="sorting-input-row">
+        <div className="sorting-input-group">
+          <label className="sorting-label">x[n] Input Sequence</label>
           <input
             value={xText}
             onChange={(e) => setXText(e.target.value)}
             placeholder="e.g. 1, 2, 1"
-            style={{ color: "#ffffff" }}
+            className="sorting-input"
           />
         </div>
 
-        <div style={{ flex: 1, minWidth: 260 }}>
-          <label>h[n] (impulse response)</label>
+        <div className="sorting-input-group">
+          <label className="sorting-label">h[n] Impulse Response</label>
           <input
             value={hText}
             onChange={(e) => setHText(e.target.value)}
             placeholder="e.g. 1, -1, 1"
-            style={{ color: "#ffffff" }}
+            className="sorting-input"
           />
         </div>
 
-        <div className="buttons">
-          <button className="btn primary" onClick={handleCompute}>
+        <div className="sorting-btn-group">
+          <button className="sim-btn sim-btn-primary" onClick={handleCompute}>
+            <Play size={16} />
             Compute Convolutions
           </button>
         </div>
       </div>
 
-      {error && (
-        <div className="info-box" style={{ marginTop: "1rem", color: "#fca5a5" }}>
-          {error}
+      {error && <div className="queue-warning-box">{error}</div>}
+
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Length of x[n]</span>
+          <span className="sorting-stat-value">{x.length || "-"}</span>
         </div>
-      )}
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Length of h[n]</span>
+          <span className="sorting-stat-value">{h.length || "-"}</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Linear Length</span>
+          <span className="sorting-stat-value">{yLinear.length || "-"}</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Circular Length</span>
+          <span className="sorting-stat-value">{yCircularNoPad.length || "-"}</span>
+        </div>
+      </div>
 
       {x.length > 0 && h.length > 0 && (
         <>
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Input Sequences</h3>
+          <div className="overview-card" style={{ marginBottom: 18 }}>
+            <div className="overview-card-head">
+              <Layers size={18} />
+              <h4>Input Sequences</h4>
+            </div>
 
-            <p style={{ marginTop: "0.75rem" }}>
-              <strong>x[n]: </strong>
-              <span className="lab-output-value">{formatSequence(x, formatNumber)}</span>
-            </p>
+            <div className="sorting-info-box">
+              <strong style={{ marginRight: 8 }}>x[n]:</strong>
+              {formatSequence(x, formatNumber)}
+            </div>
 
-            <p style={{ marginTop: "0.75rem" }}>
-              <strong>h[n]: </strong>
-              <span className="lab-output-value">{formatSequence(h, formatNumber)}</span>
-            </p>
+            <div className="sorting-info-box" style={{ marginBottom: 18 }}>
+              <strong style={{ marginRight: 8 }}>h[n]:</strong>
+              {formatSequence(h, formatNumber)}
+            </div>
 
-            <div className="workspace" style={{ marginTop: "1rem" }}>
+            <div className="workspace">
               {x.map((value, index) => (
-                <div
-                  key={`x-${index}`}
-                  className="cell"
-                  style={{ minWidth: "64px", textAlign: "center" }}
-                >
-                  <div style={{ fontSize: "12px", color: "#9ca3af" }}>x[{index}]</div>
-                  <div>{formatNumber(value)}</div>
+                <div key={`x-${index}`} className="cell" style={{ minWidth: 64 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: "#9ca3af" }}>x[{index}]</div>
+                    <div>{formatNumber(value)}</div>
+                  </div>
                 </div>
               ))}
             </div>
 
-            <div className="workspace" style={{ marginTop: "1rem" }}>
+            <div className="workspace" style={{ marginBottom: 0 }}>
               {h.map((value, index) => (
-                <div
-                  key={`h-${index}`}
-                  className="cell"
-                  style={{ minWidth: "64px", textAlign: "center" }}
-                >
-                  <div style={{ fontSize: "12px", color: "#9ca3af" }}>h[{index}]</div>
-                  <div>{formatNumber(value)}</div>
+                <div key={`h-${index}`} className="cell" style={{ minWidth: 64 }}>
+                  <div>
+                    <div style={{ fontSize: 12, color: "#9ca3af" }}>h[{index}]</div>
+                    <div>{formatNumber(value)}</div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Linear Convolution</h3>
-            <p className="lab-output-value" style={{ marginTop: "0.75rem" }}>
-              {formatSequence(yLinear, formatNumber)}
-            </p>
-            <div className="info-box" style={{ marginTop: "1rem" }}>
-              This is the true linear convolution output of length N + M - 1.
+          <div className="overview-grid" style={{ marginBottom: 18 }}>
+            <div className="overview-card">
+              <div className="overview-card-head">
+                <Gauge size={18} />
+                <h4>Linear Convolution</h4>
+              </div>
+              <p>{formatSequence(yLinear, formatNumber)}</p>
+            </div>
+
+            <div className="overview-card">
+              <div className="overview-card-head">
+                <Gauge size={18} />
+                <h4>Circular Without Padding</h4>
+              </div>
+              <p>{formatSequence(yCircularNoPad, formatNumber)}</p>
+            </div>
+
+            <div className="overview-card">
+              <div className="overview-card-head">
+                <Gauge size={18} />
+                <h4>Circular With Zero Padding</h4>
+              </div>
+              <p>{formatSequence(yCircularPadded, formatNumber)}</p>
+            </div>
+
+            <div className="overview-card">
+              <div className="overview-card-head">
+                <Layers size={18} />
+                <h4>Important Result</h4>
+              </div>
+              <p>
+                Zero-padded circular convolution matches linear convolution when L = N + M - 1.
+              </p>
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Circular Convolution (without zero padding)</h3>
-            <p className="lab-output-value" style={{ marginTop: "0.75rem" }}>
-              {formatSequence(yCircularNoPad, formatNumber)}
-            </p>
-            <div className="info-box" style={{ marginTop: "1rem" }}>
-              This uses circular length max(len(x), len(h)). It differs from linear convolution due
-              to wrap-around.
+          <div className="overview-card" style={{ marginBottom: 18 }}>
+            <div className="overview-card-head">
+              <Activity size={18} />
+              <h4>Advanced Output Sample Builder</h4>
             </div>
-          </div>
 
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Circular Convolution (with zero padding)</h3>
-            <p className="lab-output-value" style={{ marginTop: "0.75rem" }}>
-              {formatSequence(yCircularPadded, formatNumber)}
-            </p>
-            <div className="info-box" style={{ marginTop: "1rem" }}>
-              This uses circular length len(x) + len(h) - 1, so it matches the linear convolution.
-            </div>
-          </div>
-
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Advanced Output Sample Builder</h3>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "14px",
-                marginTop: "1rem"
-              }}
-            >
+            <div className="er-config-grid">
               <div>
-                <label style={{ display: "block", marginBottom: "8px" }}>
-                  Linear output index n
-                </label>
+                <label className="sorting-label">Linear output index n</label>
                 <select
                   value={selectedLinearIndex}
                   onChange={(e) => setSelectedLinearIndex(Number(e.target.value))}
-                  style={{ color: "#000", padding: "10px 12px", borderRadius: "8px", width: "100%" }}
+                  className="sorting-select"
                 >
                   {yLinear.map((_, n) => (
                     <option key={n} value={n}>
@@ -216,13 +276,11 @@ export default function DTSPLinearCircularConvolutionSimulation({
               </div>
 
               <div>
-                <label style={{ display: "block", marginBottom: "8px" }}>
-                  Circular output index n (no padding)
-                </label>
+                <label className="sorting-label">Circular output index n</label>
                 <select
                   value={selectedCircularIndex}
                   onChange={(e) => setSelectedCircularIndex(Number(e.target.value))}
-                  style={{ color: "#000", padding: "10px 12px", borderRadius: "8px", width: "100%" }}
+                  className="sorting-select"
                 >
                   {yCircularNoPad.map((_, n) => (
                     <option key={n} value={n}>
@@ -233,13 +291,11 @@ export default function DTSPLinearCircularConvolutionSimulation({
               </div>
 
               <div>
-                <label style={{ display: "block", marginBottom: "8px" }}>
-                  Circular output index n (with padding)
-                </label>
+                <label className="sorting-label">Padded circular output index n</label>
                 <select
                   value={selectedPaddedIndex}
                   onChange={(e) => setSelectedPaddedIndex(Number(e.target.value))}
-                  style={{ color: "#000", padding: "10px 12px", borderRadius: "8px", width: "100%" }}
+                  className="sorting-select"
                 >
                   {yCircularPadded.map((_, n) => (
                     <option key={n} value={n}>
@@ -250,31 +306,31 @@ export default function DTSPLinearCircularConvolutionSimulation({
               </div>
             </div>
 
-            <div
-              style={{
-                marginTop: "1rem",
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                gap: "12px"
-              }}
-            >
-              <div className="stat-card">
-                <strong>Linear Output</strong>
-                <div>y_lin[{selectedLinearIndex}] = {formatNumber(yLinear[selectedLinearIndex])}</div>
+            <div className="sorting-stats-grid" style={{ marginTop: 18, marginBottom: 0 }}>
+              <div className="sorting-stat-box">
+                <span className="sorting-stat-label">Linear Output</span>
+                <span className="sorting-stat-value">
+                  {formatNumber(yLinear[selectedLinearIndex])}
+                </span>
               </div>
 
-              <div className="stat-card">
-                <strong>Circular Output</strong>
-                <div>
-                  y_circ[{selectedCircularIndex}] = {formatNumber(yCircularNoPad[selectedCircularIndex])}
-                </div>
+              <div className="sorting-stat-box">
+                <span className="sorting-stat-label">Circular Output</span>
+                <span className="sorting-stat-value">
+                  {formatNumber(yCircularNoPad[selectedCircularIndex])}
+                </span>
               </div>
 
-              <div className="stat-card">
-                <strong>Padded Circular Output</strong>
-                <div>
-                  y_pad[{selectedPaddedIndex}] = {formatNumber(yCircularPadded[selectedPaddedIndex])}
-                </div>
+              <div className="sorting-stat-box">
+                <span className="sorting-stat-label">Padded Circular</span>
+                <span className="sorting-stat-value">
+                  {formatNumber(yCircularPadded[selectedPaddedIndex])}
+                </span>
+              </div>
+
+              <div className="sorting-stat-box">
+                <span className="sorting-stat-label">Useful Length</span>
+                <span className="sorting-stat-value">{yLinear.length}</span>
               </div>
             </div>
           </div>
@@ -286,35 +342,28 @@ export default function DTSPLinearCircularConvolutionSimulation({
           />
 
           <ContributionTable
-            title={`Detailed Circular Convolution (No Padding) for y_circ[${selectedCircularIndex}]`}
+            title={`Detailed Circular Convolution without Padding for y_circ[${selectedCircularIndex}]`}
             steps={circularNoPadAnalysis.steps}
             formatNumber={formatNumber}
             explanation={circularNoPadAnalysis.explanation}
           />
 
           <ContributionTable
-            title={`Detailed Circular Convolution (With Zero Padding) for y_pad[${selectedPaddedIndex}]`}
+            title={`Detailed Circular Convolution with Zero Padding for y_pad[${selectedPaddedIndex}]`}
             steps={circularPaddedAnalysis.steps}
             formatNumber={formatNumber}
             explanation={circularPaddedAnalysis.explanation}
           />
 
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Summary Comparison</h3>
-
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              Circular convolution without zero padding assumes the sequences repeat periodically.
-              Because of that, part of the tail wraps around and overlaps earlier values.
-            </p>
-
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              In the contribution table, any highlighted row shows wrap-around. That is the exact
-              reason the output differs from true linear convolution.
-            </p>
-
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              With zero padding, the circular length is increased to N + M - 1, so the overlap is
-              avoided and circular convolution reproduces the linear convolution result.
+          <div className="overview-card">
+            <div className="overview-card-head">
+              <Sparkles size={18} />
+              <h4>Summary Comparison</h4>
+            </div>
+            <p>
+              Circular convolution without zero padding assumes periodic repetition, causing tail
+              samples to wrap and overlap earlier samples. With zero padding to N + M - 1, this
+              overlap is avoided and the result becomes equal to linear convolution.
             </p>
           </div>
         </>

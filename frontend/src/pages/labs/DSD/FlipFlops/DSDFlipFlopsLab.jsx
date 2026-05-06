@@ -10,14 +10,16 @@ import {
   ChevronsLeft
 } from "lucide-react";
 
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
+
 import DSDFlipFlopsOverview from "./DSDFlipFlopsOverview";
 import DSDFlipFlopsSimulation from "./DSDFlipFlopsSimulation";
 import DSDFlipFlopsCircuits from "./DSDFlipFlopsCircuits";
 import DSDFlipFlopsTruthTable from "./DSDFlipFlopsTruthTable";
 import DSDFlipFlopsQuiz from "./DSDFlipFlopsQuiz";
 import DSDFlipFlopsCoding from "./DSDFlipFlopsCoding";
-
-const simulabLogo = "/assets/logo.png";
 
 const sidebarItems = [
   { key: "overview", label: "Overview", icon: BookOpen },
@@ -26,6 +28,34 @@ const sidebarItems = [
   { key: "truth table", label: "Truth Table", icon: Table2 },
   { key: "quiz", label: "Quiz", icon: Brain },
   { key: "coding", label: "Design Practice", icon: FileCode2 }
+];
+
+const quizQuestions = [
+  {
+    q: "Which flip-flop copies D to Q when the clock is active?",
+    options: ["SR Latch", "D Flip-Flop", "JK Flip-Flop", "T Flip-Flop"],
+    correct: 1
+  },
+  {
+    q: "Which flip-flop toggles when both inputs J and K are 1?",
+    options: ["SR Latch", "D Flip-Flop", "JK Flip-Flop", "Latch only"],
+    correct: 2
+  },
+  {
+    q: "A T Flip-Flop toggles when:",
+    options: ["T = 0", "T = 1 and clock is active", "CLK = 0 only", "Always"],
+    correct: 1
+  },
+  {
+    q: "The invalid condition in a basic SR latch is:",
+    options: ["S = 0, R = 0", "S = 1, R = 0", "S = 0, R = 1", "S = 1, R = 1"],
+    correct: 3
+  },
+  {
+    q: "Flip-flops are examples of:",
+    options: ["Combinational circuits", "Sequential circuits", "Analog circuits", "Power circuits"],
+    correct: 1
+  }
 ];
 
 export default function DSDFlipFlopsLab() {
@@ -44,11 +74,17 @@ export default function DSDFlipFlopsLab() {
   const [q, setQ] = useState(0);
   const [experimentRun, setExperimentRun] = useState(false);
 
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(quizQuestions.length).fill(null)
+  );
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+
   const analysis = useMemo(() => {
     let nextQ = q;
     let note = "";
     let stateName = "";
-    let qBar;
 
     if (selectedType === "sr") {
       if (s === 0 && r === 0) {
@@ -66,7 +102,7 @@ export default function DSDFlipFlopsLab() {
       } else {
         nextQ = q;
         stateName = "Invalid";
-        note = "S = 1 and R = 1 is an invalid condition for the basic SR latch.";
+        note = "S = 1 and R = 1 is an invalid condition for a basic SR latch.";
       }
     }
 
@@ -126,19 +162,58 @@ export default function DSDFlipFlopsLab() {
       }
     }
 
-    qBar = nextQ === 1 ? 0 : 1;
-
     return {
       nextQ,
-      qBar,
+      qBar: nextQ === 1 ? 0 : 1,
       stateName,
-      note
+      note,
+      presentQ: q,
+      selectedType
     };
   }, [selectedType, s, r, d, j, k, t, clk, q]);
 
   const applyClockedUpdate = () => {
     setQ(analysis.nextQ);
     setExperimentRun(true);
+  };
+
+  const handleQuizAnswer = (index, value) => {
+    const updated = [...quizAnswers];
+    updated[index] = value;
+    setQuizAnswers(updated);
+  };
+
+  const submitQuiz = async () => {
+    let total = 0;
+
+    quizQuestions.forEach((qItem, index) => {
+      if (quizAnswers[index] === qItem.correct) total++;
+    });
+
+    setQuizScore(total);
+    setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
+
+    try {
+      await saveQuizResult({
+        labSlug: "dsd",
+        experimentSlug: "flip-flops",
+        correctAnswers: total,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Flip-Flops quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const typeMeta = {
@@ -177,14 +252,8 @@ export default function DSDFlipFlopsLab() {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+          <div className="er-brand-logo simulab-sidebar-logo">
+            <SimuLabLogo size={58} showText={false} variant="default" />
           </div>
 
           {!sidebarCollapsed && (
@@ -209,6 +278,7 @@ export default function DSDFlipFlopsLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
@@ -245,7 +315,8 @@ export default function DSDFlipFlopsLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Flip-Flops"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "Flip-Flops"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -259,7 +330,9 @@ export default function DSDFlipFlopsLab() {
           <div>
             <h1 className="er-page-title">Flip-Flops</h1>
             <p className="er-page-subtitle">
-              Explore SR, D, JK, and T flip-flops and understand how sequential circuits store state, respond to clock signals, and transition from present output to next output. ✨
+              Explore SR, D, JK, and T flip-flops and understand how sequential
+              circuits store state, respond to clock signals, and move from
+              present output to next output.
             </p>
           </div>
         </div>
@@ -268,7 +341,10 @@ export default function DSDFlipFlopsLab() {
           <div className="er-config-top">
             <div>
               <h2>Flip-Flop Configuration</h2>
-              <p>Choose a flip-flop type, adjust its inputs, and observe how the next state is generated.</p>
+              <p>
+                Choose a flip-flop type, adjust its inputs, and observe how the
+                next state is generated.
+              </p>
             </div>
 
             <div className="er-mode-pill">
@@ -299,7 +375,10 @@ export default function DSDFlipFlopsLab() {
 
             <div>
               <label className="sorting-label">Operation</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 {analysis.stateName}
               </div>
             </div>
@@ -338,6 +417,17 @@ export default function DSDFlipFlopsLab() {
             <button className="er-chip active">Q = {q}</button>
             <button className="er-chip active">Next Q = {analysis.nextQ}</button>
             <button className="er-chip active">Q̅ = {analysis.qBar}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <MarkCompleteButton
+              labSlug="dsd"
+              experimentSlug="flip-flops"
+              points={10}
+            />
           </div>
         </section>
 
@@ -403,11 +493,25 @@ export default function DSDFlipFlopsLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DSDFlipFlopsQuiz experimentRun={experimentRun} />
+              <DSDFlipFlopsQuiz
+                experimentRun={experimentRun}
+                questions={quizQuestions}
+                answers={quizAnswers}
+                submitted={quizSubmitted}
+                score={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                handleAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
             )}
 
             {activeSection === "coding" && (
-              <DSDFlipFlopsCoding selectedType={selectedType} analysis={analysis} q={q} />
+              <DSDFlipFlopsCoding
+                selectedType={selectedType}
+                analysis={analysis}
+                q={q}
+              />
             )}
           </section>
         </div>

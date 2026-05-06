@@ -10,14 +10,16 @@ import {
   ChevronsLeft
 } from "lucide-react";
 
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
+
 import DSDDecoderEncoderOverview from "./DSDDecoderEncoderOverview";
 import DSDDecoderEncoderSimulation from "./DSDDecoderEncoderSimulation";
 import DSDDecoderEncoderCircuits from "./DSDDecoderEncoderCircuits";
 import DSDDecoderEncoderTruthTable from "./DSDDecoderEncoderTruthTable";
 import DSDDecoderEncoderQuiz from "./DSDDecoderEncoderQuiz";
 import DSDDecoderEncoderCoding from "./DSDDecoderEncoderCoding";
-
-const simulabLogo = "/assets/logo.png";
 
 const sidebarItems = [
   { key: "overview", label: "Overview", icon: BookOpen },
@@ -26,6 +28,39 @@ const sidebarItems = [
   { key: "truth table", label: "Truth Table", icon: Table2 },
   { key: "quiz", label: "Quiz", icon: Brain },
   { key: "coding", label: "Design Practice", icon: FileCode2 }
+];
+
+const quizQuestions = [
+  {
+    q: "A decoder converts:",
+    options: [
+      "Output lines to binary",
+      "Binary input to one active output line",
+      "Analog signal to digital",
+      "Clock to pulse"
+    ],
+    correct: 1
+  },
+  {
+    q: "A 2-to-4 decoder has how many outputs?",
+    options: ["2", "3", "4", "8"],
+    correct: 2
+  },
+  {
+    q: "An encoder performs the reverse operation of a:",
+    options: ["Flip-Flop", "Comparator", "Decoder", "Counter"],
+    correct: 2
+  },
+  {
+    q: "If input I2 is active in a 4-to-2 encoder, the binary output is:",
+    options: ["00", "01", "10", "11"],
+    correct: 2
+  },
+  {
+    q: "For a decoder, input 11 activates:",
+    options: ["Y0", "Y1", "Y2", "Y3"],
+    correct: 3
+  }
 ];
 
 export default function DSDDecoderEncoderLab() {
@@ -38,6 +73,13 @@ export default function DSDDecoderEncoderLab() {
 
   const [inputs, setInputs] = useState([1, 0, 0, 0]);
   const [experimentRun, setExperimentRun] = useState(false);
+
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(quizQuestions.length).fill(null)
+  );
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const analysis = useMemo(() => {
     if (mode === "decoder") {
@@ -54,7 +96,11 @@ export default function DSDDecoderEncoderLab() {
       };
     }
 
-    const index = inputs.findIndex((v) => v === 1);
+    const activeIndexes = inputs
+      .map((value, index) => (value === 1 ? index : -1))
+      .filter((index) => index !== -1);
+
+    const index = activeIndexes.length === 1 ? activeIndexes[0] : -1;
     const safeIndex = index === -1 ? 0 : index;
     const binary = safeIndex.toString(2).padStart(2, "0");
 
@@ -65,10 +111,49 @@ export default function DSDDecoderEncoderLab() {
       outputs: [],
       note:
         index === -1
-          ? "No input line is active. A standard encoder expects one active input line."
+          ? "A standard encoder expects exactly one active input line."
           : `Active input I${index} is converted into binary output ${binary}.`
     };
   }, [mode, a, b, inputs]);
+
+  const handleQuizAnswer = (index, value) => {
+    const updated = [...quizAnswers];
+    updated[index] = value;
+    setQuizAnswers(updated);
+  };
+
+  const submitQuiz = async () => {
+    let total = 0;
+
+    quizQuestions.forEach((question, index) => {
+      if (quizAnswers[index] === question.correct) total++;
+    });
+
+    setQuizScore(total);
+    setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
+
+    try {
+      await saveQuizResult({
+        labSlug: "dsd",
+        experimentSlug: "decoder-encoder",
+        correctAnswers: total,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Decoder Encoder quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
+  };
 
   const progressPercent =
     activeSection === "overview"
@@ -87,14 +172,8 @@ export default function DSDDecoderEncoderLab() {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+          <div className="er-brand-logo simulab-sidebar-logo">
+            <SimuLabLogo size={58} showText={false} variant="default" />
           </div>
 
           {!sidebarCollapsed && (
@@ -119,10 +198,13 @@ export default function DSDDecoderEncoderLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
-                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                className={`er-nav-item ${
+                  activeSection === item.key ? "active" : ""
+                }`}
                 onClick={() => setActiveSection(item.key)}
                 title={item.label}
               >
@@ -155,7 +237,8 @@ export default function DSDDecoderEncoderLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Encoder Decoder"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "Encoder Decoder"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -169,7 +252,9 @@ export default function DSDDecoderEncoderLab() {
           <div>
             <h1 className="er-page-title">Encoder & Decoder</h1>
             <p className="er-page-subtitle">
-              Explore how a decoder expands binary inputs into one active output line, and how an encoder compresses one active input line into a binary code. ✨
+              Explore how a decoder expands binary inputs into one active output
+              line, and how an encoder compresses one active input line into a
+              binary code.
             </p>
           </div>
         </div>
@@ -178,7 +263,10 @@ export default function DSDDecoderEncoderLab() {
           <div className="er-config-top">
             <div>
               <h2>Logic Configuration</h2>
-              <p>Switch between decoder and encoder modes to observe how binary information is expanded or compressed.</p>
+              <p>
+                Switch between decoder and encoder modes to observe how binary
+                information is expanded or compressed.
+              </p>
             </div>
 
             <div className="er-mode-pill">
@@ -186,7 +274,9 @@ export default function DSDDecoderEncoderLab() {
                 <CircuitBoard size={18} />
               </div>
               <div>
-                <strong>{mode === "decoder" ? "2-to-4 Decoder" : "4-to-2 Encoder"}</strong>
+                <strong>
+                  {mode === "decoder" ? "2-to-4 Decoder" : "4-to-2 Encoder"}
+                </strong>
                 <span>
                   {mode === "decoder"
                     ? `Input code ${analysis.binary} activates Y${analysis.index}`
@@ -203,7 +293,10 @@ export default function DSDDecoderEncoderLab() {
               <label className="sorting-label">Mode</label>
               <select
                 value={mode}
-                onChange={(e) => setMode(e.target.value)}
+                onChange={(e) => {
+                  setMode(e.target.value);
+                  setExperimentRun(true);
+                }}
                 className="sorting-select"
               >
                 <option value="decoder">Decoder</option>
@@ -213,7 +306,10 @@ export default function DSDDecoderEncoderLab() {
 
             <div>
               <label className="sorting-label">Current Result</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 {mode === "decoder"
                   ? `Y${analysis.index} active`
                   : analysis.index === -1
@@ -236,6 +332,9 @@ export default function DSDDecoderEncoderLab() {
                 <button className="er-chip active">A = {a}</button>
                 <button className="er-chip active">B = {b}</button>
                 <button className="er-chip active">AB = {analysis.binary}</button>
+                <button className="er-chip active">
+                  Active Output = Y{analysis.index}
+                </button>
               </>
             ) : (
               <>
@@ -245,6 +344,18 @@ export default function DSDDecoderEncoderLab() {
                 <button className="er-chip active">I3 = {inputs[3]}</button>
               </>
             )}
+
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <MarkCompleteButton
+              labSlug="dsd"
+              experimentSlug="decoder-encoder"
+              points={10}
+            />
           </div>
         </section>
 
@@ -290,7 +401,17 @@ export default function DSDDecoderEncoderLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DSDDecoderEncoderQuiz experimentRun={experimentRun} />
+              <DSDDecoderEncoderQuiz
+                experimentRun={experimentRun}
+                questions={quizQuestions}
+                answers={quizAnswers}
+                submitted={quizSubmitted}
+                score={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                handleAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
             )}
 
             {activeSection === "coding" && (

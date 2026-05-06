@@ -7,12 +7,37 @@ export default function DBMSERModelingQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
-  submitQuiz
+  submitQuiz,
+  redoQuiz
 }) {
   const total = quizQuestions.length;
   const percentage = total ? Math.round((quizScore / total) * 100) : 0;
+
+  if (!experimentRun) {
+    return (
+      <section className="quiz-shell">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <Brain size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Quiz</h2>
+            <p className="sorting-sim-subtitle">
+              Test your understanding after running the ER Modelling simulation.
+            </p>
+          </div>
+        </div>
+
+        <div className="quiz-locked-box">
+          <Lock size={18} />
+          <span>Please run the experiment at least once before attempting the quiz.</span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="quiz-shell">
@@ -23,17 +48,12 @@ export default function DBMSERModelingQuiz({
         <div>
           <h2 className="sorting-sim-title">Quiz</h2>
           <p className="sorting-sim-subtitle">
-            Check your understanding of {mode.toUpperCase()} concepts.
+            Answer the questions below for {mode.toUpperCase()} concepts.
           </p>
         </div>
       </div>
 
-      {!experimentRun ? (
-        <div className="quiz-locked-box">
-          <Lock size={18} />
-          <span>Please run the experiment at least once before attempting the quiz.</span>
-        </div>
-      ) : !quizSubmitted ? (
+      {!quizSubmitted ? (
         <div className="quiz-list">
           {quizQuestions.map((q, i) => (
             <div key={i} className="quiz-card-upgraded">
@@ -77,6 +97,7 @@ export default function DBMSERModelingQuiz({
               <p>
                 Score: <b>{quizScore}</b> / {total} ({percentage}%)
               </p>
+              {quizSaveStatus && <p>{quizSaveStatus}</p>}
             </div>
           </div>
 
@@ -108,13 +129,12 @@ export default function DBMSERModelingQuiz({
             ))}
           </div>
 
-          <button
-            className="sim-btn sim-btn-muted"
-            onClick={() => window.location.reload()}
-          >
-            <RotateCcw size={16} />
-            Retry Later
-          </button>
+          <div className="quiz-actions-row">
+            <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+              <RotateCcw size={16} />
+              Redo Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>

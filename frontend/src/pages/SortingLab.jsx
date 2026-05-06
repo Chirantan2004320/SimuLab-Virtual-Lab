@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import MarkCompleteButton from "../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../API/progressApi";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import PaymentDialog from "../components/PaymentDialog";
 import {
   BookOpen,
   PlayCircle,
@@ -19,6 +19,7 @@ import SortingSimulation from "./labs/sorting/SortingSimulation";
 import SortingQuiz from "./labs/sorting/SortingQuiz";
 import SortingCoding from "./labs/sorting/SortingCoding";
 import SortingComparison from "./labs/sorting/SortingComparison";
+import SimuLabLogo from "../components/SimuLabLogo";
 
 /* KEEP YOUR EXISTING quizQuestions OBJECT HERE */
 /* KEEP YOUR EXISTING problemBank ARRAY HERE */
@@ -281,8 +282,6 @@ const problemBank = [
 ];
 
 
-const simulabLogo = "/assets/logo.png";
-
 const sidebarItems = [
   { key: "overview", label: "Overview", icon: BookOpen },
   { key: "simulation", label: "Simulation", icon: PlayCircle },
@@ -301,13 +300,13 @@ function SortingLab() {
     }
   }, [user, loading, navigate]);
 
-  const [, setExperimentsList] = useState([]);
+  //const [, setExperimentsList] = useState([]);
   const [selectedExp, setSelectedExp] = useState(null);
   const [hasAccess, setHasAccess] = useState(true);
-  const [purchaseLoading, setPurchaseLoading] = useState(false);
-  const [purchaseMsg, setPurchaseMsg] = useState("");
+  //const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [purchaseMsg,] = useState("");
   const [purchaseExpiry] = useState(null);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  //const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   const [input, setInput] = useState("5, 2, 9, 1, 6");
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("bubble");
@@ -323,6 +322,8 @@ function SortingLab() {
   const [quizAnswers, setQuizAnswers] = useState([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [codes, setCodes] = useState({});
@@ -367,7 +368,8 @@ function SortingLab() {
   }
 };
 
-  function getLabName(algo) {
+  // eslint-disable-next-line no-unused-vars
+function getLabName(algo) {
     if (algo === "bubble") return "Bubble Sort Lab";
     if (algo === "selection") return "Selection Sort Lab";
     return "Insertion Sort Lab";
@@ -709,44 +711,26 @@ function SortingLab() {
   }
 
   useEffect(() => {
-    const fetchExps = async () => {
-      try {
-        try {
-          await axios.post("http://localhost:5000/api/experiments/seed/sorting-experiment");
-        } catch (seedErr) {
-          console.warn("Seed warning (non-critical):", seedErr.message);
-        }
+  setHasAccess(true);
+  setSelectedExp({
+    title: "Sorting Algorithms",
+    type: "sorting",
+    requiresPayment: false
+  });
+}, []);
 
-        const res = await axios.get("http://localhost:5000/api/experiments");
-        const expList = res.data || [];
-        setExperimentsList(expList);
+  // const checkAccess = async () => {
+  //   setHasAccess(true);
+  // };
 
-        const sorting = expList.find((e) => e.type === "sorting");
-
-        if (sorting) {
-          setSelectedExp(sorting);
-          setTimeout(() => checkAccess(), 300);
-        }
-      } catch (e) {
-        console.error("Error fetching experiments:", e);
-      }
-    };
-
-    fetchExps();
-  }, []);
-
-  const checkAccess = async () => {
-    setHasAccess(true);
-  };
-
-  const handleGooglePayClick = () => {
-    if (!selectedExp || !user) {
-      setPurchaseMsg("Please login to purchase.");
-      return;
-    }
-    setShowPaymentDialog(true);
-    setPurchaseMsg("");
-  };
+  // const handleGooglePayClick = () => {
+  //   if (!selectedExp || !user) {
+  //     setPurchaseMsg("Please login to purchase.");
+  //     return;
+  //   }
+  //   setShowPaymentDialog(true);
+  //   setPurchaseMsg("");
+  // };
 
   function pause() {
     setPlaying(false);
@@ -791,15 +775,32 @@ function SortingLab() {
     setQuizAnswers(newAnswers);
   }
 
-  function submitQuiz() {
-    let score = 0;
-    quizQuestions[selectedAlgorithm].forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+  async function submitQuiz() {
+  let score = 0;
+
+  quizQuestions[selectedAlgorithm].forEach((q, i) => {
+    if (quizAnswers[i] === q.correct) score++;
+  });
+
+  setQuizScore(score);
+  setQuizSubmitted(true);
+  setQuizSaveStatus("Saving quiz result...");
+
+  try {
+    await saveQuizResult({
+      labSlug: "dsa",
+      experimentSlug: "sorting",
+      correctAnswers: score,
+      totalQuestions: quizQuestions[selectedAlgorithm].length
     });
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
+
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error("Quiz save failed:", error);
+    setQuizSaveStatus("Quiz submitted, but backend save failed.");
   }
+}
 
   function redoQuiz() {
     setQuizAnswers(Array(quizQuestions[selectedAlgorithm].length).fill(null));
@@ -890,75 +891,126 @@ public class Main {
     });
   }
 
-  function runCode(problemId, language) {
-    const problem = currentProblems.find((p) => p.id === problemId);
-    const codeKey = `${problemId}_${language}`;
-    const code = codes[codeKey];
+ async function runCode(problemId, language) {
+  const problem = currentProblems.find((p) => p.id === problemId);
+  const codeKey = `${problemId}_${language}`;
+  const code = codes[codeKey];
 
-    if (!code) {
-      setResults((prev) => ({ ...prev, [problemId]: "Please enter code" }));
-      return;
-    }
+  if (!code) {
+    setResults((prev) => ({ ...prev, [problemId]: "Please enter code" }));
+    return;
+  }
 
-    if (language !== "javascript") {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `${language.toUpperCase()} execution will be added later. For now, only JavaScript runs directly in the browser.`
-      }));
-      return;
-    }
+  if (language !== "javascript") {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: `${language.toUpperCase()} execution will be added later. For now, only JavaScript runs directly in the browser.`
+    }));
 
     try {
-      const funcMatch = problem.description.match(/Function:\s*(\w+)/);
-      const funcName = funcMatch ? funcMatch[1] : null;
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "sorting",
+        problemTitle: `Sorting Problem ${problemId}`,
+        language,
+        code,
+        result: "attempted"
+      });
+    } catch (error) {
+      console.error("Coding save failed:", error);
+    }
 
-      if (!funcName) {
-        setResults((prev) => ({ ...prev, [problemId]: "Incorrect Output" }));
-        return;
+    return;
+  }
+
+  try {
+    const funcMatch = problem.description.match(/Function:\s*(\w+)/);
+    const funcName = funcMatch ? funcMatch[1] : null;
+
+    if (!funcName) {
+      setResults((prev) => ({ ...prev, [problemId]: "Incorrect Output" }));
+      return;
+    }
+
+    let allCorrect = true;
+    const actualResults = [];
+
+    for (const test of problem.tests) {
+      let result;
+
+      if (problem.id === 9) {
+      // eslint-disable-next-line no-new-func
+        const func = new Function(
+          "arr",
+          "startIndex",
+          code + "; return " + funcName + "(arr, startIndex);"
+        );
+        result = func(test.input[0], test.input[1]);
+      } else if ([3, 5, 8, 10, 13].includes(problem.id)) {
+        // eslint-disable-next-line no-new-func
+        const func = new Function("arr", code + "; return " + funcName + "(arr);");
+        result = func([...test.input]);
+      } else {
+        // eslint-disable-next-line no-new-func
+        const func = new Function("arr", code + "; " + funcName + "(arr); return arr;");
+        result = func([...test.input]);
       }
 
-      let allCorrect = true;
-      const actualResults = [];
+      actualResults.push(result);
 
-      for (const test of problem.tests) {
-        let result;
-
-        if (problem.id === 9) {
-          const func = new Function(
-            "arr",
-            "startIndex",
-            code + "; return " + funcName + "(arr, startIndex);"
-          );
-          result = func(test.input[0], test.input[1]);
-        } else if ([3, 5, 8, 10, 13].includes(problem.id)) {
-          const func = new Function("arr", code + "; return " + funcName + "(arr);");
-          result = func([...test.input]);
-        } else {
-          const func = new Function("arr", code + "; " + funcName + "(arr); return arr;");
-          result = func([...test.input]);
-        }
-
-        actualResults.push(result);
-
-        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
-          allCorrect = false;
-          break;
-        }
+      if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
+        allCorrect = false;
+        break;
       }
+    }
 
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: allCorrect
-          ? `Correct! Your outputs: ${actualResults.map((result) => JSON.stringify(result)).join(", ")}`
-          : "Incorrect Output"
-      }));
-    } catch (e) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Error: " + e.message
-      }));
+    const resultText = allCorrect
+      ? `Correct! Your outputs: ${actualResults.map((result) => JSON.stringify(result)).join(", ")}`
+      : "Incorrect Output";
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: resultText
+    }));
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Saving submission..."
+    }));
+
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "sorting",
+      problemTitle: `Sorting Problem ${problemId}`,
+      language,
+      code,
+      result: allCorrect ? "passed" : "failed"
+    });
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Submission saved to dashboard."
+    }));
+  } catch (e) {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: "Error: " + e.message
+    }));
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "sorting",
+        problemTitle: `Sorting Problem ${problemId}`,
+        language,
+        code,
+        result: "failed"
+      });
+    } catch (error) {
+      console.error("Coding save failed:", error);
     }
   }
+}
 
   function analyzeCode(problemId, language) {
     const codeKey = `${problemId}_${language}`;
@@ -1078,23 +1130,21 @@ public class Main {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          </div>
+  <div className="er-brand-logo simulab-sidebar-logo">
+    <SimuLabLogo
+      size={58}
+      showText={false}
+      variant="default"
+    />
+  </div>
 
-          {!sidebarCollapsed && (
-            <div>
-              <div className="er-brand-title">SimuLab</div>
-              <div className="er-brand-subtitle">DSA Lab</div>
-            </div>
-          )}
-        </div>
+  {!sidebarCollapsed && (
+    <div>
+      <div className="er-brand-title">SimuLab</div>
+      <div className="er-brand-subtitle">DSA Lab</div>
+    </div>
+  )}
+</div>
 
         <div className="er-collapse-wrap">
           <button
@@ -1205,6 +1255,15 @@ public class Main {
             <button className={`er-chip ${experimentRun ? "active" : ""}`}>
             {experimentRun ? "Simulation Run" : "Not Started"}
         </button>
+        {experimentRun && quizSubmitted && currentProblems.length > 0 && (
+  <div style={{ marginTop: 18 }}>
+    <MarkCompleteButton
+      labSlug="dsa"
+      experimentSlug="sorting"
+      points={10}
+    />
+  </div>
+)}
     </div>
 
           {purchaseMsg ? (
@@ -1240,9 +1299,9 @@ public class Main {
                 selectedExp={selectedExp}
                 hasAccess={hasAccess}
                 purchaseExpiry={purchaseExpiry}
-                purchaseLoading={purchaseLoading}
+                //purchaseLoading={purchaseLoading}
                 purchaseMsg={purchaseMsg}
-                handleGooglePayClick={handleGooglePayClick}
+                //handleGooglePayClick={handleGooglePayClick}
                 comparisons={comparisons}
                 swaps={swaps}
                 current={current}
@@ -1264,6 +1323,7 @@ public class Main {
                 quizAnswers={quizAnswers}
                 quizSubmitted={quizSubmitted}
                 quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
                 handleQuizAnswer={handleQuizAnswer}
                 submitQuiz={submitQuiz}
                 redoQuiz={redoQuiz}
@@ -1281,6 +1341,7 @@ public class Main {
                 generateProblems={generateProblems}
                 handleLanguageChange={handleLanguageChange}
                 handleCodeChange={handleCodeChange}
+                codingSaveStatus={codingSaveStatus}
                 runCode={runCode}
                 analyzeCode={analyzeCode}
                 correctCode={correctCode}
@@ -1290,7 +1351,7 @@ public class Main {
         </div>
       </main>
 
-      {showPaymentDialog && false && (
+      {/* {showPaymentDialog && false && (
         <PaymentDialog
           selectedExp={selectedExp}
           user={user}
@@ -1306,7 +1367,7 @@ public class Main {
           setLoading={setPurchaseLoading}
           setMessage={setPurchaseMsg}
         />
-      )}
+      )} */}
     </div>
   );
 }

@@ -11,12 +11,17 @@ import {
   Tooltip,
   Legend
 } from "recharts";
+import { LineChart as LineChartIcon, Activity } from "lucide-react";
 
 function GraphCard({ title, data, dataKey, secondKey = null, line = false }) {
   return (
-    <div className="card" style={{ marginTop: "1rem" }}>
-      <h3>{title}</h3>
-      <div style={{ width: "100%", height: 300 }}>
+    <div className="overview-card" style={{ marginBottom: 18 }}>
+      <div className="overview-card-head">
+        <LineChartIcon size={18} />
+        <h4>{title}</h4>
+      </div>
+
+      <div style={{ width: "100%", height: 320 }}>
         <ResponsiveContainer>
           {line ? (
             <LineChart data={data}>
@@ -26,9 +31,9 @@ function GraphCard({ title, data, dataKey, secondKey = null, line = false }) {
               <Tooltip />
               <Legend />
               <Line type="monotone" dataKey={dataKey} stroke="#38bdf8" strokeWidth={2} />
-              {secondKey ? (
+              {secondKey && (
                 <Line type="monotone" dataKey={secondKey} stroke="#22c55e" strokeWidth={2} />
-              ) : null}
+              )}
             </LineChart>
           ) : (
             <BarChart data={data}>
@@ -38,7 +43,7 @@ function GraphCard({ title, data, dataKey, secondKey = null, line = false }) {
               <Tooltip />
               <Legend />
               <Bar dataKey={dataKey} fill="#38bdf8" />
-              {secondKey ? <Bar dataKey={secondKey} fill="#22c55e" /> : null}
+              {secondKey && <Bar dataKey={secondKey} fill="#22c55e" />}
             </BarChart>
           )}
         </ResponsiveContainer>
@@ -58,9 +63,22 @@ export default function DTSPFFTvsDFTGraphs({
 }) {
   if (!paddedSequence.length) {
     return (
-      <section className="card experiment">
-        <h2>Graphs</h2>
-        <div className="info-box">Please run the simulation first to view graphs.</div>
+      <section className="comparison-shell">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <LineChartIcon size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Graphs</h2>
+            <p className="sorting-sim-subtitle">
+              Run the simulation first to compare DFT and FFT graphs.
+            </p>
+          </div>
+        </div>
+
+        <div className="coding-empty-state">
+          Please run the simulation first to view graphs.
+        </div>
       </section>
     );
   }
@@ -82,19 +100,29 @@ export default function DTSPFFTvsDFTGraphs({
   ];
 
   return (
-    <section className="card experiment">
-      <h2>Graphs</h2>
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <LineChartIcon size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Graphs</h2>
+          <p className="sorting-sim-subtitle">
+            Compare input sequence, DFT/FFT spectrum match, and operation count.
+          </p>
+        </div>
+      </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        The graphs below compare the same transform computed using direct DFT and recursive FFT.
-        The spectrum should match closely, while the operation count shows why FFT is faster.
+      <div className="sorting-info-box">
+        <Activity size={16} style={{ marginRight: 10 }} />
+        DFT and FFT magnitude spectra should match closely, while operation count shows why FFT is faster.
       </div>
 
       <GraphCard
         title="Input Sequence"
         data={timeData}
         dataKey="value"
-        line={true}
+        line
       />
 
       <GraphCard
@@ -102,7 +130,7 @@ export default function DTSPFFTvsDFTGraphs({
         data={compareSpectrumData}
         dataKey="dft"
         secondKey="fft"
-        line={true}
+        line
       />
 
       <GraphCard

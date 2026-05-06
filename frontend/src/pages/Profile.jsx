@@ -12,6 +12,9 @@ import {
 import { Button } from "../components/ui/button";
 import SimulabNavbar from "../components/SimulabNavbar";
 import { useAuth } from "../context/AuthContext";
+import ProgressTracker from "../components/ProgressTracker";
+import Leaderboard from "../components/LeaderBoard.jsx";
+import Certificate from "../components/Certificate";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 22 },
@@ -73,7 +76,7 @@ const Profile = () => {
       <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
 
       <div className="pt-28 pb-20 px-4">
-        <div className="container mx-auto max-w-5xl">
+        <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -83,16 +86,17 @@ const Profile = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-6">
               <User className="w-4 h-4 text-primary" />
               <span className="text-sm font-display text-primary tracking-wide">
-                Account Overview
+                Student Profile
               </span>
             </div>
 
             <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
               Profile
             </h1>
+
             <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
-              Manage your SimuLab account, review your details, and continue your
-              learning journey.
+              Manage your SimuLab account, review your learning progress, and
+              track your certificates and achievements.
             </p>
           </motion.div>
 
@@ -133,7 +137,10 @@ const Profile = () => {
 
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Link to="/dashboard">
-                    <Button variant="hero-outline" className="font-display gap-2">
+                    <Button
+                      variant="hero-outline"
+                      className="font-display gap-2"
+                    >
                       <LayoutDashboard className="w-4 h-4" />
                       Dashboard
                     </Button>
@@ -168,7 +175,7 @@ const Profile = () => {
                     <div className="rounded-2xl border border-border/50 bg-secondary/35 hover:bg-secondary/60 transition-all duration-300 px-5 py-4">
                       <p className="font-semibold">Go to Dashboard</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        View progress, stats, and recent labs.
+                        Open your learning hub and continue experiments.
                       </p>
                     </div>
                   </Link>
@@ -201,7 +208,7 @@ const Profile = () => {
             </motion.div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
             {profileStats.map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -215,9 +222,34 @@ const Profile = () => {
                 <div className="font-display text-3xl font-bold mb-1">
                   {stat.value}
                 </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <div className="text-sm text-muted-foreground">
+                  {stat.label}
+                </div>
               </motion.div>
             ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.9fr] gap-6">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={5}
+              className="space-y-6"
+            >
+              <ProgressTracker />
+              <Certificate />
+            </motion.div>
+
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={6}
+              className="space-y-6"
+            >
+              <Leaderboard />
+            </motion.div>
           </div>
         </div>
       </div>

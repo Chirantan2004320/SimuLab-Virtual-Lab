@@ -1,6 +1,16 @@
 import React from "react";
 
-export default function SimpleTable({ title, rows }) {
+export default function SimpleTable({
+  title,
+  rows = [],
+  highlightRows = [],
+  rowKeyField = "id"
+}) {
+  const columns =
+    rows.length > 0
+      ? Object.keys(rows[0])
+      : [];
+
   return (
     <div className="dbms-table-shell">
       <h3 className="dbms-table-title">{title}</h3>
@@ -12,17 +22,28 @@ export default function SimpleTable({ title, rows }) {
           <table className="dbms-table">
             <thead>
               <tr>
-                <th>TABLE NAME</th>
-                <th>COLUMNS</th>
+                {columns.map((column) => (
+                  <th key={column}>{column.toUpperCase()}</th>
+                ))}
               </tr>
             </thead>
+
             <tbody>
-              {rows.map((row, index) => (
-                <tr key={index}>
-                  <td>{row.table_name}</td>
-                  <td>{row.columns}</td>
-                </tr>
-              ))}
+              {rows.map((row, index) => {
+                const rowKey = row[rowKeyField] ?? index;
+                const isHighlighted = highlightRows.includes(row[rowKeyField]);
+
+                return (
+                  <tr
+                    key={rowKey}
+                    className={isHighlighted ? "dbms-row-highlight" : ""}
+                  >
+                    {columns.map((column) => (
+                      <td key={column}>{row[column]}</td>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

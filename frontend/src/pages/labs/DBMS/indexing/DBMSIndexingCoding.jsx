@@ -6,12 +6,54 @@ export default function DBMSIndexingCoding({
   currentProblems,
   answers,
   results,
+  codingSaveStatus,
+  setCodingSaveStatus,
+  saveCodingSubmission,
   generateProblems,
   handleAnswerChange,
   runAnswer,
   analyzeAnswer,
   correctAnswer
 }) {
+  const handleRunAnswer = async (problem) => {
+    runAnswer(problem.id);
+
+    const answer = answers[problem.id] || "";
+
+    if (!answer.trim()) {
+      return;
+    }
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problem.id]: "Saving coding submission..."
+    }));
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dbms",
+        experimentSlug: "indexing",
+        problemTitle: problem.title,
+        language: "text-answer",
+        code: answer,
+        result: "attempted",
+        points: 5
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problem.id]: "Coding submission saved to dashboard."
+      }));
+    } catch (error) {
+      console.error("Coding submission save failed:", error);
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problem.id]: "Answer checked, but backend save failed."
+      }));
+    }
+  };
+
   return (
     <section className="coding-shell">
       <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
@@ -21,9 +63,16 @@ export default function DBMSIndexingCoding({
         <div>
           <h2 className="sorting-sim-title">Coding Practice</h2>
           <p className="sorting-sim-subtitle">
-            Practice {searchMode === "linear" ? "linear scan logic" : "indexed lookup logic"} through answer-based problems.
+            Practice{" "}
+            {searchMode === "linear" ? "linear scan logic" : "indexed lookup logic"}{" "}
+            through answer-based problems.
           </p>
         </div>
+      </div>
+
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Practice Mode:</strong> Generate indexing problems, write your
+        explanation, run answer, analyze, and correct it.
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -32,11 +81,11 @@ export default function DBMSIndexingCoding({
         </button>
       </div>
 
-      {currentProblems.length === 0 ? (
+      {currentProblems.length === 0 && (
         <div className="coding-empty-state">
           No problems generated yet. Click <b>Generate Problems</b> to begin.
         </div>
-      ) : null}
+      )}
 
       {currentProblems.map((problem, index) => (
         <div key={problem.id} className="coding-card-upgraded">
@@ -61,7 +110,7 @@ export default function DBMSIndexingCoding({
           <div className="coding-actions-upgraded">
             <button
               className="sim-btn sim-btn-primary"
-              onClick={() => runAnswer(problem.id)}
+              onClick={() => handleRunAnswer(problem)}
             >
               <Play size={16} />
               Run Answer
@@ -85,8 +134,12 @@ export default function DBMSIndexingCoding({
           </div>
 
           {results[problem.id] && (
-            <div className="coding-result-box">
-              {results[problem.id]}
+            <div className="coding-result-box">{results[problem.id]}</div>
+          )}
+
+          {codingSaveStatus?.[problem.id] && (
+            <div className="modern-coding-note">
+              {codingSaveStatus[problem.id]}
             </div>
           )}
         </div>

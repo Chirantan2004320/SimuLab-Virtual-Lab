@@ -1,153 +1,494 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  FileCode2,
+  Play,
+  Wrench,
+  Sparkles,
+  CheckCircle2,
+  XCircle
+} from "lucide-react";
+import { saveCodingSubmission } from "../../../../API/progressApi";
 
-const problemBank = [
+const LANGUAGES = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "python", label: "Python" },
+  { value: "cpp", label: "C++" },
+  { value: "c", label: "C" },
+  { value: "java", label: "Java" }
+];
+
+const problems = [
   {
     id: 1,
     title: "Minimum Width Check",
     description:
-      "Write a function checkMinWidth(actual, required) that returns true if the actual width satisfies the minimum rule."
+      "Write a function checkMinWidth(actual, required) that returns true if the actual width satisfies the minimum lambda rule.",
+    functionName: "checkMinWidth",
+    tests: [
+      { input: [3, 2], expected: true },
+      { input: [2, 2], expected: true },
+      { input: [1, 2], expected: false }
+    ]
   },
   {
     id: 2,
     title: "Spacing Rule Check",
     description:
-      "Write a function checkSpacing(actual, required) that returns PASS or FAIL based on a spacing rule."
+      "Write a function checkSpacing(actual, required) that returns 'PASS' if spacing is valid, otherwise 'FAIL'.",
+    functionName: "checkSpacing",
+    tests: [
+      { input: [3, 2], expected: "PASS" },
+      { input: [2, 2], expected: "PASS" },
+      { input: [1, 2], expected: "FAIL" }
+    ]
   },
   {
     id: 3,
-    title: "Convert Lambda to Dimension",
+    title: "Lambda Dimension Converter",
     description:
-      "Write a function lambdaDimension(lambdaValue, multiplier) that returns the final dimension."
+      "Write a function lambdaDimension(lambdaValue, multiplier) that returns the final physical dimension.",
+    functionName: "lambdaDimension",
+    tests: [
+      { input: [2, 3], expected: 6 },
+      { input: [1.5, 2], expected: 3 },
+      { input: [0.5, 4], expected: 2 }
+    ]
   }
 ];
 
-export default function DVLSILambdaRulesMicrowindCoding() {
-  const [currentProblems, setCurrentProblems] = useState([]);
-  const [codes, setCodes] = useState({});
-  const [results, setResults] = useState({});
-
-  const generateProblems = () => {
-    setCurrentProblems(problemBank);
-    const initialCodes = {};
-    problemBank.forEach((p) => {
-      initialCodes[p.id] = getStarterCode(p.id);
-    });
-    setCodes(initialCodes);
-    setResults({});
-  };
-
-  const getStarterCode = (id) => {
-    if (id === 1) {
-      return `function checkMinWidth(actual, required) {
+const templates = {
+  javascript: [
+    `function checkMinWidth(actual, required) {
   return actual >= required;
-}`;
-    }
-
-    if (id === 2) {
-      return `function checkSpacing(actual, required) {
+}`,
+    `function checkSpacing(actual, required) {
   return actual >= required ? "PASS" : "FAIL";
-}`;
+}`,
+    `function lambdaDimension(lambdaValue, multiplier) {
+  return lambdaValue * multiplier;
+}`
+  ],
+  python: [
+    `def checkMinWidth(actual, required):
+    return actual >= required`,
+    `def checkSpacing(actual, required):
+    return "PASS" if actual >= required else "FAIL"`,
+    `def lambdaDimension(lambdaValue, multiplier):
+    return lambdaValue * multiplier`
+  ],
+  cpp: [
+    `bool checkMinWidth(double actual, double required) {
+  return actual >= required;
+}`,
+    `string checkSpacing(double actual, double required) {
+  return actual >= required ? "PASS" : "FAIL";
+}`,
+    `double lambdaDimension(double lambdaValue, double multiplier) {
+  return lambdaValue * multiplier;
+}`
+  ],
+  c: [
+    `int checkMinWidth(double actual, double required) {
+  return actual >= required;
+}`,
+    `// Return 1 for PASS and 0 for FAIL
+int checkSpacing(double actual, double required) {
+  return actual >= required ? 1 : 0;
+}`,
+    `double lambdaDimension(double lambdaValue, double multiplier) {
+  return lambdaValue * multiplier;
+}`
+  ],
+  java: [
+    `public static boolean checkMinWidth(double actual, double required) {
+  return actual >= required;
+}`,
+    `public static String checkSpacing(double actual, double required) {
+  return actual >= required ? "PASS" : "FAIL";
+}`,
+    `public static double lambdaDimension(double lambdaValue, double multiplier) {
+  return lambdaValue * multiplier;
+}`
+  ]
+};
+
+function deepEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function runJavascript(problem, code) {
+  // eslint-disable-next-line no-new-func
+  const fn = new Function(`${code}; return ${problem.functionName};`)();
+
+  const testResults = problem.tests.map((test) => {
+    const actual = fn(...test.input);
+    const passed = deepEqual(actual, test.expected);
+
+    return {
+      input: test.input,
+      expected: test.expected,
+      actual,
+      passed
+    };
+  });
+
+  return {
+    passed: testResults.every((test) => test.passed),
+    testResults
+  };
+}
+
+function TestCaseTable({ testResults }) {
+  if (!testResults?.length) return null;
+
+  return (
+    <div style={{ marginTop: 14, overflowX: "auto" }}>
+      <table className="dbms-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Input</th>
+            <th>Expected</th>
+            <th>Actual</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {testResults.map((test, index) => (
+            <tr key={index}>
+              <td>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    color: test.passed ? "#22c55e" : "#ef4444",
+                    fontWeight: 800
+                  }}
+                >
+                  {test.passed ? (
+                    <CheckCircle2 size={15} />
+                  ) : (
+                    <XCircle size={15} />
+                  )}
+                  {test.passed ? "Passed" : "Failed"}
+                </span>
+              </td>
+              <td>{JSON.stringify(test.input)}</td>
+              <td>
+                <code>{JSON.stringify(test.expected)}</code>
+              </td>
+              <td>
+                <code>{JSON.stringify(test.actual)}</code>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function DVLSILambdaRulesMicrowindCoding({
+  analysis,
+  lambdaValue,
+  polyWidth,
+  metalWidth,
+  diffSpacing,
+  polySpacing,
+  contactSize
+}) {
+  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
+  const [codes, setCodes] = useState([]);
+  const [results, setResults] = useState([]);
+  const [codingSaveStatus, setCodingSaveStatus] = useState([]);
+
+  useEffect(() => {
+    setCodes(templates[selectedLanguage]);
+    setResults(Array(problems.length).fill(null));
+    setCodingSaveStatus(Array(problems.length).fill(""));
+  }, [selectedLanguage]);
+
+  const currentInsight = useMemo(() => {
+    return `Current layout: λ=${lambdaValue}, Poly=${polyWidth}λ, Metal=${metalWidth}λ, Diff Spacing=${diffSpacing}λ, Poly Spacing=${polySpacing}λ, Contact=${contactSize}λ, DRC=${analysis.allPass ? "PASS" : "FAIL"}.`;
+  }, [
+    analysis,
+    lambdaValue,
+    polyWidth,
+    metalWidth,
+    diffSpacing,
+    polySpacing,
+    contactSize
+  ]);
+
+  const handleCodeChange = (index, value) => {
+    setCodes((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
+
+  const setResultAt = (index, value) => {
+    setResults((prev) => prev.map((item, i) => (i === index ? value : item)));
+  };
+
+  const setSaveStatusAt = (index, value) => {
+    setCodingSaveStatus((prev) =>
+      prev.map((item, i) => (i === index ? value : item))
+    );
+  };
+
+  const saveSubmission = async ({ index, problem, code, result }) => {
+    setSaveStatusAt(index, "Saving submission...");
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dvlsi",
+        experimentSlug: "lambda-rules-microwind",
+        problemTitle: problem.title,
+        language: selectedLanguage,
+        code,
+        result
+      });
+
+      setSaveStatusAt(index, "Submission saved to dashboard.");
+    } catch (error) {
+      console.error("Lambda Rules coding save failed:", error);
+      setSaveStatusAt(index, "Code checked, but backend save failed.");
+    }
+  };
+
+  const runCode = async (index) => {
+    const problem = problems[index];
+    const code = codes[index];
+
+    if (!code?.trim()) {
+      setResultAt(index, {
+        message: "Please enter code first.",
+        passed: false,
+        testResults: []
+      });
+      return;
     }
 
-    return `function lambdaDimension(lambdaValue, multiplier) {
-  return lambdaValue * multiplier;
-}`;
-  };
+    if (selectedLanguage !== "javascript") {
+      setResultAt(index, {
+        message: `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Saved as attempted submission.`,
+        passed: null,
+        testResults: []
+      });
 
-  const handleCodeChange = (problemId, code) => {
-    setCodes((prev) => ({ ...prev, [problemId]: code }));
-  };
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: "attempted"
+      });
 
-  const runCode = (problemId) => {
-    const code = codes[problemId];
-
-    if (!code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code first."
-      }));
       return;
     }
 
     try {
-      let resultText = "";
+      const output = runJavascript(problem, code);
 
-      if (problemId === 1) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return checkMinWidth;`)();
-        const output = fn(3, 2);
-        resultText =
-          typeof output === "boolean"
-            ? `Function ran successfully. Example checkMinWidth(3,2) = ${output}`
-            : "Return value should be true or false.";
-      } else if (problemId === 2) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return checkSpacing;`)();
-        const output = fn(1, 2);
-        resultText =
-          typeof output === "string"
-            ? `Function ran successfully. Example checkSpacing(1,2) = ${output}`
-            : "Return value should be PASS or FAIL.";
-      } else if (problemId === 3) {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(`${code}; return lambdaDimension;`)();
-        const output = fn(2, 3);
-        resultText =
-          typeof output === "number"
-            ? `Function ran successfully. Example lambdaDimension(2,3) = ${output}`
-            : "Return value should be a number.";
-      }
+      setResultAt(index, {
+        message: output.passed
+          ? "All test cases passed."
+          : "Some test cases failed. Check the table below.",
+        passed: output.passed,
+        testResults: output.testResults
+      });
 
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: resultText
-      }));
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: output.passed ? "passed" : "failed"
+      });
     } catch (error) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Error: ${error.message}`
-      }));
+      setResultAt(index, {
+        message: `Error: ${error.message}`,
+        passed: false,
+        testResults: []
+      });
+
+      await saveSubmission({
+        index,
+        problem,
+        code,
+        result: "failed"
+      });
     }
   };
 
+  const analyzeCode = (index) => {
+    const content = (codes[index] || "").toLowerCase();
+
+    const expected =
+      index === 0
+        ? ["actual", "required", "return"]
+        : index === 1
+        ? ["actual", "required", "pass", "fail"]
+        : ["lambdavalue", "multiplier", "return"];
+
+    const score = expected.filter((token) => content.includes(token)).length;
+
+    setResultAt(index, {
+      message:
+        score >= Math.max(2, expected.length - 1)
+          ? "Analysis: Your solution includes the expected lambda rule logic."
+          : "Analysis: Your answer is partially correct, but it should include required dimensions and rule validation logic.",
+      passed: null,
+      testResults: []
+    });
+  };
+
+  const correctCode = (index) => {
+    setCodes((prev) =>
+      prev.map((item, i) =>
+        i === index ? templates[selectedLanguage][index] : item
+      )
+    );
+
+    setResultAt(index, {
+      message: "Model answer loaded for this problem.",
+      passed: null,
+      testResults: []
+    });
+  };
+
   return (
-    <section className="card">
-      <h2>Coding Practice</h2>
-      <p>
-        Practice simple rule-checking logic used in lambda-based layout validation.
-      </p>
+    <section className="coding-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <FileCode2 size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Coding Practice</h2>
+          <p className="sorting-sim-subtitle">
+            Practice lambda rule validation logic with real test cases.
+          </p>
+        </div>
+      </div>
 
-      <button className="btn primary" onClick={generateProblems}>
-        Generate Problems
-      </button>
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Live Hint:</strong> {currentInsight}
+      </div>
 
-      {currentProblems.map((problem, index) => (
-        <div key={problem.id} className="coding-problem">
-          <h3>
-            Problem {index + 1}: {problem.title}
-          </h3>
-          <p>{problem.description}</p>
+      <div className="coding-card-upgraded" style={{ marginBottom: 18 }}>
+        <div className="coding-card-header">
+          <div>
+            <h3>Lambda Rules Test Case Workspace</h3>
+            <p>
+              Run JavaScript solutions against test cases. Other languages are
+              saved as attempted submissions for now.
+            </p>
+          </div>
+
+          <div className="coding-language-wrap">
+            <label className="sorting-label">Language</label>
+            <select
+              value={selectedLanguage}
+              onChange={(e) => setSelectedLanguage(e.target.value)}
+              className="sorting-select"
+            >
+              {LANGUAGES.map((lang) => (
+                <option key={lang.value} value={lang.value}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {problems.map((problem, index) => (
+        <div key={problem.id} className="coding-card-upgraded">
+          <div className="coding-card-header">
+            <div>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 10,
+                  padding: "6px 12px",
+                  borderRadius: 999,
+                  background: "rgba(56,189,248,0.10)",
+                  border: "1px solid rgba(56,189,248,0.18)",
+                  color: "#38bdf8",
+                  fontWeight: 700,
+                  fontSize: "0.82rem"
+                }}
+              >
+                <Sparkles size={14} />
+                <span>Layout Rule Problem</span>
+              </div>
+
+              <h3>{problem.title}</h3>
+              <p>{problem.description}</p>
+            </div>
+          </div>
 
           <textarea
-            value={codes[problem.id] || ""}
-            onChange={(e) => handleCodeChange(problem.id, e.target.value)}
-            placeholder="Write your code here..."
+            value={codes[index] || ""}
+            onChange={(e) => handleCodeChange(index, e.target.value)}
             rows={12}
-            style={{
-              width: "100%",
-              fontFamily: "monospace",
-              color: "#000000",
-              padding: "12px",
-              borderRadius: "8px",
-              marginBottom: "10px"
-            }}
+            className="coding-textarea-upgraded"
+            placeholder="Write your code here..."
           />
 
-          <button className="btn secondary" onClick={() => runCode(problem.id)}>
-            Run Code
-          </button>
+          <div className="coding-actions-upgraded">
+            <button
+              className="sim-btn sim-btn-primary"
+              onClick={() => runCode(index)}
+            >
+              <Play size={16} />
+              Run Tests
+            </button>
 
-          {results[problem.id] && <p className="result">{results[problem.id]}</p>}
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={() => analyzeCode(index)}
+            >
+              <Wrench size={16} />
+              Analyze
+            </button>
+
+            <button
+              className="sim-btn sim-btn-success"
+              onClick={() => correctCode(index)}
+            >
+              Load Correct
+            </button>
+          </div>
+
+          {selectedLanguage !== "javascript" && (
+            <div className="coding-result-box" style={{ marginTop: 14 }}>
+              Execution for {selectedLanguage.toUpperCase()} will be enabled
+              later. For now, direct execution works in JavaScript.
+            </div>
+          )}
+
+          {results[index] && (
+            <div className="coding-result-box">
+              <strong
+                style={{
+                  color:
+                    results[index].passed === true
+                      ? "#22c55e"
+                      : results[index].passed === false
+                      ? "#ef4444"
+                      : "#e2e8f0"
+                }}
+              >
+                {results[index].message}
+              </strong>
+
+              <TestCaseTable testResults={results[index].testResults} />
+            </div>
+          )}
+
+          {codingSaveStatus[index] && (
+            <div className="coding-result-box">{codingSaveStatus[index]}</div>
+          )}
         </div>
       ))}
     </section>

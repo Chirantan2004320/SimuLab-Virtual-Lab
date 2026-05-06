@@ -1,79 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { Brain, Lock, Trophy, RotateCcw } from "lucide-react";
 
-const questions = [
-  {
-    q: "Propagation delay is the time between:",
-    options: [
-      "Power ON and power OFF",
-      "Input change and corresponding output change",
-      "Two clock cycles only",
-      "Two unrelated signals"
-    ],
-    correct: 1
-  },
-  {
-    q: "Propagation delay is usually measured in:",
-    options: ["Amperes", "Volts", "Nanoseconds", "Ohms"],
-    correct: 2
-  },
-  {
-    q: "If time is less than the propagation delay:",
-    options: [
-      "Output must instantly change",
-      "Output still shows old value",
-      "Circuit turns off",
-      "Clock stops"
-    ],
-    correct: 1
-  },
-  {
-    q: "Ignoring propagation delay can lead to:",
-    options: [
-      "Better timing always",
-      "Infinite memory",
-      "Timing errors",
-      "Lower voltage only"
-    ],
-    correct: 2
-  },
-  {
-    q: "Propagation delay is important in:",
-    options: [
-      "Timing analysis",
-      "Painting circuits",
-      "Battery charging only",
-      "Keyboard layout"
-    ],
-    correct: 0
-  }
-];
-
-export default function DSDPropagationDelayQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const handleAnswer = (index, value) => {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+export default function DSDPropagationDelayQuiz({
+  experimentRun,
+  questions,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total = questions.length;
+  const percentage = total ? Math.round((score / total) * 100) : 0;
 
   return (
     <section className="quiz-shell">
@@ -84,7 +24,8 @@ export default function DSDPropagationDelayQuiz({ experimentRun }) {
         <div>
           <h2 className="sorting-sim-title">Quiz</h2>
           <p className="sorting-sim-subtitle">
-            Test your understanding of delayed signal response and timing behavior in real digital circuits.
+            Test your understanding of delayed signal response and timing
+            behavior in real digital circuits.
           </p>
         </div>
       </div>
@@ -92,7 +33,10 @@ export default function DSDPropagationDelayQuiz({ experimentRun }) {
       {!experimentRun ? (
         <div className="quiz-locked-box">
           <Lock size={18} />
-          <span>Please interact with the propagation delay simulation before attempting the quiz.</span>
+          <span>
+            Please interact with the propagation delay simulation before attempting
+            the quiz.
+          </span>
         </div>
       ) : !submitted ? (
         <div className="quiz-list">
@@ -106,7 +50,9 @@ export default function DSDPropagationDelayQuiz({ experimentRun }) {
                 {q.options.map((opt, j) => (
                   <label
                     key={j}
-                    className={`quiz-option-card ${answers[i] === j ? "selected" : ""}`}
+                    className={`quiz-option-card ${
+                      answers[i] === j ? "selected" : ""
+                    }`}
                   >
                     <input
                       type="radio"
@@ -122,7 +68,11 @@ export default function DSDPropagationDelayQuiz({ experimentRun }) {
           ))}
 
           <div className="quiz-actions-row">
-            <button className="sim-btn sim-btn-primary" onClick={submitQuiz} disabled={answers.includes(null)}>
+            <button
+              className="sim-btn sim-btn-primary"
+              onClick={submitQuiz}
+              disabled={answers.includes(null)}
+            >
               Submit Quiz
             </button>
           </div>
@@ -134,9 +84,46 @@ export default function DSDPropagationDelayQuiz({ experimentRun }) {
             <div>
               <h3>Quiz Completed</h3>
               <p>
-                Your score: <strong>{score} / {questions.length}</strong>
+                Score: <strong>{score} / {total}</strong> ({percentage}%)
               </p>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p
+              className="text-sm text-muted-foreground"
+              style={{ marginTop: 8 }}
+            >
+              {quizSaveStatus}
+            </p>
+          )}
+
+          <div className="quiz-list">
+            {questions.map((q, i) => (
+              <div key={i} className="quiz-card-upgraded">
+                <div className="quiz-question-title">
+                  {i + 1}. {q.q}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect = j === q.correct;
+                    const isWrong = answers[i] === j && j !== q.correct;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect ? "correct" : isWrong ? "wrong" : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="quiz-actions-row">

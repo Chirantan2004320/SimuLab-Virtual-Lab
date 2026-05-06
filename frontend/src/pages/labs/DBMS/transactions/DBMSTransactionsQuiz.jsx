@@ -1,5 +1,5 @@
 import React from "react";
-import { Brain, CheckCircle2, Lock } from "lucide-react";
+import { Brain, CheckCircle2, Lock, RotateCcw } from "lucide-react";
 
 export default function DBMSTransactionsQuiz({
   transactionType,
@@ -7,9 +7,11 @@ export default function DBMSTransactionsQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
-  submitQuiz
+  submitQuiz,
+  redoQuiz
 }) {
   const total = quizQuestions.length;
   const percentage = total ? Math.round((quizScore / total) * 100) : 0;
@@ -21,10 +23,12 @@ export default function DBMSTransactionsQuiz({
           <div className="sorting-sim-icon">
             <Brain size={18} />
           </div>
+
           <div>
             <h2 className="sorting-sim-title">Quiz</h2>
             <p className="sorting-sim-subtitle">
-              Test your understanding after running the {transactionType.toUpperCase()} experiment.
+              Test your understanding after running the{" "}
+              {transactionType.toUpperCase()} experiment.
             </p>
           </div>
         </div>
@@ -43,6 +47,7 @@ export default function DBMSTransactionsQuiz({
         <div className="sorting-sim-icon">
           <Brain size={18} />
         </div>
+
         <div>
           <h2 className="sorting-sim-title">Quiz</h2>
           <p className="sorting-sim-subtitle">
@@ -61,7 +66,12 @@ export default function DBMSTransactionsQuiz({
 
               <div className="quiz-options-grid">
                 {q.options.map((opt, j) => (
-                  <label key={j} className="quiz-option-card">
+                  <label
+                    key={j}
+                    className={`quiz-option-card ${
+                      quizAnswers[i] === j ? "selected" : ""
+                    }`}
+                  >
                     <input
                       type="radio"
                       name={`q${i}`}
@@ -96,6 +106,12 @@ export default function DBMSTransactionsQuiz({
             </div>
           </div>
 
+          {quizSaveStatus && (
+            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
+          )}
+
           <div className="quiz-list">
             {quizQuestions.map((q, i) => (
               <div key={i} className="quiz-card-upgraded">
@@ -123,6 +139,15 @@ export default function DBMSTransactionsQuiz({
               </div>
             ))}
           </div>
+
+          {redoQuiz && (
+            <div className="quiz-actions-row">
+              <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+                <RotateCcw size={16} />
+                Redo Quiz
+              </button>
+            </div>
+          )}
         </div>
       )}
     </section>

@@ -1,41 +1,50 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import pool from "../config/db.js";
 
 export const authenticateJWT = async (req, res, next) => {
-  let token;
-
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  }
-
-  if (!token) {
-    return res.status(401).json({ message: "Not authorized, token missing" });
-  }
-
   try {
-    // Handle local tokens (for offline/fallback logins)
-    if (token.startsWith('local-token-')) {
-      // For local tokens, we skip JWT verification
-      // In production, you would validate against a local database
-      console.log('Using local token for development:', token);
-      const userId = token.replace('local-token-', '');
-      req.user = { _id: userId };
-      return next();
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized, token missing",
+      });
     }
 
-    // Verify JWT token
+    const token = authHeader.split(" ")[1];
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select("-password"); // attach user
+
+    const [users] = await pool.query(
+      "SELECT id, name, email, role, created_at FROM users WHERE id = ?",
+      [decoded.id]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    req.user = users[0];
     next();
   } catch (error) {
-    return res.status(401).json({ message: "Not authorized, token invalid" });
+    return res.status(401).json({
+      success: false,
+      message: "Not authorized, token invalid",
+    });
   }
 };
 
-export const requireTeacher = (req, res, next) => {
-  if (req.user && req.user.role === 'teacher') {
+export const requireAdmin = (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
     return next();
   }
-  return res.status(403).json({ message: 'Access denied: Teacher only' });
+
+  return res.status(403).json({
+    success: false,
+    message: "Access denied: Admin only",
+  });
 };

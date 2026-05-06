@@ -1,12 +1,37 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../../../SortingLab.css";
-import { FlaskConical } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {useAuth} from "../../../../context/AuthContext.js";
+import {
+  BookOpen,
+  PlayCircle,
+  GitCompare,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  ShieldCheck,
+  LockKeyhole,
+  AlertTriangle
+} from "lucide-react";
+
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+//import {saveQuizResult, saveCodingSubmission} from "../../../../API/progressApi";
 
 import DBMSConcurrencyOverview from "./DBMSConcurrencyOverview";
 import DBMSConcurrencySimulation from "./DBMSConcurrencySimulation";
 import DBMSConcurrencyComparison from "./DBMSConcurrencyComparison";
 import DBMSConcurrencyQuiz from "./DBMSConcurrencyQuiz";
 import DBMSConcurrencyCoding from "./DBMSConcurrencyCoding";
+
+const simulabLogo = "/assets/logo.png";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "comparison", label: "Comparison", icon: GitCompare },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+];
 
 const concurrencyQuizQuestionsByType = {
   "lost-update": [
@@ -310,8 +335,13 @@ const initialRow = {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function DBMSConcurrencyLab() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
   const [demoType, setDemoType] = useState("lost-update");
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [message, setMessage] = useState("Concurrency Control lab initialized.");
   const [experimentRun, setExperimentRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -329,14 +359,19 @@ export default function DBMSConcurrencyLab() {
   const [anomalyText, setAnomalyText] = useState("");
 
   const quizQuestions = useMemo(() => concurrencyQuizQuestionsByType[demoType], [demoType]);
-
   const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(concurrencyCodeTemplates["lost-update"].javascript);
   const [codeResult, setCodeResult] = useState("");
+
+  useEffect(() => {
+    if (!loading && !user) navigate("/login");
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     setStepHistory([]);
@@ -363,9 +398,7 @@ export default function DBMSConcurrencyLab() {
     setCodeResult("");
   }, [demoType, selectedLanguage]);
 
-  const addStep = (text) => {
-    setStepHistory((prev) => [...prev, text]);
-  };
+  const addStep = (text) => setStepHistory((prev) => [...prev, text]);
 
   const runSimulation = async () => {
     if (isRunning) return;
@@ -515,7 +548,6 @@ export default function DBMSConcurrencyLab() {
     } finally {
       setIsRunning(false);
       setSelectedTransaction(null);
-      setLockHolder((prev) => (demoType === "locking" ? prev : "None"));
     }
   };
 
@@ -558,15 +590,102 @@ export default function DBMSConcurrencyLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+  const getExperimentSlug = () => "concurrency";
+
+const saveQuizResult = async (score, total) => {
+  try {
+    setQuizSaveStatus("Saving quiz result...");
+
+    const response = await fetch("http://localhost:5000/api/quiz-results", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        labSlug: "dbms",
+        experimentSlug: getExperimentSlug(),
+        correctAnswers: score,
+        totalQuestions: total,
+        scorePercentage: ((score / total) * 100).toFixed(2)
+      })
     });
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
-  };
+    if (!response.ok) {
+      throw new Error("Failed to save quiz result");
+    }
+
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error(error);
+    setQuizSaveStatus("Quiz submitted, but dashboard save failed.");
+  }
+};
+
+  const submitQuiz = async () => {
+  let score = 0;
+
+  quizQuestions.forEach((q, i) => {
+    if (quizAnswers[i] === q.correct) score++;
+  });
+
+  setQuizScore(score);
+  setQuizSubmitted(true);
+
+  const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
+  scores.push({
+    subject: "DBMS",
+    experiment: "concurrency",
+    demoType,
+    correct: score,
+    total: quizQuestions.length,
+    time: Date.now()
+  });
+  localStorage.setItem("vlab_scores", JSON.stringify(scores));
+
+  await saveQuizResult(score, quizQuestions.length);
+};
+
+const redoQuiz = () => {
+  setQuizAnswers(Array(quizQuestions.length).fill(null));
+  setQuizSubmitted(false);
+  setQuizScore(0);
+  setQuizSaveStatus("");
+};
+
+
+const saveCodingSubmission = async ({
+  labSlug,
+  experimentSlug,
+  problemTitle,
+  language,
+  code,
+  result,
+  points
+}) => {
+  const response = await fetch("http://localhost:5000/api/coding-submissions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      labSlug,
+      experimentSlug,
+      problemTitle,
+      language,
+      code,
+      result,
+      points
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to save coding submission");
+  }
+
+  return response.json();
+};
 
   const runCode = () => {
     if (selectedLanguage !== "javascript") {
@@ -586,87 +705,199 @@ export default function DBMSConcurrencyLab() {
     }
   };
 
+  const analyzeCode = () => {
+    if (!code.trim()) {
+      setCodeResult("Analysis: Please write or load a concurrency example first.");
+      return;
+    }
+
+    if (demoType === "lost-update") {
+      setCodeResult(
+        "Analysis:\nThis example shows two transactions reading the same old value before either safely prevents overlap. That can cause one committed update to be overwritten by another stale write."
+      );
+      return;
+    }
+
+    if (demoType === "dirty-read") {
+      setCodeResult(
+        "Analysis:\nThis example shows T2 reading data that T1 has not committed yet. If T1 rolls back, T2 has used an invalid temporary value."
+      );
+      return;
+    }
+
+    setCodeResult(
+      "Analysis:\nThis example shows locking-based concurrency control. One transaction holds the lock while the other waits, preventing unsafe simultaneous access."
+    );
+  };
+
+  const optimizeCode = () => {
+    if (demoType === "lost-update") {
+      setCodeResult(
+        "Optimization Suggestion:\nUse row-level locking, SELECT ... FOR UPDATE, or a stricter isolation level so concurrent transactions cannot overwrite each other's committed update."
+      );
+      return;
+    }
+
+    if (demoType === "dirty-read") {
+      setCodeResult(
+        "Optimization Suggestion:\nUse READ COMMITTED or stronger isolation so one transaction cannot read another transaction's uncommitted data."
+      );
+      return;
+    }
+
+    setCodeResult(
+      "Optimization Suggestion:\nKeep lock duration short, commit quickly, and ensure waiting transactions proceed only after the lock holder releases the row."
+    );
+  };
+
+  const demoLabel =
+    demoType === "lost-update"
+      ? "Lost Update"
+      : demoType === "dirty-read"
+      ? "Dirty Read"
+      : "Locking Demo";
+
   const codingProblem = codingProblemByType[demoType];
 
-  const analyzeCode = () => {
-  if (!code.trim()) {
-    setCodeResult("Analysis: Please write or load a concurrency example first.");
-    return;
-  }
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 50
+      : activeSection === "comparison"
+      ? 68
+      : activeSection === "quiz"
+      ? 84
+      : 95;
 
-  if (demoType === "lost-update") {
-    setCodeResult(
-      "Analysis:\nThis example shows two transactions reading the same old value before either safely prevents overlap. That can cause one committed update to be overwritten by another stale write."
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
     );
-    return;
   }
 
-  if (demoType === "dirty-read") {
-    setCodeResult(
-      "Analysis:\nThis example shows T2 reading data that T1 has not committed yet. If T1 rolls back, T2 has used an invalid temporary value."
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Please log in to access the lab.
+      </div>
     );
-    return;
   }
-
-  setCodeResult(
-    "Analysis:\nThis example shows locking-based concurrency control. One transaction holds the lock while the other waits, preventing unsafe simultaneous access."
-  );
-};
-
-const optimizeCode = () => {
-  if (demoType === "lost-update") {
-    setCodeResult(
-      "Optimization Suggestion:\nUse row-level locking, SELECT ... FOR UPDATE, or a stricter isolation level so concurrent transactions cannot overwrite each other's committed update."
-    );
-    return;
-  }
-
-  if (demoType === "dirty-read") {
-    setCodeResult(
-      "Optimization Suggestion:\nUse READ COMMITTED or stronger isolation so one transaction cannot read another transaction's uncommitted data."
-    );
-    return;
-  }
-
-  setCodeResult(
-    "Optimization Suggestion:\nKeep lock duration short, commit quickly, and ensure waiting transactions proceed only after the lock holder releases the row."
-  );
-};
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive Concurrency Experiment
-            </span>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            Concurrency Control
-          </h1>
-
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Understand Lost Update, Dirty Read, and Locking through step-by-step concurrent transaction visualization.
-          </p>
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DBMS Lab</div>
+            </div>
+          )}
         </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">Demo Configuration</h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 16
-            }}
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
           >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">Concurrency Control</h1>
+            <p className="er-page-subtitle">
+              Understand Lost Update, Dirty Read, and Locking through concurrent transaction visualization.
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Concurrency Configuration</h2>
+              <p>Select a concurrency anomaly or control technique and observe how two transactions interact.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                {demoType === "locking" ? (
+                  <LockKeyhole size={18} />
+                ) : demoType === "dirty-read" ? (
+                  <AlertTriangle size={18} />
+                ) : (
+                  <ShieldCheck size={18} />
+                )}
+              </div>
+              <div>
+                <strong>{demoLabel}</strong>
+                <span>
+                  {demoType === "lost-update" &&
+                    "Two transactions overwrite shared data using stale reads."}
+                  {demoType === "dirty-read" &&
+                    "One transaction reads another transaction's uncommitted value."}
+                  {demoType === "locking" &&
+                    "Locks force safe access to shared data."}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
             <div>
               <label className="sorting-label">Demo Type</label>
               <select
@@ -694,109 +925,99 @@ const optimizeCode = () => {
                 <option value={350}>Fast</option>
               </select>
             </div>
+
+            <div>
+              <label className="sorting-label">Shared Value</label>
+              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+                {sharedRow.value}
+              </div>
+            </div>
+          </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Demo: {demoLabel}</button>
+            <button className="er-chip active">T1: {transaction1State}</button>
+            <button className="er-chip active">T2: {transaction2State}</button>
+            <button className="er-chip active">Lock: {lockHolder}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+          <div style={{ marginTop: 24 }}>
+            <MarkCompleteButton
+              labSlug="dbms"
+              experimentSlug="concurrency"
+              points={10}
+            />
           </div>
         </section>
 
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <DBMSConcurrencyOverview demoType={demoType} initialRow={initialRow} />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
+            {activeSection === "simulation" && (
+              <DBMSConcurrencySimulation
+                demoType={demoType}
+                sharedRow={sharedRow}
+                runSimulation={runSimulation}
+                reset={reset}
+                loadSample={loadSample}
+                message={message}
+                transaction1State={transaction1State}
+                transaction2State={transaction2State}
+                transaction1Read={transaction1Read}
+                transaction2Read={transaction2Read}
+                lockHolder={lockHolder}
+                currentStage={currentStage}
+                selectedTransaction={selectedTransaction}
+                anomalyText={anomalyText}
+                stepHistory={stepHistory}
+                isRunning={isRunning}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
-              onClick={() => setActiveSection("comparison")}
-            >
-              Comparison
-            </button>
+            {activeSection === "comparison" && (
+              <DBMSConcurrencyComparison demoType={demoType} />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
+            {activeSection === "quiz" && (
+             <DBMSConcurrencyQuiz
+  demoType={demoType}
+  quizQuestions={quizQuestions}
+  quizAnswers={quizAnswers}
+  quizSubmitted={quizSubmitted}
+  quizScore={quizScore}
+  quizSaveStatus={quizSaveStatus}
+  experimentRun={experimentRun}
+  handleQuizAnswer={handleQuizAnswer}
+  submitQuiz={submitQuiz}
+  redoQuiz={redoQuiz}
+/>
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
-
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "overview" && (
-                <DBMSConcurrencyOverview demoType={demoType} initialRow={initialRow} />
-              )}
-
-              {activeSection === "simulation" && (
-                <DBMSConcurrencySimulation
-                  demoType={demoType}
-                  sharedRow={sharedRow}
-                  runSimulation={runSimulation}
-                  reset={reset}
-                  loadSample={loadSample}
-                  message={message}
-                  transaction1State={transaction1State}
-                  transaction2State={transaction2State}
-                  transaction1Read={transaction1Read}
-                  transaction2Read={transaction2Read}
-                  lockHolder={lockHolder}
-                  currentStage={currentStage}
-                  selectedTransaction={selectedTransaction}
-                  anomalyText={anomalyText}
-                  stepHistory={stepHistory}
-                  isRunning={isRunning}
-                />
-              )}
-
-              {activeSection === "comparison" && (
-                <DBMSConcurrencyComparison demoType={demoType} />
-              )}
-
-              {activeSection === "quiz" && (
-                <DBMSConcurrencyQuiz
-                  demoType={demoType}
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  experimentRun={experimentRun}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                />
-              )}
-
-              {activeSection === "coding" && (
-                <DBMSConcurrencyCoding
-                  codingProblem={codingProblem}
-                  selectedLanguage={selectedLanguage}
-                  setSelectedLanguage={setSelectedLanguage}
-                  code={code}
-                  setCode={setCode}
-                  codeResult={codeResult}
-                  runCode={runCode}
-                  demoType={demoType}
-                  analyzeCode={analyzeCode}
-                  optimizeCode={optimizeCode}
-                />
-              )}
-            </div>
-          </main>
+            {activeSection === "coding" && (
+              <DBMSConcurrencyCoding
+  codingProblem={codingProblem}
+  selectedLanguage={selectedLanguage}
+  setSelectedLanguage={setSelectedLanguage}
+  code={code}
+  setCode={setCode}
+  codeResult={codeResult}
+  codingSaveStatus={codingSaveStatus}
+  setCodingSaveStatus={setCodingSaveStatus}
+  saveCodingSubmission={saveCodingSubmission}
+  runCode={runCode}
+  demoType={demoType}
+  analyzeCode={analyzeCode}
+  optimizeCode={optimizeCode}
+/>
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -14,6 +14,7 @@ export default function HashTableCoding({
   selectedLanguages,
   codes,
   results,
+  codingSaveStatus,
   generateProblems,
   handleLanguageChange,
   handleCodeChange,
@@ -41,11 +42,11 @@ export default function HashTableCoding({
         </button>
       </div>
 
-      {currentProblems.length === 0 ? (
+      {currentProblems.length === 0 && (
         <div className="coding-empty-state">
           No problems generated yet. Click <b>Generate Problems</b> to begin.
         </div>
-      ) : null}
+      )}
 
       {currentProblems.map((problem, index) => {
         const selectedLanguage = selectedLanguages[problem.id] || "javascript";
@@ -63,7 +64,9 @@ export default function HashTableCoding({
                 <label className="sorting-label">Language</label>
                 <select
                   value={selectedLanguage}
-                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  onChange={(e) =>
+                    handleLanguageChange(problem.id, e.target.value, problem)
+                  }
                   className="sorting-select"
                 >
                   {LANGUAGES.map((lang) => (
@@ -117,9 +120,17 @@ export default function HashTableCoding({
               </div>
             )}
 
+            {/* ✅ Result */}
             {results[problem.id] && (
               <div className="coding-result-box">
                 {results[problem.id]}
+              </div>
+            )}
+
+            {/* ✅ NEW: Save Status */}
+            {codingSaveStatus?.[problem.id] && (
+              <div className="coding-result-box">
+                {codingSaveStatus[problem.id]}
               </div>
             )}
           </div>

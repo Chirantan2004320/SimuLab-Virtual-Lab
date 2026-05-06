@@ -11,14 +11,16 @@ import {
   ChevronsLeft
 } from "lucide-react";
 
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
+
 import DSDLogicGatesOverview from "./DSDLogicGatesOverview";
 import DSDLogicGatesSimulation from "./DSDLogicGatesSimulation";
 import DSDLogicGatesCircuits from "./DSDLogicGatesCircuits";
 import DSDLogicGatesTruthTable from "./DSDLogicGatesTruthTable";
 import DSDLogicGatesQuiz from "./DSDLogicGatesQuiz";
 import DSDLogicGatesCoding from "./DSDLogicGatesCoding";
-
-const simulabLogo = "/assets/logo.png";
 
 function boolToBit(value) {
   return value ? 1 : 0;
@@ -33,6 +35,44 @@ const sidebarItems = [
   { key: "coding", label: "Coding", icon: Code2 }
 ];
 
+const quizQuestions = [
+  {
+    q: "Which gate passes the input unchanged to the output?",
+    options: ["NOT", "BUFFER", "XOR", "NOR"],
+    correct: 1
+  },
+  {
+    q: "Which gate inverts a single input?",
+    options: ["AND", "OR", "NOT", "XNOR"],
+    correct: 2
+  },
+  {
+    q: "Which gate gives output 1 only when both inputs are 1?",
+    options: ["OR", "AND", "XOR", "NOR"],
+    correct: 1
+  },
+  {
+    q: "XOR gate gives output 1 when:",
+    options: [
+      "Both inputs are 0",
+      "Inputs are different",
+      "Inputs are equal",
+      "Both inputs are 1"
+    ],
+    correct: 1
+  },
+  {
+    q: "XNOR gate gives output 1 when:",
+    options: [
+      "Inputs are different",
+      "Inputs are equal",
+      "Only A is 1",
+      "Only B is 1"
+    ],
+    correct: 1
+  }
+];
+
 export default function DSDLogicGatesLab() {
   const [activeSection, setActiveSection] = useState("overview");
   const [a, setA] = useState(false);
@@ -40,6 +80,13 @@ export default function DSDLogicGatesLab() {
   const [selectedGate, setSelectedGate] = useState("AND");
   const [experimentRun, setExperimentRun] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(quizQuestions.length).fill(null)
+  );
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const analysis = useMemo(() => {
     const A = boolToBit(a);
@@ -113,27 +160,64 @@ export default function DSDLogicGatesLab() {
     };
   }, [a, b, selectedGate]);
 
+  const handleQuizAnswer = (index, value) => {
+    const updated = [...quizAnswers];
+    updated[index] = value;
+    setQuizAnswers(updated);
+  };
+
+  const submitQuiz = async () => {
+    let total = 0;
+
+    quizQuestions.forEach((q, i) => {
+      if (quizAnswers[i] === q.correct) total++;
+    });
+
+    setQuizScore(total);
+    setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
+
+    try {
+      await saveQuizResult({
+        labSlug: "dsd",
+        experimentSlug: "logic-gates",
+        correctAnswers: total,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Logic Gates quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
+  };
+
   const progressPercent =
-    activeSection === "coding"
-      ? 75
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 45
+      : activeSection === "circuits"
+      ? 60
+      : activeSection === "truth"
+      ? 72
       : activeSection === "quiz"
-      ? 68
-      : experimentRun
-      ? 55
-      : 35;
+      ? 85
+      : 95;
 
   return (
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+          <div className="er-brand-logo simulab-sidebar-logo">
+            <SimuLabLogo size={58} showText={false} variant="default" />
           </div>
 
           {!sidebarCollapsed && (
@@ -158,10 +242,13 @@ export default function DSDLogicGatesLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
-                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                className={`er-nav-item ${
+                  activeSection === item.key ? "active" : ""
+                }`}
                 onClick={() => setActiveSection(item.key)}
                 title={item.label}
               >
@@ -194,7 +281,8 @@ export default function DSDLogicGatesLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Logic Gates"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "Logic Gates"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -258,6 +346,27 @@ export default function DSDLogicGatesLab() {
               </div>
             </div>
           </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Input A = {analysis.A}</button>
+            <button className="er-chip active">
+              Input B = {analysis.isSingleInput ? "Ignored" : analysis.B}
+            </button>
+            <button className="er-chip active">
+              Output Y = {analysis.selected.output}
+            </button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <MarkCompleteButton
+              labSlug="dsd"
+              experimentSlug="logic-gates"
+              points={10}
+            />
+          </div>
         </section>
 
         <div className="er-content-layout">
@@ -297,7 +406,17 @@ export default function DSDLogicGatesLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DSDLogicGatesQuiz experimentRun={experimentRun} />
+              <DSDLogicGatesQuiz
+                experimentRun={experimentRun}
+                questions={quizQuestions}
+                answers={quizAnswers}
+                submitted={quizSubmitted}
+                score={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                handleAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
             )}
 
             {activeSection === "coding" && (

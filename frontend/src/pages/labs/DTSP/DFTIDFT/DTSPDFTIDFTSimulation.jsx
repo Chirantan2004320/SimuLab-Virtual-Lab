@@ -1,4 +1,5 @@
 import React from "react";
+import { Activity, Play, RotateCcw, Gauge, Layers, Sparkles } from "lucide-react";
 
 export default function DTSPDFTIDFTSimulation({
   inputText,
@@ -23,55 +24,118 @@ export default function DTSPDFTIDFTSimulation({
       : [];
 
   return (
-    <section className="card experiment">
-      <h2>Simulation</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              Compute DFT coefficients, inspect frequency bins, and reconstruct the signal using IDFT.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div className="controls">
-        <div style={{ flex: 1 }}>
-          <label>Input Sequence</label>
+      <div className="overview-grid" style={{ marginBottom: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>DFT Output</h4>
+          </div>
+          <p>
+            A sequence of length <strong>N</strong> produces <strong>N</strong> complex DFT coefficients.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Layers size={18} />
+            <h4>IDFT Reconstruction</h4>
+          </div>
+          <p>
+            IDFT uses all frequency-domain coefficients to rebuild the original time-domain sequence.
+          </p>
+        </div>
+      </div>
+
+      <div className="sorting-info-box">
+        <Sparkles size={16} style={{ marginRight: 10 }} />
+        Try sequences like 1, 2, 3, 4 or 1, 0, 1, 0 to compare how magnitude and phase change.
+      </div>
+
+      <div className="sorting-input-row">
+        <div className="sorting-input-group">
+          <label className="sorting-label">Input Sequence</label>
           <input
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="e.g. 1, 2, 3, 4"
-            style={{ color: "#ffffff" }}
+            className="sorting-input"
           />
         </div>
 
-        <div className="buttons">
-          <button className="btn primary" onClick={handleComputeDFT}>
+        <div className="sorting-btn-group">
+          <button className="sim-btn sim-btn-primary" onClick={handleComputeDFT}>
+            <Play size={16} />
             Compute DFT
           </button>
+
           <button
-            className="btn secondary"
+            className="sim-btn sim-btn-muted"
             onClick={handleComputeIDFT}
             disabled={!dftResult.length}
           >
+            <RotateCcw size={16} />
             Compute IDFT
           </button>
         </div>
       </div>
 
       {error && (
-        <div className="info-box" style={{ marginTop: "1rem", color: "#fca5a5" }}>
+        <div className="queue-warning-box">
           {error}
         </div>
       )}
 
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Sequence Length</span>
+          <span className="sorting-stat-value">{sequence.length || "-"}</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">DFT Coefficients</span>
+          <span className="sorting-stat-value">{dftResult.length || "-"}</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Selected Bin</span>
+          <span className="sorting-stat-value">{dftResult.length ? `k=${selectedK}` : "-"}</span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">IDFT Status</span>
+          <span className="sorting-stat-value">{reconstructed.length ? "Done" : "Pending"}</span>
+        </div>
+      </div>
+
       {sequence.length > 0 && (
-        <div className="card" style={{ marginTop: "1rem" }}>
-          <h3>Input Sequence x[n]</h3>
-          <div className="workspace">
+        <div className="overview-card" style={{ marginBottom: 18 }}>
+          <div className="overview-card-head">
+            <Layers size={18} />
+            <h4>Input Sequence x[n]</h4>
+          </div>
+
+          <div className="workspace" style={{ marginBottom: 0 }}>
             {sequence.map((value, index) => (
-              <div
-                key={index}
-                className="cell"
-                style={{
-                  minWidth: "64px",
-                  textAlign: "center"
-                }}
-              >
-                <div style={{ fontSize: "12px", color: "#9ca3af" }}>n={index}</div>
-                <div>{value}</div>
+              <div key={index} className="cell" style={{ minWidth: 64 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "#9ca3af" }}>n={index}</div>
+                  <div>{value}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -79,22 +143,18 @@ export default function DTSPDFTIDFTSimulation({
       )}
 
       {dftResult.length > 0 && (
-        <div className="card" style={{ marginTop: "1rem" }}>
-          <h3>DFT Coefficients X[k]</h3>
+        <div className="overview-card" style={{ marginBottom: 18 }}>
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>DFT Coefficients X[k]</h4>
+          </div>
 
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: "8px" }}>
-              Select frequency bin to inspect
-            </label>
+          <div style={{ marginBottom: 16, maxWidth: 260 }}>
+            <label className="sorting-label">Select Frequency Bin</label>
             <select
               value={selectedK}
               onChange={(e) => setSelectedK(Number(e.target.value))}
-              style={{
-                color: "#000",
-                padding: "10px 12px",
-                borderRadius: "8px",
-                minWidth: "180px"
-              }}
+              className="sorting-select"
             >
               {dftResult.map((_, k) => (
                 <option key={k} value={k}>
@@ -112,7 +172,7 @@ export default function DTSPDFTIDFTSimulation({
                   <th>Real</th>
                   <th>Imag</th>
                   <th>|X[k]|</th>
-                  <th>Phase (rad)</th>
+                  <th>Phase</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,13 +192,15 @@ export default function DTSPDFTIDFTSimulation({
       )}
 
       {selectedBinResult && (
-        <div className="card" style={{ marginTop: "1rem" }}>
-          <h3>Step-by-Step Computation for X[{selectedK}]</h3>
+        <div className="overview-card" style={{ marginBottom: 18 }}>
+          <div className="overview-card-head">
+            <Activity size={18} />
+            <h4>Step-by-Step Computation for X[{selectedK}]</h4>
+          </div>
 
-          <div className="info-box" style={{ marginBottom: "1rem" }}>
-            For the selected frequency bin k = {selectedK}, each input sample x[n]
-            contributes to the final coefficient X[{selectedK}] through a rotating
-            complex exponential term.
+          <div className="sorting-info-box">
+            <Layers size={16} style={{ marginRight: 10 }} />
+            Each input sample contributes real and imaginary parts to the selected DFT coefficient.
           </div>
 
           <div style={{ overflowX: "auto" }}>
@@ -152,8 +214,8 @@ export default function DTSPDFTIDFTSimulation({
                   <th>sin()</th>
                   <th>Real Contribution</th>
                   <th>Imag Contribution</th>
-                  <th>Partial Real Sum</th>
-                  <th>Partial Imag Sum</th>
+                  <th>Partial Real</th>
+                  <th>Partial Imag</th>
                 </tr>
               </thead>
               <tbody>
@@ -174,70 +236,51 @@ export default function DTSPDFTIDFTSimulation({
             </table>
           </div>
 
-          <div
-            style={{
-              marginTop: "1rem",
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "12px"
-            }}
-          >
-            <div className="stat-card">
-              <strong>Selected Bin</strong>
-              <div>k = {selectedK}</div>
+          <div className="sorting-stats-grid" style={{ marginTop: 18, marginBottom: 0 }}>
+            <div className="sorting-stat-box">
+              <span className="sorting-stat-label">Selected Bin</span>
+              <span className="sorting-stat-value">k = {selectedK}</span>
             </div>
 
-            <div className="stat-card">
-              <strong>Real Part</strong>
-              <div>{formatNumber(selectedBinResult.re)}</div>
+            <div className="sorting-stat-box">
+              <span className="sorting-stat-label">Real Part</span>
+              <span className="sorting-stat-value">{formatNumber(selectedBinResult.re)}</span>
             </div>
 
-            <div className="stat-card">
-              <strong>Imaginary Part</strong>
-              <div>{formatNumber(selectedBinResult.im)}</div>
+            <div className="sorting-stat-box">
+              <span className="sorting-stat-label">Imaginary Part</span>
+              <span className="sorting-stat-value">{formatNumber(selectedBinResult.im)}</span>
             </div>
 
-            <div className="stat-card">
-              <strong>Magnitude</strong>
-              <div>{formatNumber(getMagnitude(selectedBinResult))}</div>
-            </div>
-
-            <div className="stat-card">
-              <strong>Phase</strong>
-              <div>{formatNumber(getPhase(selectedBinResult))} rad</div>
+            <div className="sorting-stat-box">
+              <span className="sorting-stat-label">Magnitude</span>
+              <span className="sorting-stat-value">{formatNumber(getMagnitude(selectedBinResult))}</span>
             </div>
           </div>
         </div>
       )}
 
       {reconstructed.length > 0 && (
-        <div className="card" style={{ marginTop: "1rem" }}>
-          <h3>Reconstructed Sequence using IDFT</h3>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <RotateCcw size={18} />
+            <h4>Reconstructed Sequence using IDFT</h4>
+          </div>
 
-          <div className="workspace">
+          <div className="workspace" style={{ marginBottom: 18 }}>
             {reconstructed.map((value, index) => (
-              <div
-                key={index}
-                className="cell"
-                style={{
-                  minWidth: "64px",
-                  textAlign: "center"
-                }}
-              >
-                <div style={{ fontSize: "12px", color: "#9ca3af" }}>n={index}</div>
-                <div>{formatNumber(value, 4)}</div>
+              <div key={index} className="cell" style={{ minWidth: 64 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "#9ca3af" }}>n={index}</div>
+                  <div>{formatNumber(value, 4)}</div>
+                </div>
               </div>
             ))}
           </div>
 
-          <p style={{ color: "#22c55e", marginTop: "1rem" }}>
-            Reconstruction Error: {reconstructionError.map((e) => e.toFixed(4)).join(", ")}
-          </p>
-
-          <div className="info-box" style={{ marginTop: "1rem" }}>
-            Observation: The IDFT reconstructs the original sequence from the
-            DFT coefficients. Small differences can appear because of floating-point
-            rounding.
+          <div className="sorting-info-box" style={{ marginBottom: 0 }}>
+            Reconstruction Error:{" "}
+            {reconstructionError.map((value) => value.toFixed(4)).join(", ")}
           </div>
         </div>
       )}

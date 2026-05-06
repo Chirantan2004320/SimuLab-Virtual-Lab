@@ -1,61 +1,111 @@
 import React from "react";
+import { Target, BookOpen, CircleDot, X, CheckCircle2 } from "lucide-react";
 
 export default function DTSPPoleZeroAnalysisOverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To determine the zeros and poles of simple discrete-time transfer
-          functions and interpret system stability using their locations in the
-          z-plane.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Understand zeros, poles, z-plane behavior, and stability using the unit circle.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          A discrete-time LTI system can be represented by its transfer function
-          H(z) = N(z) / D(z), where the roots of the numerator polynomial are
-          called zeros and the roots of the denominator polynomial are called
-          poles.
-        </p>
-        <p>
-          The position of poles and zeros in the z-plane gives important
-          information about the system behavior, including stability and
-          frequency selectivity.
-        </p>
-        <p>
-          For a causal discrete-time system, stability depends on the pole
-          locations. If all poles lie strictly inside the unit circle, the
-          system is stable. If any pole lies outside the unit circle, the system
-          is unstable.
-        </p>
-        <p>
-          Zeros affect how certain frequency components are attenuated, while
-          poles influence resonant behavior and system response.
-        </p>
-      </section>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>Pole-Zero Analysis</h3>
+          <span className="overview-badge">DTSP Experiment</span>
+        </div>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Enter numerator coefficients in descending powers of z.</li>
-          <li>Enter denominator coefficients in descending powers of z.</li>
-          <li>Click on <strong>Analyze</strong>.</li>
-          <li>Observe the computed zeros and poles.</li>
-          <li>Check the z-plane graph and read the stability interpretation.</li>
+        <p className="overview-hero-text">
+          A discrete-time LTI system can be represented by a transfer function H(z) = N(z) / D(z).
+          The roots of the numerator are zeros and the roots of the denominator are poles.
+          Their locations in the z-plane describe system behavior, frequency selectivity, and stability.
+        </p>
+      </div>
+
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            To determine zeros and poles of discrete-time transfer functions and interpret stability
+            using their locations in the z-plane.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CircleDot size={18} />
+            <h4>Zeros</h4>
+          </div>
+          <p>
+            Zeros are roots of the numerator polynomial and indicate frequencies that may be attenuated.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <X size={18} />
+            <h4>Poles</h4>
+          </div>
+          <p>
+            Poles are roots of the denominator polynomial and strongly influence system response.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Stability</h4>
+          </div>
+          <p>
+            For a causal discrete-time system, all poles must lie strictly inside the unit circle
+            for stability.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {[
+            "Enter numerator coefficients in descending powers of z.",
+            "Enter denominator coefficients in descending powers of z.",
+            "Click Analyze.",
+            "Observe computed zeros and poles.",
+            "Open the z-plane graph.",
+            "Check the stability interpretation using the unit circle."
+          ].map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Key Observation</h2>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Target size={18} />
+          <h4>Key Observation</h4>
+        </div>
         <p>
-          The unit circle is the most important reference in pole-zero analysis.
-          Poles inside it indicate stability, while poles outside it indicate
-          instability.
+          The unit circle is the main reference for discrete-time stability. Poles inside the
+          unit circle indicate stable behavior, while poles outside it indicate instability.
         </p>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

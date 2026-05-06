@@ -15,6 +15,7 @@ export default function TreeCoding({
   selectedLanguages,
   codes,
   results,
+  codingSaveStatus,
   generateProblems,
   handleLanguageChange,
   handleCodeChange,
@@ -64,7 +65,9 @@ export default function TreeCoding({
                 <label className="sorting-label">Language</label>
                 <select
                   value={selectedLanguage}
-                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  onChange={(e) =>
+                    handleLanguageChange(problem.id, e.target.value, problem)
+                  }
                   className="sorting-select"
                 >
                   {LANGUAGES.map((lang) => (
@@ -81,7 +84,7 @@ export default function TreeCoding({
               onChange={(e) =>
                 handleCodeChange(problem.id, selectedLanguage, e.target.value)
               }
-              placeholder="Write your code here..."
+              placeholder="Write your tree solution here..."
               rows={14}
               className="coding-textarea-upgraded"
             />
@@ -121,6 +124,12 @@ export default function TreeCoding({
             {results[problem.id] && (
               <div className="coding-result-box">
                 {results[problem.id]}
+              </div>
+            )}
+
+            {codingSaveStatus?.[problem.id] && (
+              <div className="coding-result-box">
+                {codingSaveStatus[problem.id]}
               </div>
             )}
           </div>

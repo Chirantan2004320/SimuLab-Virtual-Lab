@@ -11,14 +11,16 @@ import {
   Scale
 } from "lucide-react";
 
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
+
 import DSDComparatorOverview from "./DSDComparatorOverview";
 import DSDComparatorSimulation from "./DSDComparatorSimulation";
 import DSDComparatorCircuits from "./DSDComparatorCircuits";
 import DSDComparatorTruthTable from "./DSDComparatorTruthTable";
 import DSDComparatorQuiz from "./DSDComparatorQuiz";
 import DSDComparatorCoding from "./DSDComparatorCoding";
-
-const simulabLogo = "/assets/logo.png";
 
 const sidebarItems = [
   { key: "overview", label: "Overview", icon: BookOpen },
@@ -29,6 +31,34 @@ const sidebarItems = [
   { key: "coding", label: "Design Practice", icon: FileCode2 }
 ];
 
+const quizQuestions = [
+  {
+    q: "A comparator is mainly used to:",
+    options: ["Store binary data", "Compare binary values", "Generate clock pulses", "Encode analog input"],
+    correct: 1
+  },
+  {
+    q: "If A = 1 and B = 0, which output becomes active?",
+    options: ["A < B", "A = B", "A > B", "None"],
+    correct: 2
+  },
+  {
+    q: "If A = 0 and B = 0, the active output is:",
+    options: ["A > B", "A = B", "A < B", "All outputs"],
+    correct: 1
+  },
+  {
+    q: "A 1-bit comparator has how many comparison outputs?",
+    options: ["1", "2", "3", "4"],
+    correct: 2
+  },
+  {
+    q: "The expression for A > B in a 1-bit comparator is:",
+    options: ["A · B̅", "A̅ · B", "A + B", "A̅B̅ + AB"],
+    correct: 0
+  }
+];
+
 export default function DSDComparatorLab() {
   const [activeSection, setActiveSection] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -36,10 +66,23 @@ export default function DSDComparatorLab() {
   const [b, setB] = useState(0);
   const [experimentRun, setExperimentRun] = useState(false);
 
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(quizQuestions.length).fill(null)
+  );
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+
   const analysis = useMemo(() => {
     const greater = a > b ? 1 : 0;
     const equal = a === b ? 1 : 0;
     const less = a < b ? 1 : 0;
+
+    const expressions = {
+      greater: "A · B̅",
+      equal: "A̅B̅ + AB",
+      less: "A̅ · B"
+    };
 
     if (greater) {
       return {
@@ -49,11 +92,7 @@ export default function DSDComparatorLab() {
         relation: "A > B",
         activeOutput: "Greater",
         note: "Since A is greater than B, the A > B output becomes active.",
-        expressions: {
-          greater: "A · B̅",
-          equal: "A̅B̅ + AB",
-          less: "A̅ · B"
-        }
+        expressions
       };
     }
 
@@ -65,11 +104,7 @@ export default function DSDComparatorLab() {
         relation: "A = B",
         activeOutput: "Equal",
         note: "Since both inputs are equal, only the equality output becomes active.",
-        expressions: {
-          greater: "A · B̅",
-          equal: "A̅B̅ + AB",
-          less: "A̅ · B"
-        }
+        expressions
       };
     }
 
@@ -80,13 +115,58 @@ export default function DSDComparatorLab() {
       relation: "A < B",
       activeOutput: "Less",
       note: "Since A is less than B, the A < B output becomes active.",
-      expressions: {
-        greater: "A · B̅",
-        equal: "A̅B̅ + AB",
-        less: "A̅ · B"
-      }
+      expressions
     };
   }, [a, b]);
+
+  const handleQuizAnswer = (index, value) => {
+    const updated = [...quizAnswers];
+    updated[index] = value;
+    setQuizAnswers(updated);
+  };
+
+  const submitQuiz = async () => {
+    let total = 0;
+
+    quizQuestions.forEach((question, index) => {
+      if (quizAnswers[index] === question.correct) total++;
+    });
+
+    setQuizScore(total);
+    setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
+
+    try {
+      await saveQuizResult({
+        labSlug: "dsd",
+        experimentSlug: "comparator",
+        correctAnswers: total,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Comparator quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
+  };
+
+  const toggleA = () => {
+    setA((prev) => prev ^ 1);
+    setExperimentRun(true);
+  };
+
+  const toggleB = () => {
+    setB((prev) => prev ^ 1);
+    setExperimentRun(true);
+  };
 
   const progressPercent =
     activeSection === "overview"
@@ -105,14 +185,8 @@ export default function DSDComparatorLab() {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+          <div className="er-brand-logo simulab-sidebar-logo">
+            <SimuLabLogo size={58} showText={false} variant="default" />
           </div>
 
           {!sidebarCollapsed && (
@@ -137,10 +211,13 @@ export default function DSDComparatorLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
-                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                className={`er-nav-item ${
+                  activeSection === item.key ? "active" : ""
+                }`}
                 onClick={() => setActiveSection(item.key)}
                 title={item.label}
               >
@@ -173,7 +250,8 @@ export default function DSDComparatorLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Comparator"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "Comparator"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -187,7 +265,8 @@ export default function DSDComparatorLab() {
           <div>
             <h1 className="er-page-title">Comparator</h1>
             <p className="er-page-subtitle">
-              Compare two 1-bit binary inputs and observe greater-than, equal-to, and less-than outputs. ✨
+              Compare two 1-bit binary inputs and observe greater-than, equal-to,
+              and less-than outputs.
             </p>
           </div>
         </div>
@@ -213,31 +292,54 @@ export default function DSDComparatorLab() {
           <div className="er-config-grid">
             <div>
               <label className="sorting-label">Current Inputs</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 A = {a}, B = {b}
               </div>
             </div>
 
             <div>
               <label className="sorting-label">Active Relation</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 {analysis.relation}
               </div>
             </div>
           </div>
 
           <div className="er-chip-row">
-            <button className="er-chip active" onClick={() => setA(a ^ 1)}>A = {a}</button>
-            <button className="er-chip active" onClick={() => setB(b ^ 1)}>B = {b}</button>
+            <button className="er-chip active" onClick={toggleA}>
+              A = {a}
+            </button>
+            <button className="er-chip active" onClick={toggleB}>
+              B = {b}
+            </button>
             <button className="er-chip active">A &gt; B = {analysis.greater}</button>
             <button className="er-chip active">A = B = {analysis.equal}</button>
             <button className="er-chip active">A &lt; B = {analysis.less}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <MarkCompleteButton
+              labSlug="dsd"
+              experimentSlug="comparator"
+              points={10}
+            />
           </div>
         </section>
 
         <div className="er-content-layout">
           <section className="er-content-card">
-            {activeSection === "overview" && <DSDComparatorOverview analysis={analysis} />}
+            {activeSection === "overview" && (
+              <DSDComparatorOverview analysis={analysis} />
+            )}
 
             {activeSection === "simulation" && (
               <DSDComparatorSimulation
@@ -259,7 +361,17 @@ export default function DSDComparatorLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DSDComparatorQuiz experimentRun={experimentRun} />
+              <DSDComparatorQuiz
+                experimentRun={experimentRun}
+                questions={quizQuestions}
+                answers={quizAnswers}
+                submitted={quizSubmitted}
+                score={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                handleAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
             )}
 
             {activeSection === "coding" && (

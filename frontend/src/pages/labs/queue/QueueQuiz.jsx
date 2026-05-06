@@ -7,6 +7,7 @@ const QueueQuiz = ({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz
@@ -22,7 +23,10 @@ const QueueQuiz = ({
         </div>
         <div>
           <h2 className="sorting-sim-title">
-            Quiz <span style={{ color: "#38bdf8" }}>({queueType === "circular" ? "Circular Queue" : "Normal Queue"})</span>
+            Quiz{" "}
+            <span style={{ color: "#38bdf8" }}>
+              ({queueType === "circular" ? "Circular Queue" : "Normal Queue"})
+            </span>
           </h2>
           <p className="sorting-sim-subtitle">
             Test your understanding of queue concepts and operations.
@@ -51,7 +55,6 @@ const QueueQuiz = ({
                       name={`q${i}`}
                       checked={quizAnswers[i] === j}
                       onChange={() => handleQuizAnswer(i, j)}
-                      disabled={quizSubmitted}
                     />
                     <span>{opt}</span>
                   </label>
@@ -63,6 +66,7 @@ const QueueQuiz = ({
           <button
             className="sim-btn sim-btn-primary"
             onClick={submitQuiz}
+            disabled={quizAnswers.includes(null)}
             style={{ width: "fit-content" }}
           >
             Submit Quiz
@@ -79,6 +83,12 @@ const QueueQuiz = ({
               </p>
             </div>
           </div>
+
+          {quizSaveStatus && (
+            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
+          )}
 
           <div className="quiz-list">
             {quizQuestions.map((q, i) => (

@@ -10,14 +10,16 @@ import {
   ChevronsLeft
 } from "lucide-react";
 
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
+
 import DSDPropagationDelayOverview from "./DSDPropagationDelayOverview";
 import DSDPropagationDelaySimulation from "./DSDPropagationDelaySimulation";
 import DSDPropagationDelayCircuits from "./DSDPropagationDelayCircuits";
 import DSDPropagationDelayTruthTable from "./DSDPropagationDelayTruthTable";
 import DSDPropagationDelayQuiz from "./DSDPropagationDelayQuiz";
 import DSDPropagationDelayCoding from "./DSDPropagationDelayCoding";
-
-const simulabLogo = "/assets/logo.png";
 
 function gateOutput(gate, input) {
   if (gate === "NOT") return input === 1 ? 0 : 1;
@@ -34,6 +36,44 @@ const sidebarItems = [
   { key: "coding", label: "Design Practice", icon: FileCode2 }
 ];
 
+const quizQuestions = [
+  {
+    q: "Propagation delay is the time between:",
+    options: [
+      "Power ON and power OFF",
+      "Input change and corresponding output change",
+      "Two clock cycles only",
+      "Two unrelated signals"
+    ],
+    correct: 1
+  },
+  {
+    q: "Propagation delay is usually measured in:",
+    options: ["Amperes", "Volts", "Nanoseconds", "Ohms"],
+    correct: 2
+  },
+  {
+    q: "If time is less than the propagation delay:",
+    options: [
+      "Output must instantly change",
+      "Output still shows old value",
+      "Circuit turns off",
+      "Clock stops"
+    ],
+    correct: 1
+  },
+  {
+    q: "Ignoring propagation delay can lead to:",
+    options: ["Better timing always", "Infinite memory", "Timing errors", "Lower voltage only"],
+    correct: 2
+  },
+  {
+    q: "Propagation delay is important in:",
+    options: ["Timing analysis", "Painting circuits", "Battery charging only", "Keyboard layout"],
+    correct: 0
+  }
+];
+
 export default function DSDPropagationDelayLab() {
   const [activeSection, setActiveSection] = useState("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -44,6 +84,13 @@ export default function DSDPropagationDelayLab() {
   const [timeNs, setTimeNs] = useState(0);
   const [transitionCount, setTransitionCount] = useState(0);
   const [experimentRun, setExperimentRun] = useState(false);
+
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(quizQuestions.length).fill(null)
+  );
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const analysis = useMemo(() => {
     const previousInput = inputBit === 1 ? 0 : 1;
@@ -72,7 +119,7 @@ export default function DSDPropagationDelayLab() {
       note:
         timeNs < delayNs
           ? `The output has not yet responded because the propagation delay of ${delayNs} ns has not elapsed.`
-          : `The propagation delay has elapsed, so the output now reflects the new input.`
+          : "The propagation delay has elapsed, so the output now reflects the new input."
     };
   }, [selectedGate, inputBit, delayNs, timeNs]);
 
@@ -93,6 +140,45 @@ export default function DSDPropagationDelayLab() {
     setExperimentRun(true);
   };
 
+  const handleQuizAnswer = (index, value) => {
+    const updated = [...quizAnswers];
+    updated[index] = value;
+    setQuizAnswers(updated);
+  };
+
+  const submitQuiz = async () => {
+    let total = 0;
+
+    quizQuestions.forEach((question, index) => {
+      if (quizAnswers[index] === question.correct) total++;
+    });
+
+    setQuizScore(total);
+    setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
+
+    try {
+      await saveQuizResult({
+        labSlug: "dsd",
+        experimentSlug: "propagation-delay",
+        correctAnswers: total,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Propagation Delay quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
+  };
+
   const progressPercent =
     activeSection === "overview"
       ? 20
@@ -110,14 +196,8 @@ export default function DSDPropagationDelayLab() {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+          <div className="er-brand-logo simulab-sidebar-logo">
+            <SimuLabLogo size={58} showText={false} variant="default" />
           </div>
 
           {!sidebarCollapsed && (
@@ -142,10 +222,13 @@ export default function DSDPropagationDelayLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
-                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                className={`er-nav-item ${
+                  activeSection === item.key ? "active" : ""
+                }`}
                 onClick={() => setActiveSection(item.key)}
                 title={item.label}
               >
@@ -178,7 +261,8 @@ export default function DSDPropagationDelayLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Propagation Delay"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "Propagation Delay"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -192,7 +276,9 @@ export default function DSDPropagationDelayLab() {
           <div>
             <h1 className="er-page-title">Propagation Delay</h1>
             <p className="er-page-subtitle">
-              Visualize how signals take finite time to travel through logic gates, and observe how input transitions appear at the output only after the configured delay. ✨
+              Visualize how signals take finite time to travel through logic gates,
+              and observe how input transitions appear at the output only after
+              the configured delay.
             </p>
           </div>
         </div>
@@ -201,7 +287,10 @@ export default function DSDPropagationDelayLab() {
           <div className="er-config-top">
             <div>
               <h2>Delay Configuration</h2>
-              <p>Choose a gate, set the delay, toggle the input transition, and track how the output responds in time.</p>
+              <p>
+                Choose a gate, set the delay, toggle the input transition, and
+                track how the output responds in time.
+              </p>
             </div>
 
             <div className="er-mode-pill">
@@ -210,7 +299,9 @@ export default function DSDPropagationDelayLab() {
               </div>
               <div>
                 <strong>{selectedGate} Gate Timing</strong>
-                <span>Delay = {delayNs} ns · Current time = {timeNs} ns</span>
+                <span>
+                  Delay = {delayNs} ns · Current time = {timeNs} ns
+                </span>
               </div>
             </div>
           </div>
@@ -220,7 +311,10 @@ export default function DSDPropagationDelayLab() {
               <label className="sorting-label">Gate Type</label>
               <select
                 value={selectedGate}
-                onChange={(e) => setSelectedGate(e.target.value)}
+                onChange={(e) => {
+                  setSelectedGate(e.target.value);
+                  setTimeNs(0);
+                }}
                 className="sorting-select"
               >
                 <option value="NOT">NOT Gate</option>
@@ -230,7 +324,10 @@ export default function DSDPropagationDelayLab() {
 
             <div>
               <label className="sorting-label">Observed State</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 {analysis.state}
               </div>
             </div>
@@ -238,11 +335,28 @@ export default function DSDPropagationDelayLab() {
 
           <div className="er-chip-row">
             <button className="er-chip active">Input = {inputBit}</button>
-            <button className="er-chip active">Initial Output = {analysis.initialOutput}</button>
-            <button className="er-chip active">Observed Output = {analysis.observedOutput}</button>
-            <button className="er-chip active">Final Output = {analysis.finalOutput}</button>
+            <button className="er-chip active">
+              Initial Output = {analysis.initialOutput}
+            </button>
+            <button className="er-chip active">
+              Observed Output = {analysis.observedOutput}
+            </button>
+            <button className="er-chip active">
+              Final Output = {analysis.finalOutput}
+            </button>
             <button className="er-chip active">Delay = {delayNs} ns</button>
             <button className="er-chip active">Time = {timeNs} ns</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <MarkCompleteButton
+              labSlug="dsd"
+              experimentSlug="propagation-delay"
+              points={10}
+            />
           </div>
         </section>
 
@@ -289,7 +403,17 @@ export default function DSDPropagationDelayLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DSDPropagationDelayQuiz experimentRun={experimentRun} />
+              <DSDPropagationDelayQuiz
+                experimentRun={experimentRun}
+                questions={quizQuestions}
+                answers={quizAnswers}
+                submitted={quizSubmitted}
+                score={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                handleAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
             )}
 
             {activeSection === "coding" && (

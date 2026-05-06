@@ -1,16 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../../../SortingLab.css";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../../context/AuthContext.js";
 import {
   ArrowLeftRight,
   BookOpen,
   Brain,
-  ChevronLeft,
-  ChevronRight,
+  ChevronsLeft,
   Code2,
   Database,
   Filter,
-  Gauge,
+  Gauge
 } from "lucide-react";
+
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
 
 import DBMSQueryOptimizationOverview from "./DBMSQueryOptimizationOverview";
 import DBMSQueryOptimizationSimulation from "./DBMSQueryOptimizationSimulation";
@@ -18,158 +21,113 @@ import DBMSQueryOptimizationQuiz from "./DBMSQueryOptimizationQuiz";
 import DBMSQueryOptimizationCoding from "./DBMSQueryOptimizationCoding";
 
 const simulabLogo = "/assets/logo.png";
+const LAB_SLUG = "dbms";
+const EXPERIMENT_SLUG = "query-optimization";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: Gauge },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: Code2 }
+];
 
 const quizQuestionsByMode = {
   selection: [
     {
       question: "Query optimization mainly tries to:",
-      options: [
-        "Increase redundancy",
-        "Reduce execution cost",
-        "Delete all indexes",
-        "Convert SQL into HTML",
-      ],
-      correct: 1,
+      options: ["Increase redundancy", "Reduce execution cost", "Delete all indexes", "Convert SQL into HTML"],
+      correct: 1
     },
     {
       question: "A selective WHERE clause usually helps because it:",
-      options: [
-        "Filters rows early",
-        "Increases table size",
-        "Creates duplicates",
-        "Avoids all joins",
-      ],
-      correct: 0,
+      options: ["Filters rows early", "Increases table size", "Creates duplicates", "Avoids all joins"],
+      correct: 0
     },
     {
       question: "Applying selection early is usually beneficial because:",
-      options: [
-        "Fewer rows move to later steps",
-        "It disables optimization",
-        "It removes primary keys",
-        "It always sorts data",
-      ],
-      correct: 0,
-    },
+      options: ["Fewer rows move to later steps", "It disables optimization", "It removes primary keys", "It always sorts data"],
+      correct: 0
+    }
   ],
   projection: [
     {
       question: "Projection means:",
-      options: [
-        "Choosing needed columns",
-        "Deleting rows only",
-        "Creating locks",
-        "Updating indexes",
-      ],
-      correct: 0,
+      options: ["Choosing needed columns", "Deleting rows only", "Creating locks", "Updating indexes"],
+      correct: 0
     },
     {
       question: "Early projection can improve performance by:",
-      options: [
-        "Reducing data passed forward",
-        "Adding more columns",
-        "Creating anomalies",
-        "Removing WHERE clause",
-      ],
-      correct: 0,
+      options: ["Reducing data passed forward", "Adding more columns", "Creating anomalies", "Removing WHERE clause"],
+      correct: 0
     },
     {
       question: "Projection optimization mainly reduces:",
-      options: [
-        "Number of columns processed",
-        "Transaction rollback only",
-        "Primary key count",
-        "Concurrency issues",
-      ],
-      correct: 0,
-    },
+      options: ["Number of columns processed", "Transaction rollback only", "Primary key count", "Concurrency issues"],
+      correct: 0
+    }
   ],
   join: [
     {
       question: "Join optimization often tries to:",
-      options: [
-        "Choose a better join order",
-        "Remove all foreign keys",
-        "Disable indexing",
-        "Avoid all conditions",
-      ],
-      correct: 0,
+      options: ["Choose a better join order", "Remove all foreign keys", "Disable indexing", "Avoid all conditions"],
+      correct: 0
     },
     {
       question: "Joining smaller filtered tables first is often better because:",
-      options: [
-        "Intermediate results are smaller",
-        "It increases memory use only",
-        "It always makes joins incorrect",
-        "It avoids SQL parsing",
-      ],
-      correct: 0,
+      options: ["Intermediate results are smaller", "It increases memory use only", "It always makes joins incorrect", "It avoids SQL parsing"],
+      correct: 0
     },
     {
       question: "A bad join order can lead to:",
-      options: [
-        "Larger intermediate results",
-        "Automatic normalization",
-        "Stronger primary keys",
-        "Fewer tables in schema",
-      ],
-      correct: 0,
-    },
-  ],
+      options: ["Larger intermediate results", "Automatic normalization", "Stronger primary keys", "Fewer tables in schema"],
+      correct: 0
+    }
+  ]
 };
 
 const codingProblemsByMode = {
   selection: [
     {
       title: "Optimize selection query",
-      description:
-        "Write an optimized version of a query that filters rows early using a WHERE condition.",
+      description: "Write an optimized version of a query that filters rows early using a WHERE condition."
     },
     {
       title: "Reduce scanned rows",
-      description:
-        "Write a query optimization idea that pushes the department filter before any expensive processing.",
+      description: "Write a query optimization idea that pushes the department filter before any expensive processing."
     },
     {
       title: "Selection pushdown plan",
-      description:
-        "Show a structured answer that explains how early filtering reduces intermediate rows.",
-    },
+      description: "Show a structured answer that explains how early filtering reduces intermediate rows."
+    }
   ],
   projection: [
     {
       title: "Optimize projection query",
-      description:
-        "Write an optimized version of a query that selects only the required columns.",
+      description: "Write an optimized version of a query that selects only the required columns."
     },
     {
       title: "Avoid SELECT *",
-      description:
-        "Rewrite a query so it returns only student_id and name from Students.",
+      description: "Rewrite a query so it returns only student_id and name from Students."
     },
     {
       title: "Projection pushdown plan",
-      description:
-        "Write a structured answer showing how early projection reduces data transfer and processing.",
-    },
+      description: "Write a structured answer showing how early projection reduces data transfer and processing."
+    }
   ],
   join: [
     {
       title: "Optimize join order",
-      description:
-        "Write an optimized query plan idea where filtering happens before a join to reduce intermediate rows.",
+      description: "Write an optimized query plan idea where filtering happens before a join to reduce intermediate rows."
     },
     {
       title: "Join filtered inputs first",
-      description:
-        "Show how filtering Students before joining with Enrollments improves performance.",
+      description: "Show how filtering Students before joining with Enrollments improves performance."
     },
     {
       title: "Reduce join cost",
-      description:
-        "Write a structured answer explaining how a better join order reduces query cost.",
-    },
-  ],
+      description: "Write a structured answer explaining how a better join order reduces query cost."
+    }
+  ]
 };
 
 const codeTemplates = {
@@ -187,7 +145,7 @@ const codeTemplates = {
     c: `char answer[] =
 "Apply the WHERE filter as early as possible to reduce rows processed later.";`,
     java: `String answer =
-"Apply the WHERE filter as early as possible to reduce rows processed later.";`,
+"Apply the WHERE filter as early as possible to reduce rows processed later.";`
   },
   projection: {
     javascript: `const answer = {
@@ -205,7 +163,7 @@ const codeTemplates = {
     c: `char answer[] =
 "Select only required columns instead of SELECT * to reduce data transfer.";`,
     java: `String answer =
-"Select only required columns instead of SELECT * to reduce data transfer.";`,
+"Select only required columns instead of SELECT * to reduce data transfer.";`
   },
   join: {
     javascript: `const answer = {
@@ -221,8 +179,8 @@ const codeTemplates = {
     c: `char answer[] =
 "Apply selection before join so the join works on fewer rows.";`,
     java: `String answer =
-"Apply selection before join so the join works on fewer rows.";`,
-  },
+"Apply selection before join so the join works on fewer rows.";`
+  }
 };
 
 const studentsTable = [
@@ -230,7 +188,7 @@ const studentsTable = [
   { student_id: 2, name: "Diya", department: "ECE", semester: 3 },
   { student_id: 3, name: "Kabir", department: "CSE", semester: 5 },
   { student_id: 4, name: "Meera", department: "ME", semester: 4 },
-  { student_id: 5, name: "Rohan", department: "CSE", semester: 6 },
+  { student_id: 5, name: "Rohan", department: "CSE", semester: 6 }
 ];
 
 const enrollmentsTable = [
@@ -238,39 +196,40 @@ const enrollmentsTable = [
   { student_id: 1, course_id: "C102", grade: "B+" },
   { student_id: 2, course_id: "E201", grade: "A-" },
   { student_id: 3, course_id: "C101", grade: "A" },
-  { student_id: 5, course_id: "C301", grade: "B" },
+  { student_id: 5, course_id: "C301", grade: "B" }
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const sectionItems = [
-  { key: "overview", label: "Overview", icon: BookOpen },
-  { key: "simulation", label: "Simulation", icon: Gauge },
-  { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Coding", icon: Code2 },
-];
 
 const modeMeta = {
   selection: {
     icon: Filter,
     title: "Selection Pushdown",
-    desc: "Apply filters early to reduce the rows flowing through the plan.",
+    desc: "Apply filters early to reduce rows flowing through the query plan.",
+    chip: "Selection"
   },
   projection: {
     icon: Database,
     title: "Projection Pushdown",
-    desc: "Keep only the needed columns as early as possible.",
+    desc: "Keep only required columns as early as possible.",
+    chip: "Projection"
   },
   join: {
     icon: ArrowLeftRight,
     title: "Join Order Optimization",
-    desc: "Reduce intermediate results by joining better filtered inputs first.",
-  },
+    desc: "Reduce intermediate results by joining filtered inputs first.",
+    chip: "Join"
+  }
 };
 
 export default function DBMSQueryOptimizationLab() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
   const [mode, setMode] = useState("selection");
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [message, setMessage] = useState("Query Optimization lab initialized.");
   const [experimentRun, setExperimentRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -284,26 +243,24 @@ export default function DBMSQueryOptimizationLab() {
   const [resultRows, setResultRows] = useState([]);
   const [planText, setPlanText] = useState("");
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
+  const quizQuestions = useMemo(() => quizQuestionsByMode[mode], [mode]);
+  const codingProblems = useMemo(() => codingProblemsByMode[mode], [mode]);
+
+  const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestionsByMode.selection.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [codes, setCodes] = useState(
-    Array(codingProblemsByMode.selection.length).fill(
-      codeTemplates.selection.javascript
-    )
+    Array(codingProblemsByMode.selection.length).fill(codeTemplates.selection.javascript)
   );
-  const [results, setResults] = useState(
-    Array(codingProblemsByMode.selection.length).fill("")
-  );
+  const [results, setResults] = useState(Array(codingProblemsByMode.selection.length).fill(""));
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const quizQuestions = useMemo(() => quizQuestionsByMode[mode], [mode]);
-  const codingProblems = useMemo(() => codingProblemsByMode[mode], [mode]);
-  const currentModeMeta = modeMeta[mode];
-  const CurrentModeIcon = currentModeMeta.icon;
+  useEffect(() => {
+    if (!loading && !user) navigate("/login");
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     setStepHistory([]);
@@ -316,19 +273,87 @@ export default function DBMSQueryOptimizationLab() {
     setMessage("Query Optimization lab initialized.");
     setExperimentRun(false);
     setIsRunning(false);
+
     setQuizAnswers(Array(quizQuestionsByMode[mode].length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
 
     const starter = codeTemplates[mode][selectedLanguage];
-    const problemCount = codingProblemsByMode[mode].length;
-    setCodes(Array(problemCount).fill(starter));
-    setResults(Array(problemCount).fill(""));
+    const count = codingProblemsByMode[mode].length;
+    setCodes(Array(count).fill(starter));
+    setResults(Array(count).fill(""));
+    setCodingSaveStatus({});
   }, [mode, selectedLanguage]);
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
   };
+
+  const saveQuizResult = async (score, total) => {
+    try {
+      setQuizSaveStatus("Saving quiz result...");
+
+      const response = await fetch("http://localhost:5000/api/quiz-results", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          labSlug: LAB_SLUG,
+          experimentSlug: EXPERIMENT_SLUG,
+          correctAnswers: score,
+          totalQuestions: total,
+          scorePercentage: ((score / total) * 100).toFixed(2)
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save quiz result");
+      }
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error(error);
+      setQuizSaveStatus("Quiz submitted, but dashboard save failed.");
+    }
+  };
+
+  const saveCodingSubmission = async ({
+  labSlug,
+  experimentSlug,
+  problemTitle,
+  language,
+  code,
+  result,
+  points
+}) => {
+  const response = await fetch("http://localhost:5000/api/coding-submissions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      labSlug,
+      experimentSlug,
+      problemTitle,
+      language,
+      code,
+      result,
+      points
+    })
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || data.error || "Failed to save coding submission");
+  }
+
+  return data;
+};
 
   const runSimulation = async () => {
     if (isRunning) return;
@@ -340,18 +365,20 @@ export default function DBMSQueryOptimizationLab() {
     setHighlightedRows([]);
     setResultRows([]);
     setPlanText("");
+    setInputRowsCount(0);
+    setOutputRowsCount(0);
 
     try {
       if (mode === "selection") {
         setInputRowsCount(studentsTable.length);
-        setMessage("Starting selection optimization demo...");
-        addStep("Started selection optimization demo.");
+        setMessage("Starting selection pushdown demo...");
+        addStep("Started selection pushdown optimization demo.");
         await sleep(animationSpeed);
 
         setCurrentStage("Apply WHERE Early");
-        setPlanText("Optimization: Apply WHERE department = 'CSE' as early as possible.");
+        setPlanText("Apply WHERE department = 'CSE' before later processing.");
         setMessage("Filtering rows early using WHERE department = 'CSE'.");
-        addStep("Applied selection early to reduce rows before later processing.");
+        addStep("Selection applied early so fewer rows move forward.");
         await sleep(animationSpeed);
 
         const filtered = studentsTable.filter((row) => row.department === "CSE");
@@ -363,19 +390,19 @@ export default function DBMSQueryOptimizationLab() {
 
       if (mode === "projection") {
         setInputRowsCount(studentsTable.length);
-        setMessage("Starting projection optimization demo...");
-        addStep("Started projection optimization demo.");
+        setMessage("Starting projection pushdown demo...");
+        addStep("Started projection pushdown optimization demo.");
         await sleep(animationSpeed);
 
         setCurrentStage("Reduce Columns Early");
-        setPlanText("Optimization: Select only needed columns instead of SELECT *.");
-        setMessage("Projecting only student_id and name.");
-        addStep("Applied projection early to reduce unnecessary column processing.");
+        setPlanText("Select only student_id and name instead of using SELECT *.");
+        setMessage("Projecting only required columns.");
+        addStep("Projection applied early to reduce unnecessary column processing.");
         await sleep(animationSpeed);
 
         const projected = studentsTable.map((row) => ({
           student_id: row.student_id,
-          name: row.name,
+          name: row.name
         }));
 
         setHighlightedRows(studentsTable.map((row) => row.student_id));
@@ -387,37 +414,34 @@ export default function DBMSQueryOptimizationLab() {
       if (mode === "join") {
         setInputRowsCount(studentsTable.length + enrollmentsTable.length);
         setMessage("Starting join optimization demo...");
-        addStep("Started join optimization demo.");
+        addStep("Started join order optimization demo.");
         await sleep(animationSpeed);
 
         setCurrentStage("Filter Before Join");
-        setPlanText(
-          "Optimization: Filter Students where department = 'CSE' before joining with Enrollments."
-        );
-        setMessage("Filtering Students first, then joining with Enrollments.");
-        addStep("Reduced join input by filtering Students before join.");
+        setPlanText("Filter Students where department = 'CSE' before joining with Enrollments.");
+        setMessage("Filtering Students first before join.");
+        addStep("Reduced join input by filtering Students first.");
         await sleep(animationSpeed);
 
-        const filteredStudents = studentsTable.filter(
-          (row) => row.department === "CSE"
-        );
+        const filteredStudents = studentsTable.filter((row) => row.department === "CSE");
         setHighlightedRows(filteredStudents.map((row) => row.student_id));
         await sleep(animationSpeed);
 
         setCurrentStage("Join Smaller Inputs");
+
         const joined = [];
-        for (const student of filteredStudents) {
-          for (const enrollment of enrollmentsTable) {
+        filteredStudents.forEach((student) => {
+          enrollmentsTable.forEach((enrollment) => {
             if (student.student_id === enrollment.student_id) {
               joined.push({
                 student_id: student.student_id,
                 name: student.name,
                 course_id: enrollment.course_id,
-                grade: enrollment.grade,
+                grade: enrollment.grade
               });
             }
-          }
-        }
+          });
+        });
 
         setResultRows(joined);
         setOutputRowsCount(joined.length);
@@ -427,12 +451,15 @@ export default function DBMSQueryOptimizationLab() {
       }
 
       setCurrentStage("Complete");
-      setMessage(`${mode.toUpperCase()} optimization demo completed.`);
-      addStep(`${mode.toUpperCase()} optimization simulation completed successfully.`);
+      setMessage(`${modeMeta[mode].title} completed.`);
+      addStep(`${modeMeta[mode].title} simulation completed successfully.`);
 
       localStorage.setItem(
         "vlab_last_experiment",
-        JSON.stringify({ name: `dbms-query-opt-${mode}`, time: Date.now() })
+        JSON.stringify({
+          name: `dbms-query-optimization-${mode}`,
+          time: Date.now()
+        })
       );
     } finally {
       setIsRunning(false);
@@ -446,14 +473,10 @@ export default function DBMSQueryOptimizationLab() {
     setHighlightedRows([]);
     setResultRows([]);
     setPlanText("Sample loaded. Run the demo to observe optimization steps.");
-    setInputRowsCount(
-      mode === "join"
-        ? studentsTable.length + enrollmentsTable.length
-        : studentsTable.length
-    );
+    setInputRowsCount(mode === "join" ? studentsTable.length + enrollmentsTable.length : studentsTable.length);
     setOutputRowsCount(0);
-    setStepHistory([`Sample loaded for ${mode.toUpperCase()} optimization demo.`]);
-    setMessage(`Sample loaded for ${mode.toUpperCase()} optimization demo.`);
+    setStepHistory([`Sample loaded for ${modeMeta[mode].title}.`]);
+    setMessage(`Sample loaded for ${modeMeta[mode].title}.`);
   };
 
   const reset = () => {
@@ -470,16 +493,17 @@ export default function DBMSQueryOptimizationLab() {
     setExperimentRun(false);
   };
 
-  const handleQuizAnswer = (i, v) => {
+  const handleQuizAnswer = (index, value) => {
     const updated = [...quizAnswers];
-    updated[i] = v;
+    updated[index] = value;
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+
+    quizQuestions.forEach((question, index) => {
+      if (quizAnswers[index] === question.correct) score++;
     });
 
     setQuizScore(score);
@@ -488,12 +512,22 @@ export default function DBMSQueryOptimizationLab() {
     const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
     scores.push({
       subject: "DBMS",
-      experiment: `query-opt-${mode}`,
+      experiment: EXPERIMENT_SLUG,
+      mode,
       correct: score,
       total: quizQuestions.length,
-      time: Date.now(),
+      time: Date.now()
     });
     localStorage.setItem("vlab_scores", JSON.stringify(scores));
+
+    await saveQuizResult(score, quizQuestions.length);
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const updateCodeAt = (index, value) => {
@@ -504,88 +538,139 @@ export default function DBMSQueryOptimizationLab() {
     setResults((prev) => prev.map((item, i) => (i === index ? value : item)));
   };
 
-  const runCode = (problemIndex) => {
-    if (selectedLanguage !== "javascript") {
-      setResultAt(
-        problemIndex,
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
-      return;
+  const runCode = async (problemIndex) => {
+  if (selectedLanguage !== "javascript") {
+    setResultAt(
+      problemIndex,
+      `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet.`
+    );
+    return;
+  }
+
+  try {
+    //eslint-disable-next-line no-new-func
+    const fn = new Function(`${codes[problemIndex]}; return answer;`);
+    const output = fn();
+
+    setResultAt(
+      problemIndex,
+      `Output:\n${JSON.stringify(output, null, 2)}`
+    );
+
+    // ✅ Try saving but DON'T break UI if it fails
+    try {
+      await saveCodingSubmission({
+        labSlug: "dbms",
+        experimentSlug: "query-optimization",
+        problemTitle: codingProblems[problemIndex].title,
+        language: selectedLanguage,
+        code: codes[problemIndex],
+        result: JSON.stringify(output),
+        points: 10
+      });
+    } catch (err) {
+      console.warn("Save failed, continuing anyway:", err.message);
+      // ❌ DO NOT show error to user
     }
 
-    try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(`${codes[problemIndex]}; return answer;`);
-      const result = fn();
-      setResultAt(problemIndex, `Output:\n${JSON.stringify(result, null, 2)}`);
-    } catch (error) {
-      setResultAt(problemIndex, `Error: ${error.message}`);
-    }
-  };
+  } catch (error) {
+    setResultAt(problemIndex, `Error: ${error.message}`);
+  }
+};
 
   const analyzeCode = (problemIndex) => {
-    const content = codes[problemIndex].toLowerCase();
+    const content = (codes[problemIndex] || "").toLowerCase();
 
-    const modeChecks = {
+    const checks = {
       selection: ["where", "filter", "selection", "early", "rows"],
       projection: ["select", "columns", "projection", "student_id", "name"],
-      join: ["join", "filter", "before", "intermediate", "rows"],
+      join: ["join", "filter", "before", "intermediate", "rows"]
     };
 
-    const keywords = modeChecks[mode] || [];
-    const score = keywords.filter((k) => content.includes(k)).length;
+    const keywords = checks[mode] || [];
+    const matched = keywords.filter((word) => content.includes(word));
 
-    if (score >= Math.max(2, keywords.length - 2)) {
+    if (matched.length >= 3) {
       setResultAt(
         problemIndex,
-        "Analysis:\nYour answer includes the main query optimization ideas expected for this problem."
+        `Analysis:\nGood answer. You included important optimization concepts: ${matched.join(", ")}.`
       );
     } else {
       setResultAt(
         problemIndex,
-        "Analysis:\nYour answer is partially correct, but it should include more optimization keywords relevant to this mode."
+        `Analysis:\nYour answer is partially correct. Try including more ideas like: ${keywords.join(", ")}.`
       );
     }
   };
 
   const correctCode = (problemIndex) => {
-    const corrected = codeTemplates[mode][selectedLanguage];
-    updateCodeAt(problemIndex, corrected);
+    updateCodeAt(problemIndex, codeTemplates[mode][selectedLanguage]);
     setResultAt(problemIndex, "Model answer loaded for this problem.");
   };
 
-  const progressValue = experimentRun ? 75 : 35;
-  const ringAngle = Math.max(0, Math.min(100, progressValue)) * 3.6;
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 52
+      : activeSection === "quiz"
+      ? 82
+      : 95;
+
+  const CurrentModeIcon = modeMeta[mode].icon;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Please log in to access the lab.
+      </div>
+    );
+  }
 
   return (
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DBMS Lab</div>
+            </div>
+          )}
+        </div>
+
         <div className="er-collapse-wrap">
           <button
             type="button"
             className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
             onClick={() => setSidebarCollapsed((prev) => !prev)}
           >
-            {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            <ChevronsLeft size={18} />
           </button>
         </div>
 
-        <div className="er-brand">
-          <div className="er-brand-logo">
-            <img src={simulabLogo} alt="SimuLab" />
-          </div>
-
-          {!sidebarCollapsed && (
-            <div>
-              <div className="er-brand-title">SimuLab</div>
-              <div className="er-brand-subtitle">DBMS Virtual Lab</div>
-            </div>
-          )}
-        </div>
-
-        <nav className="er-nav">
-          {sectionItems.map((item) => {
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
@@ -593,12 +678,12 @@ export default function DBMSQueryOptimizationLab() {
                 onClick={() => setActiveSection(item.key)}
                 title={item.label}
               >
-                <Icon size={20} />
+                <Icon size={18} />
                 {!sidebarCollapsed && <span>{item.label}</span>}
               </button>
             );
           })}
-        </nav>
+        </div>
 
         {!sidebarCollapsed && (
           <div className="er-progress-card">
@@ -608,21 +693,13 @@ export default function DBMSQueryOptimizationLab() {
               <div
                 className="er-progress-circle"
                 style={{
-                  background: `conic-gradient(#4aa8ff ${ringAngle}deg, rgba(255,255,255,0.08) 0deg)`,
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
                 }}
               >
                 <div className="er-progress-inner">
-                  <div className="er-progress-value">{progressValue}%</div>
+                  <div className="er-progress-value">{progressPercent}%</div>
                   <div className="er-progress-text">Complete</div>
                 </div>
-              </div>
-            </div>
-
-            <div className="er-last-activity">
-              <div className="er-last-activity-label">Last Activity</div>
-              <div className="er-last-activity-row">
-                <span>Query Optimization</span>
-                <span className="dot-live">● Just now</span>
               </div>
             </div>
           </div>
@@ -630,37 +707,38 @@ export default function DBMSQueryOptimizationLab() {
       </aside>
 
       <main className="er-main-area">
-        <header className="er-page-header">
-          <h1 className="er-page-title">Query Optimization</h1>
-          <p className="er-page-subtitle">
-            Learn selection pushdown, projection pushdown, and join order optimization
-            through visual exploration. ✨
-          </p>
-        </header>
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">Query Optimization</h1>
+            <p className="er-page-subtitle">
+              Learn selection pushdown, projection pushdown, and join order optimization through visual execution plans.
+            </p>
+          </div>
+        </div>
 
         <section className="er-config-card">
           <div className="er-config-top">
             <div>
               <h2>Optimization Configuration</h2>
               <p>
-                Choose the optimization mode and control the animation flow for the simulation.
+                Choose an optimization technique and observe how the query plan becomes more efficient.
               </p>
             </div>
 
             <div className="er-mode-pill">
               <div className="er-mode-pill-icon">
-                <CurrentModeIcon size={24} />
+                <CurrentModeIcon size={18} />
               </div>
               <div>
-                <strong>{currentModeMeta.title}</strong>
-                <span>{currentModeMeta.desc}</span>
+                <strong>{modeMeta[mode].title}</strong>
+                <span>{modeMeta[mode].desc}</span>
               </div>
             </div>
           </div>
 
           <div className="er-config-grid">
             <div>
-              <label className="sorting-label">Mode</label>
+              <label className="sorting-label">Optimization Mode</label>
               <select
                 value={mode}
                 onChange={(e) => setMode(e.target.value)}
@@ -691,6 +769,7 @@ export default function DBMSQueryOptimizationLab() {
           <div className="er-chip-row">
             {Object.entries(modeMeta).map(([key, meta]) => {
               const Icon = meta.icon;
+
               return (
                 <button
                   key={key}
@@ -698,22 +777,28 @@ export default function DBMSQueryOptimizationLab() {
                   onClick={() => setMode(key)}
                   disabled={isRunning}
                 >
-                  <Icon size={16} />
-                  <span>
-                    {key === "selection"
-                      ? "Selection"
-                      : key === "projection"
-                      ? "Projection"
-                      : "Join"}
-                  </span>
+                  <Icon size={14} />
+                  {meta.chip}
                 </button>
               );
             })}
+
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 24 }}>
+            <MarkCompleteButton
+              labSlug={LAB_SLUG}
+              experimentSlug={EXPERIMENT_SLUG}
+              points={10}
+            />
           </div>
         </section>
 
-        <section className="er-content-layout">
-          <div className="er-content-card">
+        <div className="er-content-layout">
+          <section className="er-content-card">
             {activeSection === "overview" && (
               <DBMSQueryOptimizationOverview
                 mode={mode}
@@ -749,9 +834,11 @@ export default function DBMSQueryOptimizationLab() {
                 quizAnswers={quizAnswers}
                 quizSubmitted={quizSubmitted}
                 quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
                 experimentRun={experimentRun}
                 handleQuizAnswer={handleQuizAnswer}
                 submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
               />
             )}
 
@@ -762,6 +849,9 @@ export default function DBMSQueryOptimizationLab() {
                 setSelectedLanguage={setSelectedLanguage}
                 codes={codes}
                 results={results}
+                codingSaveStatus={codingSaveStatus}
+                setCodingSaveStatus={setCodingSaveStatus}
+                saveCodingSubmission={saveCodingSubmission}
                 handleCodeChange={updateCodeAt}
                 runCode={runCode}
                 analyzeCode={analyzeCode}
@@ -769,8 +859,8 @@ export default function DBMSQueryOptimizationLab() {
                 mode={mode}
               />
             )}
-          </div>
-        </section>
+          </section>
+        </div>
       </main>
     </div>
   );

@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import React, { useRef, useState } from "react";
 import {
   BookOpen,
@@ -9,6 +10,9 @@ import {
 } from "lucide-react";
 import "./Lab.css";
 import "./SortingLab.css";
+
+import MarkCompleteButton from "../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../API/progressApi";
 
 import QueueOverview from "./labs/queue/QueueOverview";
 import QueueSimulation from "./labs/queue/QueueSimulation";
@@ -25,74 +29,21 @@ const sidebarItems = [
 ];
 
 const normalQuizQuestions = [
-  {
-    question: "Which principle does a Queue follow?",
-    options: ["LIFO", "FIFO", "Random", "Priority"],
-    correct: 1
-  },
-  {
-    question: "What is the operation to remove from a queue?",
-    options: ["push", "pop", "dequeue", "peek"],
-    correct: 2
-  },
-  {
-    question: "Which element is removed first in a queue?",
-    options: ["Last inserted", "Middle element", "First inserted", "Random element"],
-    correct: 2
-  },
-  {
-    question: "In a normal queue, insertion happens at:",
-    options: ["Front", "Rear", "Middle", "Top"],
-    correct: 1
-  },
-  {
-    question: "In a normal queue, deletion happens at:",
-    options: ["Rear", "Front", "Middle", "Bottom"],
-    correct: 1
-  },
-  {
-    question: "A queue becomes empty when:",
-    options: ["Rear is full", "There are no elements left", "Front > Rear always", "Queue size is fixed"],
-    correct: 1
-  }
+  { question: "Which principle does a Queue follow?", options: ["LIFO", "FIFO", "Random", "Priority"], correct: 1 },
+  { question: "What is the operation to remove from a queue?", options: ["push", "pop", "dequeue", "peek"], correct: 2 },
+  { question: "Which element is removed first in a queue?", options: ["Last inserted", "Middle element", "First inserted", "Random element"], correct: 2 },
+  { question: "In a normal queue, insertion happens at:", options: ["Front", "Rear", "Middle", "Top"], correct: 1 },
+  { question: "In a normal queue, deletion happens at:", options: ["Rear", "Front", "Middle", "Bottom"], correct: 1 },
+  { question: "A queue becomes empty when:", options: ["Rear is full", "There are no elements left", "Front > Rear always", "Queue size is fixed"], correct: 1 }
 ];
 
 const circularQuizQuestions = [
-  {
-    question: "What is the main advantage of a circular queue?",
-    options: [
-      "It sorts data automatically",
-      "It avoids memory wastage",
-      "It behaves like a stack",
-      "It removes the rear element first"
-    ],
-    correct: 1
-  },
-  {
-    question: "In a circular queue, rear is updated using:",
-    options: ["rear + 1", "(rear + 1) / size", "(rear + 1) % size", "rear - 1"],
-    correct: 2
-  },
-  {
-    question: "A circular queue is full when:",
-    options: ["front === rear", "count === capacity", "rear === 0", "front === -1"],
-    correct: 1
-  },
-  {
-    question: "Which arithmetic helps circular queue wrap around?",
-    options: ["Subtraction", "Division", "Modulo", "Multiplication"],
-    correct: 2
-  },
-  {
-    question: "If front is 5 and size is 8, next front after dequeue becomes:",
-    options: ["6", "7", "0", "(5 + 1) % 8"],
-    correct: 3
-  },
-  {
-    question: "Circular queue is especially useful in:",
-    options: ["Recursive stack calls", "Buffer management", "Binary trees", "Heap sorting"],
-    correct: 1
-  }
+  { question: "What is the main advantage of a circular queue?", options: ["It sorts data automatically", "It avoids memory wastage", "It behaves like a stack", "It removes the rear element first"], correct: 1 },
+  { question: "In a circular queue, rear is updated using:", options: ["rear + 1", "(rear + 1) / size", "(rear + 1) % size", "rear - 1"], correct: 2 },
+  { question: "A circular queue is full when:", options: ["front === rear", "count === capacity", "rear === 0", "front === -1"], correct: 1 },
+  { question: "Which arithmetic helps circular queue wrap around?", options: ["Subtraction", "Division", "Modulo", "Multiplication"], correct: 2 },
+  { question: "If front is 5 and size is 8, next front after dequeue becomes:", options: ["6", "7", "0", "(5 + 1) % 8"], correct: 3 },
+  { question: "Circular queue is especially useful in:", options: ["Recursive stack calls", "Buffer management", "Binary trees", "Heap sorting"], correct: 1 }
 ];
 
 const codingProblemBank = {
@@ -243,7 +194,12 @@ export default function QueueLab() {
   const [quizAnswers, setQuizAnswers] = useState([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+
   const [experimentRun, setExperimentRun] = useState(false);
+  const [codingAttempted, setCodingAttempted] = useState(false);
+  const [codingSaveStatus, setCodingSaveStatus] = useState("");
+
   const [warning, setWarning] = useState("");
   const [animating, setAnimating] = useState(false);
   const [animDuration, setAnimDuration] = useState(400);
@@ -276,16 +232,19 @@ export default function QueueLab() {
   React.useEffect(() => {
     setCode(queueCodeTemplates[queueType][selectedLanguage]);
     setCodeResult("");
+    setCodingSaveStatus("");
   }, [selectedLanguage, queueType]);
 
   React.useEffect(() => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-  }, [queueType, selectedLanguage, quizQuestions.length]);
+    setQuizSaveStatus("");
+  }, [queueType, quizQuestions.length]);
 
   React.useEffect(() => {
     setSelectedProblemIndex(0);
+    setCodingAttempted(false);
   }, [queueType]);
 
   const progressPercent =
@@ -315,12 +274,7 @@ export default function QueueLab() {
     setWarning("");
     setAnimating(false);
     setTraversalActiveIndex(null);
-    setOperationStats({
-      enqueue: 0,
-      dequeue: 0,
-      peek: 0,
-      traverse: 0
-    });
+    setOperationStats({ enqueue: 0, dequeue: 0, peek: 0, traverse: 0 });
   };
 
   const enqueue = () => {
@@ -478,9 +432,7 @@ export default function QueueLab() {
 
       setAnimating(true);
       indices.forEach((index, step) => {
-        setTimeout(() => {
-          setTraversalActiveIndex(index);
-        }, step * animDuration);
+        setTimeout(() => setTraversalActiveIndex(index), step * animDuration);
       });
 
       setTimeout(() => {
@@ -508,9 +460,7 @@ export default function QueueLab() {
 
       setAnimating(true);
       indices.forEach((index, step) => {
-        setTimeout(() => {
-          setTraversalActiveIndex(index);
-        }, step * animDuration);
+        setTimeout(() => setTraversalActiveIndex(index), step * animDuration);
       });
 
       setTimeout(() => {
@@ -523,9 +473,7 @@ export default function QueueLab() {
     }
   };
 
-  const clearLog = () => {
-    setLog(["Log cleared."]);
-  };
+  const clearLog = () => setLog(["Log cleared."]);
 
   const reset = () => {
     setQueue([]);
@@ -538,17 +486,10 @@ export default function QueueLab() {
     setWarning("");
     setAnimating(false);
     setTraversalActiveIndex(null);
-    setOperationStats({
-      enqueue: 0,
-      dequeue: 0,
-      peek: 0,
-      traverse: 0
-    });
+    setOperationStats({ enqueue: 0, dequeue: 0, peek: 0, traverse: 0 });
   };
 
-  const handleSpeedChange = (e) => {
-    setAnimDuration(Number(e.target.value));
-  };
+  const handleSpeedChange = (e) => setAnimDuration(Number(e.target.value));
 
   const handleQuizAnswer = (i, v) => {
     const updated = [...quizAnswers];
@@ -556,7 +497,7 @@ export default function QueueLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
 
     quizQuestions.forEach((q, i) => {
@@ -565,48 +506,64 @@ export default function QueueLab() {
 
     setQuizScore(score);
     setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: queueType === "circular" ? "circular-queue" : "queue",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+    try {
+      await saveQuizResult({
+        labSlug: "dsa",
+        experimentSlug: "queue",
+        correctAnswers: score,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Queue quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
   };
 
   const analyzeCode = (problemIndex, language) => {
-  const analysisData = {
-    code,
-    problemIndex,
-    queueType,
-    language
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({ code, problemIndex, queueType, language })
+    );
+    alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
-  localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
-  alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
-};
-
-const correctCode = (problemIndex, language) => {
-  const correctionData = {
-    code,
-    problemIndex,
-    queueType,
-    language,
-    action: "correct"
+  const correctCode = (problemIndex, language) => {
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({ code, problemIndex, queueType, language, action: "correct" })
+    );
+    alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   };
 
-  localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
-  alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
-};
+  const runCode = async () => {
+    setCodingAttempted(true);
+    setCodingSaveStatus("");
 
-  const runCode = () => {
     if (selectedLanguage !== "javascript") {
       setCodeResult(
         `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
       );
+
+      try {
+        setCodingSaveStatus("Saving coding attempt...");
+        await saveCodingSubmission({
+          labSlug: "dsa",
+          experimentSlug: "queue",
+          problemTitle: codingProblem.title,
+          language: selectedLanguage,
+          code,
+          result: "attempted"
+        });
+        setCodingSaveStatus("Coding attempt saved to dashboard.");
+      } catch (error) {
+        console.error("Queue coding save failed:", error);
+        setCodingSaveStatus("Coding attempted, but backend save failed.");
+      }
+
       return;
     }
 
@@ -634,8 +591,36 @@ const correctCode = (problemIndex, language) => {
       }
 
       setCodeResult(`Output: ${JSON.stringify(result)}`);
+      setCodingSaveStatus("Saving coding submission...");
+
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "queue",
+        problemTitle: codingProblem.title,
+        language: selectedLanguage,
+        code,
+        result: "passed"
+      });
+
+      setCodingSaveStatus("Coding submission saved to dashboard.");
     } catch (error) {
       setCodeResult(`Error: ${error.message}`);
+
+      try {
+        setCodingSaveStatus("Saving failed coding submission...");
+        await saveCodingSubmission({
+          labSlug: "dsa",
+          experimentSlug: "queue",
+          problemTitle: codingProblem.title,
+          language: selectedLanguage,
+          code,
+          result: "failed"
+        });
+        setCodingSaveStatus("Failed coding submission saved to dashboard.");
+      } catch (saveError) {
+        console.error("Queue coding save failed:", saveError);
+        setCodingSaveStatus("Coding failed, and backend save also failed.");
+      }
     }
   };
 
@@ -787,6 +772,16 @@ const correctCode = (problemIndex, language) => {
               {experimentRun ? "Experiment Run" : "Not Started"}
             </button>
           </div>
+
+          {experimentRun && quizSubmitted && codingAttempted && (
+            <div style={{ marginTop: 18 }}>
+              <MarkCompleteButton
+                labSlug="dsa"
+                experimentSlug="queue"
+                points={10}
+              />
+            </div>
+          )}
         </section>
 
         <div className="er-content-layout">
@@ -828,6 +823,7 @@ const correctCode = (problemIndex, language) => {
                 quizAnswers={quizAnswers}
                 quizSubmitted={quizSubmitted}
                 quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
                 experimentRun={experimentRun}
                 handleQuizAnswer={handleQuizAnswer}
                 submitQuiz={submitQuiz}
@@ -840,7 +836,12 @@ const correctCode = (problemIndex, language) => {
                   <label className="sorting-label">Problem</label>
                   <select
                     value={selectedProblemIndex}
-                    onChange={(e) => setSelectedProblemIndex(Number(e.target.value))}
+                    onChange={(e) => {
+                      const nextIndex = Number(e.target.value);
+                      setSelectedProblemIndex(nextIndex);
+                      setCodeResult("");
+                      setCodingSaveStatus("");
+                    }}
                     className="sorting-select"
                     style={{ maxWidth: 420 }}
                   >
@@ -853,17 +854,18 @@ const correctCode = (problemIndex, language) => {
                 </div>
 
                 <QueueCoding
-                    codingProblems={codingProblems}
-                    queueCodeTemplates={queueCodeTemplates}
-                    queueType={queueType}
-                    selectedLanguage={selectedLanguage}
-                    setSelectedLanguage={setSelectedLanguage}
-                    code={code}
-                    setCode={setCode}
-                    codeResult={codeResult}
-                    runCode={runCode}
-                    analyzeCode={analyzeCode}
-                    correctCode={correctCode}
+                  codingProblems={[codingProblem]}
+                  queueCodeTemplates={queueCodeTemplates}
+                  queueType={queueType}
+                  selectedLanguage={selectedLanguage}
+                  setSelectedLanguage={setSelectedLanguage}
+                  code={code}
+                  setCode={setCode}
+                  codeResult={codeResult}
+                  codingSaveStatus={codingSaveStatus}
+                  runCode={runCode}
+                  analyzeCode={analyzeCode}
+                  correctCode={correctCode}
                 />
               </div>
             )}

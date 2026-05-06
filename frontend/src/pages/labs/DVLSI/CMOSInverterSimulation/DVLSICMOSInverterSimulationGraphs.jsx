@@ -7,9 +7,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ScatterChart,
-  Scatter
+  Legend
 } from "recharts";
 
 export default function DVLSICMOSInverterSimulationGraphs({
@@ -19,96 +17,41 @@ export default function DVLSICMOSInverterSimulationGraphs({
   transientData,
   vdd
 }) {
-  const operatingPoint = [{ vin, vout: analysis.vout }];
-
-  if (!transferData.length) {
-    return (
-      <section className="card experiment">
-        <h2>Graphs</h2>
-        <div className="info-box">Adjust simulation parameters to view graphs.</div>
-      </section>
-    );
-  }
-
   return (
-    <section className="card experiment">
+    <section className="sorting-sim-card">
       <h2>Graphs</h2>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        These graphs show the voltage transfer characteristic and a simple transient
-        response of the CMOS inverter. The current operating point is highlighted on the transfer curve.
+      <div className="sorting-info-box">
+        Shows VTC and transient switching behavior of CMOS inverter
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Voltage Transfer Characteristic (VTC)</h3>
-        <div style={{ width: "100%", height: 320 }}>
-          <ResponsiveContainer>
-            <ScatterChart>
-              <CartesianGrid stroke="#334155" />
-              <XAxis
-                type="number"
-                dataKey="vin"
-                name="Vin"
-                domain={[0, Math.max(vdd, 0.5)]}
-                stroke="#cbd5e1"
-              />
-              <YAxis
-                type="number"
-                dataKey="vout"
-                name="Vout"
-                domain={[0, Math.max(vdd, 0.5)]}
-                stroke="#cbd5e1"
-              />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="monotone"
-                data={transferData}
-                dataKey="vout"
-                stroke="#60a5fa"
-                strokeWidth={2}
-                dot={false}
-                name="Transfer Curve"
-              />
-              <Scatter
-                data={operatingPoint}
-                fill="#f59e0b"
-                name="Operating Point"
-              />
-            </ScatterChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="card" style={{ marginTop: 16 }}>
+        <h3>Voltage Transfer Curve</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={transferData}>
+            <CartesianGrid stroke="#334155" />
+            <XAxis dataKey="vin" stroke="#cbd5e1" />
+            <YAxis stroke="#cbd5e1" domain={[0, vdd]} />
+            <Tooltip />
+            <Legend />
+            <Line dataKey="vout" stroke="#38bdf8" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
+      <div className="card" style={{ marginTop: 16 }}>
         <h3>Transient Response</h3>
-        <div style={{ width: "100%", height: 320 }}>
-          <ResponsiveContainer>
-            <LineChart data={transientData}>
-              <CartesianGrid stroke="#334155" />
-              <XAxis dataKey="time" stroke="#cbd5e1" />
-              <YAxis stroke="#cbd5e1" />
-              <Tooltip />
-              <Legend />
-              <Line
-                type="stepAfter"
-                dataKey="vin"
-                stroke="#22c55e"
-                strokeWidth={2}
-                name="Vin"
-                dot={false}
-              />
-              <Line
-                type="stepAfter"
-                dataKey="vout"
-                stroke="#ef4444"
-                strokeWidth={2}
-                name="Vout"
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={transientData}>
+            <CartesianGrid stroke="#334155" />
+            <XAxis dataKey="time" stroke="#cbd5e1" />
+            <YAxis stroke="#cbd5e1" />
+            <Tooltip />
+            <Legend />
+            <Line dataKey="vin" stroke="#22c55e" />
+            <Line dataKey="vout" stroke="#ef4444" />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </section>
   );

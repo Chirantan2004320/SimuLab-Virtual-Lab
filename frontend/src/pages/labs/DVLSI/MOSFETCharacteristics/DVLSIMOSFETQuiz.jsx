@@ -1,131 +1,132 @@
-import React, { useState } from "react";
+import React from "react";
+import { Brain, Lock, Trophy, RotateCcw } from "lucide-react";
 
-const questions = [
-  {
-    q: "When VGS is below threshold voltage, the MOSFET is in:",
-    options: ["Cutoff", "Triode", "Saturation", "Breakdown"],
-    correct: 0
-  },
-  {
-    q: "The triode region is characterized by:",
-    options: [
-      "No channel formation",
-      "Pinch-off near drain",
-      "Resistive channel conduction",
-      "Infinite current"
-    ],
-    correct: 2
-  },
-  {
-    q: "Saturation starts approximately when:",
-    options: [
-      "VDS = 0",
-      "VDS ≥ VGS − VT",
-      "VGS = 0",
-      "VDS < VT"
-    ],
-    correct: 1
-  },
-  {
-    q: "In saturation, the drain current is mainly controlled by:",
-    options: ["Only VDS", "Only body voltage", "VGS overdrive", "Source resistance only"],
-    correct: 2
-  },
-  {
-    q: "The threshold voltage VT determines:",
-    options: [
-      "Gate oxide thickness directly",
-      "When the inversion channel starts to form",
-      "The exact drain voltage always",
-      "The package type"
-    ],
-    correct: 1
-  }
-];
-
-export default function DVLSIMOSFETQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const handleAnswer = (index, value) => {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+export default function DVLSIMOSFETQuiz({
+  experimentRun,
+  questions,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total = questions.length;
+  const percentage = total ? Math.round((score / total) * 100) : 0;
 
   return (
-    <section className="card">
-      <h2>Quiz</h2>
+    <section className="quiz-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Brain size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Quiz</h2>
+          <p className="sorting-sim-subtitle">
+            Test your understanding of MOSFET regions and behavior.
+          </p>
+        </div>
+      </div>
 
       {!experimentRun ? (
-        <p>Please interact with the MOSFET simulation before attempting the quiz.</p>
-      ) : (
-        <div>
+        <div className="quiz-locked-box">
+          <Lock size={18} />
+          <span>
+            Please interact with the MOSFET simulation before attempting the quiz.
+          </span>
+        </div>
+      ) : !submitted ? (
+        <div className="quiz-list">
           {questions.map((q, i) => (
-            <div key={i} className="quiz-question">
-              <p>
-                <strong>{i + 1}. {q.q}</strong>
-              </p>
+            <div key={i} className="quiz-card-upgraded">
+              <div className="quiz-question-title">
+                {i + 1}. {q.q}
+              </div>
 
-              {q.options.map((opt, j) => (
-                <label
-                  key={j}
-                  className={`quiz-option ${
-                    submitted
-                      ? j === q.correct
-                        ? "correct"
-                        : answers[i] === j
-                        ? "wrong"
-                        : ""
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q${i}`}
-                    value={j}
-                    checked={answers[i] === j}
-                    onChange={() => handleAnswer(i, j)}
-                    disabled={submitted}
-                  />
-                  {opt}
-                </label>
-              ))}
+              <div className="quiz-options-grid">
+                {q.options.map((opt, j) => (
+                  <label
+                    key={j}
+                    className={`quiz-option-card ${
+                      answers[i] === j ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q${i}`}
+                      checked={answers[i] === j}
+                      onChange={() => handleAnswer(i, j)}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
 
-          {!submitted ? (
+          <div className="quiz-actions-row">
             <button
-              className="btn primary"
+              className="sim-btn sim-btn-primary"
               onClick={submitQuiz}
               disabled={answers.includes(null)}
             >
               Submit Quiz
             </button>
-          ) : (
+          </div>
+        </div>
+      ) : (
+        <div className="quiz-result-shell">
+          <div className="quiz-score-box">
+            <Trophy size={22} />
             <div>
-              <p>Score: {score} / {questions.length}</p>
-              <button className="btn secondary" onClick={redoQuiz}>
-                Redo Quiz
-              </button>
+              <h3>Quiz Completed</h3>
+              <p>
+                Score: <strong>{score} / {total}</strong> ({percentage}%)
+              </p>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
           )}
+
+          <div className="quiz-list">
+            {questions.map((q, i) => (
+              <div key={i} className="quiz-card-upgraded">
+                <div className="quiz-question-title">
+                  {i + 1}. {q.q}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect = j === q.correct;
+                    const isWrong = answers[i] === j && j !== q.correct;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect ? "correct" : isWrong ? "wrong" : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="quiz-actions-row">
+            <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+              <RotateCcw size={16} />
+              Retry Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>

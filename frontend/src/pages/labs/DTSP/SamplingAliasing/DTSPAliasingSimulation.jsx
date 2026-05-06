@@ -1,4 +1,5 @@
 import React from "react";
+import { Activity, Play, Gauge, Waves, Sparkles, AlertTriangle } from "lucide-react";
 
 export default function DTSPAliasingSimulation({
   signalFreq,
@@ -8,26 +9,60 @@ export default function DTSPAliasingSimulation({
   generateSignal,
   aliasFreq,
   isAliasing,
-  nyquistRate
+  nyquistRate,
+  experimentRun
 }) {
-    
-    const nyquist = nyquistRate;
-
   return (
-    <section className="card experiment">
-      <h2>Simulation</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              Adjust frequencies and observe Nyquist condition, aliasing status, and apparent frequency.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-          gap: "18px",
-          marginTop: "1rem"
-        }}
-      >
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Signal Frequency (Hz): <strong>{signalFreq}</strong>
+      <div className="overview-grid" style={{ marginBottom: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>Nyquist Condition</h4>
+          </div>
+          <p>
+            Sampling Frequency should be at least <strong>2 × Signal Frequency</strong>.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Waves size={18} />
+            <h4>Current Status</h4>
+          </div>
+          <p>
+            {experimentRun
+              ? isAliasing
+                ? "Aliasing is occurring for the selected values."
+                : "Sampling is safe for the selected values."
+              : "Generate the signal to check aliasing."}
+          </p>
+        </div>
+      </div>
+
+      <div className="sorting-info-box">
+        <Sparkles size={16} style={{ marginRight: 10 }} />
+        Increase sampling frequency above the Nyquist rate to correctly capture the original waveform.
+      </div>
+
+      <div className="sorting-input-row">
+        <div className="sorting-input-group">
+          <label className="sorting-label">
+            Signal Frequency: <strong>{signalFreq} Hz</strong>
           </label>
           <input
             type="range"
@@ -35,13 +70,13 @@ export default function DTSPAliasingSimulation({
             max="10"
             value={signalFreq}
             onChange={(e) => setSignalFreq(Number(e.target.value))}
-            style={{ width: "100%" }}
+            className="sorting-range"
           />
         </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Sampling Frequency (Hz): <strong>{samplingFreq}</strong>
+        <div className="sorting-input-group">
+          <label className="sorting-label">
+            Sampling Frequency: <strong>{samplingFreq} Hz</strong>
           </label>
           <input
             type="range"
@@ -49,70 +84,71 @@ export default function DTSPAliasingSimulation({
             max="20"
             value={samplingFreq}
             onChange={(e) => setSamplingFreq(Number(e.target.value))}
-            style={{ width: "100%" }}
+            className="sorting-range"
           />
         </div>
+
+        <div className="sorting-btn-group">
+          <button className="sim-btn sim-btn-primary" onClick={generateSignal}>
+            <Play size={16} />
+            Generate Signal
+          </button>
+        </div>
       </div>
 
-      <div className="buttons" style={{ marginTop: "1rem" }}>
-        <button className="btn primary" onClick={generateSignal}>
-          Generate Signal
-        </button>
-      </div>
-
-      <div
-        style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px"
-        }}
-      >
-        <div className="stat-card">
-          <strong>Signal Frequency</strong>
-          <div>{signalFreq} Hz</div>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Signal Frequency</span>
+          <span className="sorting-stat-value">{signalFreq} Hz</span>
         </div>
 
-        <div className="stat-card">
-          <strong>Sampling Frequency</strong>
-          <div>{samplingFreq} Hz</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Sampling Frequency</span>
+          <span className="sorting-stat-value">{samplingFreq} Hz</span>
         </div>
 
-        <div className="stat-card">
-          <strong>Nyquist Rate</strong>
-          <div>{nyquist} Hz</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Nyquist Rate</span>
+          <span className="sorting-stat-value">{nyquistRate} Hz</span>
         </div>
 
-        <div className="stat-card">
-          <strong>Status</strong>
-          <div>{isAliasing ? "Aliasing" : "Safe Sampling"}</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Observed Alias</span>
+          <span className="sorting-stat-value">
+            {aliasFreq !== null ? `${aliasFreq} Hz` : "-"}
+          </span>
         </div>
       </div>
 
       {aliasFreq !== null && (
-        <>
-          <div
-            className="info-box"
-            style={{
-              marginTop: "1rem",
-              borderLeft: isAliasing ? "4px solid #ef4444" : "4px solid #22c55e"
-            }}
-          >
-            {isAliasing
-              ? `⚠️ Aliasing occurs because sampling frequency (${samplingFreq} Hz) is less than the Nyquist rate (${nyquist} Hz). The signal may appear as a lower frequency of about ${aliasFreq} Hz.`
-              : `✅ No aliasing occurs because sampling frequency (${samplingFreq} Hz) satisfies the Nyquist condition for the ${signalFreq} Hz signal.`}
-          </div>
-
-          <div className="card" style={{ marginTop: "1rem" }}>
-            <h3>Observation</h3>
-            <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-              When the sampling frequency is high enough, the sampled points follow the original
-              signal correctly. When the sampling frequency becomes too low, the sampled points can
-              misleadingly suggest a different lower-frequency waveform. This effect is called aliasing.
-            </p>
-          </div>
-        </>
+        <div
+          className="sorting-info-box"
+          style={{
+            borderLeft: isAliasing ? "4px solid #ef4444" : "4px solid #22c55e"
+          }}
+        >
+          <AlertTriangle size={16} style={{ marginRight: 10 }} />
+          {isAliasing
+            ? `Aliasing occurs because sampling frequency (${samplingFreq} Hz) is less than the Nyquist rate (${nyquistRate} Hz). The signal may appear as approximately ${aliasFreq} Hz.`
+            : `No aliasing occurs because sampling frequency (${samplingFreq} Hz) satisfies the Nyquist condition for the ${signalFreq} Hz signal.`}
+        </div>
       )}
+
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <BookOpenFallback />
+          <h4>Observation</h4>
+        </div>
+        <p>
+          When the sampling frequency is high enough, sampled points follow the original signal.
+          When the sampling frequency is too low, the sampled points can misleadingly form a
+          different lower-frequency waveform.
+        </p>
+      </div>
     </section>
   );
+}
+
+function BookOpenFallback() {
+  return <Waves size={18} />;
 }

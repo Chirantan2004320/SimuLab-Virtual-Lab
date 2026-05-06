@@ -11,6 +11,8 @@ import {
 
 import "../../Lab.css";
 import "../../SortingLab.css";
+import { saveQuizResult, saveCodingSubmission } from "../../../API/progressApi";
+import MarkCompleteButton from "../../../components/MarkCompleteButton";
 
 import HashTableOverview from "./HashTableOverview";
 import HashTableSimulation from "./HashTableSimulation";
@@ -217,6 +219,8 @@ export default function HashTableLab() {
   const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState({});
@@ -452,26 +456,31 @@ export default function HashTableLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
+  const submitQuiz = async () => {
+  let score = 0;
 
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+  quizQuestions.forEach((q, i) => {
+    if (quizAnswers[i] === q.correct) score++;
+  });
+
+  setQuizScore(score);
+  setQuizSubmitted(true);
+  setQuizSaveStatus("Saving quiz result...");
+
+  try {
+    await saveQuizResult({
+      labSlug: "dsa",
+      experimentSlug: "hash-table",
+      correctAnswers: score,
+      totalQuestions: quizQuestions.length
     });
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
-
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: "hash-table",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
-  };
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error("Quiz save failed:", error);
+    setQuizSaveStatus("Quiz submitted, but backend save failed.");
+  }
+};
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
@@ -522,63 +531,125 @@ export default function HashTableLab() {
     }));
   };
 
-  const runCode = (problemId, language) => {
-    const problem = currentProblems.find((p) => p.id === problemId);
-    const codeKey = `${problemId}_${language}`;
-    const currentCode = codes[codeKey];
+  const runCode = async (problemId, language) => {
+  const problem = currentProblems.find((p) => p.id === problemId);
+  const codeKey = `${problemId}_${language}`;
+  const currentCode = codes[codeKey];
 
-    if (!problem || !currentCode) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code."
-      }));
-      return;
-    }
+  if (!problem || !currentCode) {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: "Please enter code."
+    }));
+    return;
+  }
 
-    if (language !== "javascript") {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      }));
-      return;
-    }
+  if (language !== "javascript") {
+    const message = `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`;
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: message
+    }));
 
     try {
-      const outputs = [];
-      let allCorrect = true;
-
-      for (const test of problem.tests) {
-        const args = test.input.map((item) =>
-          Array.isArray(item) ? JSON.parse(JSON.stringify(item)) : item
-        );
-
-        const fn = new Function(
-          ...Array.from({ length: args.length }, (_, index) => `arg${index}`),
-          `${currentCode}; return ${problem.functionName}(${args.map((_, index) => `arg${index}`).join(", ")});`
-        );
-
-        const result = fn(...args);
-        outputs.push(result);
-
-        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
-          allCorrect = false;
-          break;
-        }
-      }
-
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: allCorrect
-          ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
-          : "Incorrect Output"
-      }));
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "hash-table",
+        problemTitle: problem.title,
+        language,
+        code: currentCode,
+        result: "attempted"
+      });
     } catch (error) {
-      setResults((prev) => ({
+      console.error("Coding save failed:", error);
+    }
+
+    return;
+  }
+
+  try {
+    const outputs = [];
+    let allCorrect = true;
+
+    for (const test of problem.tests) {
+      const args = test.input.map((item) =>
+        Array.isArray(item) ? JSON.parse(JSON.stringify(item)) : item
+      );
+
+      // eslint-disable-next-line no-new-func
+      const fn = new Function(
+        ...Array.from({ length: args.length }, (_, index) => `arg${index}`),
+        `${currentCode}; return ${problem.functionName}(${args
+          .map((_, index) => `arg${index}`)
+          .join(", ")});`
+      );
+
+      const result = fn(...args);
+      outputs.push(result);
+
+      if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
+        allCorrect = false;
+        break;
+      }
+    }
+
+    const resultText = allCorrect
+      ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
+      : "Incorrect Output";
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: resultText
+    }));
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Saving submission..."
+    }));
+
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "hash-table",
+      problemTitle: problem.title,
+      language,
+      code: currentCode,
+      result: allCorrect ? "passed" : "failed"
+    });
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Submission saved to dashboard."
+    }));
+  } catch (error) {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: `Error: ${error.message}`
+    }));
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "hash-table",
+        problemTitle: problem?.title || `Hash Table Problem ${problemId}`,
+        language,
+        code: currentCode,
+        result: "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problemId]: `Error: ${error.message}`
+        [problemId]: "Failed submission saved to dashboard."
+      }));
+    } catch (saveError) {
+      console.error("Coding save failed:", saveError);
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Code ran, but backend save failed."
       }));
     }
-  };
+  }
+};
 
   const analyzeCode = (problemId, language) => {
     const codeKey = `${problemId}_${language}`;
@@ -755,6 +826,13 @@ export default function HashTableLab() {
               {experimentRun ? "Simulation Run" : "Not Started"}
             </button>
           </div>
+          <div style={{ marginTop: 18 }}>
+  <MarkCompleteButton
+    labSlug="dsa"
+    experimentSlug="heap"
+    points={10}
+  />
+</div>
         </section>
 
         <div className="er-content-layout">
@@ -785,30 +863,32 @@ export default function HashTableLab() {
 
             {activeSection === "quiz" && (
               <HashTableQuiz
-                quizQuestions={quizQuestions}
-                quizAnswers={quizAnswers}
-                quizSubmitted={quizSubmitted}
-                quizScore={quizScore}
-                experimentRun={experimentRun}
-                handleQuizAnswer={handleQuizAnswer}
-                submitQuiz={submitQuiz}
-                redoQuiz={redoQuiz}
-              />
+  quizQuestions={quizQuestions}
+  quizAnswers={quizAnswers}
+  quizSubmitted={quizSubmitted}
+  quizScore={quizScore}
+  quizSaveStatus={quizSaveStatus}
+  experimentRun={experimentRun}
+  handleQuizAnswer={handleQuizAnswer}
+  submitQuiz={submitQuiz}
+  redoQuiz={redoQuiz}
+/>
             )}
 
             {activeSection === "coding" && (
               <HashTableCoding
-                currentProblems={currentProblems}
-                selectedLanguages={selectedLanguages}
-                codes={codes}
-                results={results}
-                generateProblems={generateProblems}
-                handleLanguageChange={handleLanguageChange}
-                handleCodeChange={handleCodeChange}
-                runCode={runCode}
-                analyzeCode={analyzeCode}
-                correctCode={correctCode}
-              />
+  currentProblems={currentProblems}
+  selectedLanguages={selectedLanguages}
+  codes={codes}
+  results={results}
+  codingSaveStatus={codingSaveStatus}
+  generateProblems={generateProblems}
+  handleLanguageChange={handleLanguageChange}
+  handleCodeChange={handleCodeChange}
+  runCode={runCode}
+  analyzeCode={analyzeCode}
+  correctCode={correctCode}
+/>
             )}
           </section>
         </div>

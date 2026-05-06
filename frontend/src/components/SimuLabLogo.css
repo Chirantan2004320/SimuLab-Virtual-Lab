@@ -1,0 +1,183 @@
+.simulab-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.simulab-logo-orb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(34, 211, 238, 0.25), transparent 35%),
+    radial-gradient(circle at 75% 80%, rgba(168, 85, 247, 0.25), transparent 38%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.98));
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  box-shadow:
+    0 0 20px rgba(34, 211, 238, 0.35),
+    inset 0 0 18px rgba(139, 92, 246, 0.16);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.simulab-logo-wrap:hover .simulab-logo-orb {
+  transform: translateY(-2px) scale(1.04);
+  box-shadow:
+    0 0 28px rgba(34, 211, 238, 0.55),
+    0 0 42px rgba(139, 92, 246, 0.35),
+    inset 0 0 20px rgba(236, 72, 153, 0.18);
+}
+
+.simulab-logo-svg {
+  width: 78%;
+  height: 78%;
+  overflow: visible;
+}
+
+.logo-ring {
+  fill: none;
+  stroke: url("#simulabGradient");
+  stroke-width: 4;
+  stroke-dasharray: 250;
+  stroke-dashoffset: 0;
+  animation: logoRingSpin 5s linear infinite;
+  transform-origin: center;
+}
+
+.logo-flask-outline {
+  fill: none;
+  stroke: #e0f2fe;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.7));
+}
+
+.logo-liquid {
+  fill: url("#liquidGradient");
+  opacity: 0.92;
+  animation: liquidFloat 2.8s ease-in-out infinite;
+}
+
+.bubble {
+  fill: #e0f2fe;
+  opacity: 0.9;
+  animation: bubbleRise 2.4s ease-in-out infinite;
+}
+
+.bubble-2 {
+  animation-delay: 0.45s;
+}
+
+.bubble-3 {
+  animation-delay: 0.85s;
+}
+
+.logo-spark {
+  fill: #f0abfc;
+  opacity: 0.95;
+  animation: sparkPulse 1.8s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(236, 72, 153, 0.8));
+}
+
+.simulab-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.simulab-logo-text span {
+  color: #f8fafc;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.simulab-logo-text small {
+  margin-top: 4px;
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.simulab-logo-wrap.light .simulab-logo-orb {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(14, 165, 233, 0.18), transparent 35%),
+    linear-gradient(145deg, #ffffff, #e0f2fe);
+  border-color: rgba(14, 165, 233, 0.35);
+}
+
+.simulab-logo-wrap.light .simulab-logo-text span {
+  color: #0f172a;
+}
+
+.simulab-logo-wrap.light .simulab-logo-text small {
+  color: #0369a1;
+}
+
+.simulab-logo-wrap.loading .simulab-logo-orb {
+  animation: logoLoadingPulse 1.4s ease-in-out infinite;
+}
+
+.simulab-logo-wrap.loading .logo-ring {
+  animation: logoRingSpin 1.1s linear infinite;
+}
+
+@keyframes logoRingSpin {
+  from {
+    stroke-dashoffset: 250;
+    transform: rotate(0deg);
+  }
+  to {
+    stroke-dashoffset: 0;
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes liquidFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes bubbleRise {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkPulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes logoLoadingPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(34, 211, 238, 0.3);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 30px rgba(34, 211, 238, 0.65),
+      0 0 48px rgba(139, 92, 246, 0.4);
+  }
+}

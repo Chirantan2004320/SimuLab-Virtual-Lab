@@ -7,8 +7,12 @@ import {
   Table2,
   Brain,
   FileCode2,
-  ChevronsLeft,
+  ChevronsLeft
 } from "lucide-react";
+
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
 
 import DSDMultiplexerOverview from "./DSDMultiplexerOverview";
 import DSDMultiplexerSimulation from "./DSDMultiplexerSimulation";
@@ -16,8 +20,6 @@ import DSDMultiplexerCircuits from "./DSDMultiplexerCircuits";
 import DSDMultiplexerTruthTable from "./DSDMultiplexerTruthTable";
 import DSDMultiplexerQuiz from "./DSDMultiplexerQuiz";
 import DSDMultiplexerCoding from "./DSDMultiplexerCoding";
-
-const simulabLogo = "/assets/logo.png";
 
 function bit(v) {
   return v ? 1 : 0;
@@ -29,7 +31,45 @@ const sidebarItems = [
   { key: "circuits", label: "Circuits", icon: CircuitBoard },
   { key: "truth table", label: "Truth Table", icon: Table2 },
   { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Design Practice", icon: FileCode2 },
+  { key: "coding", label: "Design Practice", icon: FileCode2 }
+];
+
+const quizQuestions = [
+  {
+    q: "A multiplexer is mainly used to:",
+    options: [
+      "Store data permanently",
+      "Select one input from many and route it to output",
+      "Invert a signal only",
+      "Generate clock signals"
+    ],
+    correct: 1
+  },
+  {
+    q: "A 4-to-1 multiplexer has how many select lines?",
+    options: ["1", "2", "3", "4"],
+    correct: 1
+  },
+  {
+    q: "If S1S0 = 10, which input is selected?",
+    options: ["I0", "I1", "I2", "I3"],
+    correct: 2
+  },
+  {
+    q: "If S1S0 = 01, the output is connected to:",
+    options: ["I0", "I1", "I2", "I3"],
+    correct: 1
+  },
+  {
+    q: "Multiplexers are examples of:",
+    options: [
+      "Sequential circuits",
+      "Combinational circuits",
+      "Analog amplifiers",
+      "Memory cells"
+    ],
+    correct: 1
+  }
 ];
 
 export default function DSDMultiplexerLab() {
@@ -45,6 +85,13 @@ export default function DSDMultiplexerLab() {
 
   const [experimentRun, setExperimentRun] = useState(false);
 
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(quizQuestions.length).fill(null)
+  );
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+
   const analysis = useMemo(() => {
     const I0 = bit(i0);
     const I1 = bit(i1);
@@ -58,10 +105,18 @@ export default function DSDMultiplexerLab() {
     const output = inputs[selectedIndex];
 
     let note = "";
-    if (selectedIndex === 0) note = "Since S1S0 = 00, input I0 is routed to the output.";
-    if (selectedIndex === 1) note = "Since S1S0 = 01, input I1 is routed to the output.";
-    if (selectedIndex === 2) note = "Since S1S0 = 10, input I2 is routed to the output.";
-    if (selectedIndex === 3) note = "Since S1S0 = 11, input I3 is routed to the output.";
+    if (selectedIndex === 0) {
+      note = "Since S1S0 = 00, input I0 is routed to the output.";
+    }
+    if (selectedIndex === 1) {
+      note = "Since S1S0 = 01, input I1 is routed to the output.";
+    }
+    if (selectedIndex === 2) {
+      note = "Since S1S0 = 10, input I2 is routed to the output.";
+    }
+    if (selectedIndex === 3) {
+      note = "Since S1S0 = 11, input I3 is routed to the output.";
+    }
 
     return {
       I0,
@@ -73,13 +128,53 @@ export default function DSDMultiplexerLab() {
       selectedIndex,
       inputs,
       output,
-      expression: "Y = I0·S1̅·S0̅ + I1·S1̅·S0 + I2·S1·S0̅ + I3·S1·S0",
+      expression:
+        "Y = I0·S1̅·S0̅ + I1·S1̅·S0 + I2·S1·S0̅ + I3·S1·S0",
       note,
       selectedInputLabel: `I${selectedIndex}`,
       selectCode: `${S1}${S0}`,
-      category: "Combinational Data Selector",
+      category: "Combinational Data Selector"
     };
   }, [i0, i1, i2, i3, s0, s1]);
+
+  const handleQuizAnswer = (index, value) => {
+    const updated = [...quizAnswers];
+    updated[index] = value;
+    setQuizAnswers(updated);
+  };
+
+  const submitQuiz = async () => {
+    let total = 0;
+
+    quizQuestions.forEach((q, i) => {
+      if (quizAnswers[i] === q.correct) total++;
+    });
+
+    setQuizScore(total);
+    setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
+
+    try {
+      await saveQuizResult({
+        labSlug: "dsd",
+        experimentSlug: "multiplexer",
+        correctAnswers: total,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Multiplexer quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
+  };
+
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizSaveStatus("");
+  };
 
   const progressPercent =
     activeSection === "overview"
@@ -92,20 +187,14 @@ export default function DSDMultiplexerLab() {
       ? 72
       : activeSection === "quiz"
       ? 84
-      : 92;
+      : 95;
 
   return (
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+          <div className="er-brand-logo simulab-sidebar-logo">
+            <SimuLabLogo size={58} showText={false} variant="default" />
           </div>
 
           {!sidebarCollapsed && (
@@ -130,10 +219,13 @@ export default function DSDMultiplexerLab() {
         <div className="er-nav">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
+
             return (
               <button
                 key={item.key}
-                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                className={`er-nav-item ${
+                  activeSection === item.key ? "active" : ""
+                }`}
                 onClick={() => setActiveSection(item.key)}
                 title={item.label}
               >
@@ -152,7 +244,7 @@ export default function DSDMultiplexerLab() {
               <div
                 className="er-progress-circle"
                 style={{
-                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`,
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
                 }}
               >
                 <div className="er-progress-inner">
@@ -166,7 +258,8 @@ export default function DSDMultiplexerLab() {
               <div className="er-last-activity-label">Last Activity</div>
               <div className="er-last-activity-row">
                 <span>
-                  {sidebarItems.find((i) => i.key === activeSection)?.label || "Multiplexer"}
+                  {sidebarItems.find((i) => i.key === activeSection)?.label ||
+                    "Multiplexer"}
                 </span>
                 <span className="dot-live">Just now</span>
               </div>
@@ -180,7 +273,8 @@ export default function DSDMultiplexerLab() {
           <div>
             <h1 className="er-page-title">Multiplexer</h1>
             <p className="er-page-subtitle">
-              Explore how a 4-to-1 multiplexer selects one of four data inputs using two select lines and forwards it to a single output. ✨
+              Explore how a 4-to-1 multiplexer selects one of four data inputs
+              using two select lines and forwards it to a single output.
             </p>
           </div>
         </div>
@@ -189,7 +283,10 @@ export default function DSDMultiplexerLab() {
           <div className="er-config-top">
             <div>
               <h2>MUX Configuration</h2>
-              <p>Control data inputs and select lines to observe routing behavior in real time.</p>
+              <p>
+                Control data inputs and select lines to observe routing behavior
+                in real time.
+              </p>
             </div>
 
             <div className="er-mode-pill">
@@ -206,14 +303,20 @@ export default function DSDMultiplexerLab() {
           <div className="er-config-grid">
             <div>
               <label className="sorting-label">Select Code</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 S1S0 = {analysis.selectCode}
               </div>
             </div>
 
             <div>
               <label className="sorting-label">Selected Input</label>
-              <div className="sorting-select" style={{ display: "flex", alignItems: "center" }}>
+              <div
+                className="sorting-select"
+                style={{ display: "flex", alignItems: "center" }}
+              >
                 {analysis.selectedInputLabel}
               </div>
             </div>
@@ -227,12 +330,25 @@ export default function DSDMultiplexerLab() {
             <button className="er-chip active">S1 = {analysis.S1}</button>
             <button className="er-chip active">S0 = {analysis.S0}</button>
             <button className="er-chip active">Y = {analysis.output}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Not Started"}
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18 }}>
+            <MarkCompleteButton
+              labSlug="dsd"
+              experimentSlug="multiplexer"
+              points={10}
+            />
           </div>
         </section>
 
         <div className="er-content-layout">
           <section className="er-content-card">
-            {activeSection === "overview" && <DSDMultiplexerOverview analysis={analysis} />}
+            {activeSection === "overview" && (
+              <DSDMultiplexerOverview analysis={analysis} />
+            )}
 
             {activeSection === "simulation" && (
               <DSDMultiplexerSimulation
@@ -262,7 +378,17 @@ export default function DSDMultiplexerLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DSDMultiplexerQuiz experimentRun={experimentRun} />
+              <DSDMultiplexerQuiz
+                experimentRun={experimentRun}
+                questions={quizQuestions}
+                answers={quizAnswers}
+                submitted={quizSubmitted}
+                score={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                handleAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
             )}
 
             {activeSection === "coding" && (

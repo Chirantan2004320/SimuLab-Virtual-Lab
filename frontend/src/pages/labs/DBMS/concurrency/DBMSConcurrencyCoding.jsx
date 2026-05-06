@@ -20,16 +20,16 @@ const concurrencyProblemSets = {
     },
     {
       id: 2,
-      title: "Identify the anomaly",
+      title: "Identify the Lost Update anomaly",
       description:
-        "Write a short explanation of why the final value becomes incorrect when both transactions read the same old balance before updating.",
+        "Explain why the final value becomes incorrect when both transactions read the same old balance before updating.",
       tag: "Concept Check"
     },
     {
       id: 3,
       title: "Prevent Lost Update",
       description:
-        "Rewrite the scenario using locking or proper concurrency control so that one transaction cannot overwrite the other unsafely.",
+        "Rewrite the scenario using locking or proper isolation so that one transaction cannot overwrite the other unsafely.",
       tag: "Optimization"
     }
   ],
@@ -43,16 +43,16 @@ const concurrencyProblemSets = {
     },
     {
       id: 2,
-      title: "Explain the danger",
+      title: "Explain Dirty Read danger",
       description:
-        "Write why reading uncommitted data can produce an incorrect result if the first transaction rolls back later.",
+        "Explain why reading uncommitted data can produce an incorrect result if the first transaction rolls back later.",
       tag: "Concept Check"
     },
     {
       id: 3,
       title: "Prevent Dirty Read",
       description:
-        "Rewrite the scenario using proper isolation level or locking so that T2 cannot read uncommitted data from T1.",
+        "Rewrite the scenario using READ COMMITTED or locking so that T2 cannot read uncommitted data from T1.",
       tag: "Optimization"
     }
   ],
@@ -68,7 +68,7 @@ const concurrencyProblemSets = {
       id: 2,
       title: "Explain waiting behavior",
       description:
-        "Write why T2 must wait when T1 already holds the lock on the shared row.",
+        "Explain why T2 must wait when T1 already holds the lock on the shared row.",
       tag: "Concept Check"
     },
     {
@@ -88,6 +88,9 @@ export default function DBMSConcurrencyCoding({
   code,
   setCode,
   codeResult,
+  codingSaveStatus,
+  setCodingSaveStatus,
+  saveCodingSubmission,
   runCode,
   demoType,
   analyzeCode,
@@ -96,11 +99,48 @@ export default function DBMSConcurrencyCoding({
   const problems = concurrencyProblemSets[demoType] || [
     {
       id: 1,
-      title: codingProblem?.title || "Problem 1",
-      description: codingProblem?.description || "Write your solution.",
+      title: codingProblem?.title || "Concurrency Problem",
+      description: codingProblem?.description || "Write your concurrency solution.",
       tag: "Core Problem"
     }
   ];
+
+  const handleRunCode = async (problem) => {
+    runCode();
+
+    if (!code.trim()) return;
+
+    setCodingSaveStatus?.((prev) => ({
+      ...prev,
+      [problem.id]: "Saving coding submission..."
+    }));
+
+    try {
+      if (saveCodingSubmission) {
+        await saveCodingSubmission({
+          labSlug: "dbms",
+          experimentSlug: "concurrency",
+          problemTitle: problem.title,
+          language: selectedLanguage,
+          code,
+          result: "attempted",
+          points: 5
+        });
+      }
+
+      setCodingSaveStatus?.((prev) => ({
+        ...prev,
+        [problem.id]: "Coding submission saved to dashboard."
+      }));
+    } catch (error) {
+      console.error("Coding submission save failed:", error);
+
+      setCodingSaveStatus?.((prev) => ({
+        ...prev,
+        [problem.id]: "Code checked, but backend save failed."
+      }));
+    }
+  };
 
   return (
     <section className="coding-shell">
@@ -112,9 +152,14 @@ export default function DBMSConcurrencyCoding({
         <div>
           <h2 className="sorting-sim-title">Coding Practice</h2>
           <p className="sorting-sim-subtitle">
-            Practice concurrency-control scenarios in code and SQL-style steps.
+            Practice concurrency-control scenarios using SQL-style transaction steps.
           </p>
         </div>
+      </div>
+
+      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
+        <strong>Practice Mode:</strong> Write transaction steps, run the example,
+        analyze the anomaly, and optimize the solution.
       </div>
 
       <div className="linked-coding-list">
@@ -159,7 +204,10 @@ export default function DBMSConcurrencyCoding({
                 />
 
                 <div className="coding-actions-upgraded">
-                  <button className="sim-btn sim-btn-primary" onClick={runCode}>
+                  <button
+                    className="sim-btn sim-btn-primary"
+                    onClick={() => handleRunCode(problem)}
+                  >
                     <Play size={16} />
                     Run Code
                   </button>
@@ -184,15 +232,31 @@ export default function DBMSConcurrencyCoding({
                 </div>
 
                 {selectedLanguage !== "javascript" && (
-                  <div className="coding-result-box" style={{ marginTop: 14 }}>
+                  <div className="modern-coding-note">
                     Execution for {selectedLanguage.toUpperCase()} will be enabled
-                    later with Judge0. For now, direct execution works in
-                    JavaScript.
+                    later with Judge0. For now, direct execution works in JavaScript.
                   </div>
                 )}
 
                 {codeResult && (
-                  <div className="coding-result-box">{codeResult}</div>
+                  <div className="coding-result-box">
+                    <pre
+                      style={{
+                        margin: 0,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                        fontFamily: "inherit"
+                      }}
+                    >
+                      {codeResult}
+                    </pre>
+                  </div>
+                )}
+
+                {codingSaveStatus?.[problem.id] && (
+                  <div className="modern-coding-note">
+                    {codingSaveStatus[problem.id]}
+                  </div>
                 )}
               </>
             ) : (
@@ -205,9 +269,8 @@ export default function DBMSConcurrencyCoding({
                   color: "#cbd5e1"
                 }}
               >
-                Solve this problem in the same editor above. These extra questions
-                are provided so the coding section feels like your other advanced
-                experiments with multiple practice tasks.
+                Solve this task using the same editor above. Update the SQL-style
+                steps according to this problem, then run or analyze your answer.
               </div>
             )}
           </div>

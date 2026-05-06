@@ -9,6 +9,37 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
+import { LineChart as LineChartIcon, Activity } from "lucide-react";
+
+function GraphCard({ title, data, xKey, dataKey, name, dot = true }) {
+  return (
+    <div className="overview-card" style={{ marginBottom: 18 }}>
+      <div className="overview-card-head">
+        <LineChartIcon size={18} />
+        <h4>{title}</h4>
+      </div>
+
+      <div style={{ width: "100%", height: 320 }}>
+        <ResponsiveContainer>
+          <LineChart data={data}>
+            <CartesianGrid stroke="#334155" />
+            <XAxis dataKey={xKey} stroke="#cbd5e1" />
+            <YAxis stroke="#cbd5e1" />
+            <Tooltip />
+            <Legend />
+            <Line
+              dataKey={dataKey}
+              stroke="#38bdf8"
+              strokeWidth={2}
+              name={name}
+              dot={dot}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
 
 export default function DTSPFilterDesignGraphs({
   impulse,
@@ -18,9 +49,22 @@ export default function DTSPFilterDesignGraphs({
 }) {
   if (!impulse.length) {
     return (
-      <section className="card experiment">
-        <h2>Graphs</h2>
-        <div className="info-box">Run simulation first to view graphs.</div>
+      <section className="comparison-shell">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <LineChartIcon size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Graphs</h2>
+            <p className="sorting-sim-subtitle">
+              Generate the filter first to view response graphs.
+            </p>
+          </div>
+        </div>
+
+        <div className="coding-empty-state">
+          Run simulation first to view graphs.
+        </div>
       </section>
     );
   }
@@ -28,91 +72,57 @@ export default function DTSPFilterDesignGraphs({
   const impulseData = impulse.map((v, i) => ({ n: i, value: v }));
 
   return (
-    <section className="card experiment">
-      <h2>Graphs</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        These graphs show the designed FIR filter coefficients, its frequency response,
-        and the effect of filtering a mixed input signal.
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <LineChartIcon size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Graphs</h2>
+          <p className="sorting-sim-subtitle">
+            Visualize FIR coefficients, frequency response, and signal filtering effect.
+          </p>
+        </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Impulse Response</h3>
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={impulseData}>
-            <CartesianGrid stroke="#334155" />
-            <XAxis dataKey="n" stroke="#cbd5e1" />
-            <YAxis stroke="#cbd5e1" />
-            <Tooltip />
-            <Legend />
-            <Line
-              dataKey="value"
-              stroke="#22c55e"
-              strokeWidth={2}
-              name="h[n]"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="sorting-info-box">
+        <Activity size={16} style={{ marginRight: 10 }} />
+        These graphs show the designed filter coefficients, normalized response, and before/after filtering.
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Frequency Response (Normalized)</h3>
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={frequency}>
-            <CartesianGrid stroke="#334155" />
-            <XAxis dataKey="w" stroke="#cbd5e1" />
-            <YAxis stroke="#cbd5e1" />
-            <Tooltip />
-            <Legend />
-            <Line
-              dataKey="mag"
-              stroke="#38bdf8"
-              strokeWidth={2}
-              name="|H(ω)|"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <GraphCard
+        title="Impulse Response h[n]"
+        data={impulseData}
+        xKey="n"
+        dataKey="value"
+        name="h[n]"
+      />
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Signal Before Filtering</h3>
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={inputSignal}>
-            <CartesianGrid stroke="#334155" />
-            <XAxis dataKey="n" stroke="#cbd5e1" />
-            <YAxis stroke="#cbd5e1" />
-            <Tooltip />
-            <Legend />
-            <Line
-              dataKey="value"
-              stroke="#facc15"
-              strokeWidth={2}
-              name="Input Signal"
-              dot={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <GraphCard
+        title="Frequency Response |H(ω)|"
+        data={frequency}
+        xKey="w"
+        dataKey="mag"
+        name="|H(ω)|"
+      />
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Signal After Filtering</h3>
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={outputSignal}>
-            <CartesianGrid stroke="#334155" />
-            <XAxis dataKey="n" stroke="#cbd5e1" />
-            <YAxis stroke="#cbd5e1" />
-            <Tooltip />
-            <Legend />
-            <Line
-              dataKey="value"
-              stroke="#ef4444"
-              strokeWidth={2}
-              name="Filtered Output"
-              dot={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      <GraphCard
+        title="Signal Before Filtering"
+        data={inputSignal}
+        xKey="n"
+        dataKey="value"
+        name="Input Signal"
+        dot={false}
+      />
+
+      <GraphCard
+        title="Signal After Filtering"
+        data={outputSignal}
+        xKey="n"
+        dataKey="value"
+        name="Filtered Output"
+        dot={false}
+      />
     </section>
   );
 }

@@ -11,9 +11,6 @@ import {
 import { Button } from "../components/ui/button";
 import SimulabNavbar from "../components/SimulabNavbar";
 import { useAuth } from "../context/AuthContext";
-import ProgressTracker from "../components/ProgressTracker";
-import Leaderboard from "../components/LeaderBoard.jsx";
-import Certificate from "../components/Certificate";
 
 const dashboardLabs = [
   {
@@ -141,7 +138,7 @@ const Dashboard = ({ instituteMode = false }) => {
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-6">
                   <BarChart3 className="w-4 h-4 text-primary" />
                   <span className="text-sm font-display text-primary tracking-wide">
-                    Learning Overview
+                    Learning Hub
                   </span>
                 </div>
 
@@ -154,15 +151,15 @@ const Dashboard = ({ instituteMode = false }) => {
                   <span className="text-foreground font-medium">
                     {displayName}
                   </span>
-                  . Track your labs, monitor your learning journey, and continue
-                  exploring interactive experiments.
+                  . Continue exploring interactive labs and hands-on engineering
+                  experiments.
                 </p>
               </div>
 
               <Link to="/profile">
                 <Button variant="hero-outline" className="font-display gap-2">
                   <User className="w-4 h-4" />
-                  Profile
+                  View Profile
                 </Button>
               </Link>
             </div>
@@ -189,79 +186,72 @@ const Dashboard = ({ instituteMode = false }) => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_0.8fr] gap-6 mb-14">
-            <div>
-              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-                <div>
-                  <h2 className="font-display text-2xl sm:text-3xl font-bold">
-                    Your <span className="text-gradient">Labs</span>
-                  </h2>
-                  <p className="text-muted-foreground mt-1">
-                    Open a lab and continue your interactive learning journey.
-                  </p>
-                </div>
-
-                <Link to="/labs">
-                  <Button variant="hero-outline" className="font-display gap-2">
-                    View All Labs <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+          <div className="mb-14">
+            <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+              <div>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold">
+                  Your <span className="text-gradient">Labs</span>
+                </h2>
+                <p className="text-muted-foreground mt-1">
+                  Open a lab and continue your interactive learning journey.
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {dashboardLabs.map((lab, i) => (
-                  <motion.div
-                    key={lab.id}
-                    initial="hidden"
-                    animate="visible"
-                    variants={fadeUp}
-                    custom={i + 1}
-                    className="glass rounded-2xl overflow-hidden group hover:glow-border transition-all duration-500"
-                  >
-                    <div
-                      className="h-1.5 w-full"
-                      style={{
-                        background: `linear-gradient(90deg, hsl(${lab.color}), hsl(${lab.color} / 0.35))`,
-                      }}
-                    />
-
-                    <div className="p-7">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-4">
-                          <span className="text-4xl">{lab.icon}</span>
-                          <div>
-                            <h3 className="font-display text-xl font-bold leading-tight">
-                              {lab.title}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {lab.subtitle}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                        {lab.description}
-                      </p>
-
-                      <Link to={lab.route}>
-                        <Button
-                          variant="hero-outline"
-                          className="font-display gap-2"
-                        >
-                          Open Lab <ArrowRight className="w-4 h-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              <Link to="/labs">
+                <Button variant="hero-outline" className="font-display gap-2">
+                  View All Labs <ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
             </div>
 
-            <div className="grid gap-6 h-fit">
-              <ProgressTracker />
-              <Leaderboard />
-              <Certificate />
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {dashboardLabs.map((lab, i) => (
+                <motion.div
+                  key={lab.id}
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeUp}
+                  custom={i + 1}
+                  className="glass rounded-2xl overflow-hidden group hover:glow-border transition-all duration-500"
+                >
+                  <div
+                    className="h-1.5 w-full"
+                    style={{
+                      background: `linear-gradient(90deg, hsl(${lab.color}), hsl(${lab.color} / 0.35))`,
+                    }}
+                  />
+
+                  <div className="p-7">
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-4">
+                        <span className="text-4xl">{lab.icon}</span>
+
+                        <div>
+                          <h3 className="font-display text-xl font-bold leading-tight">
+                            {lab.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {lab.subtitle}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                      {lab.description}
+                    </p>
+
+                    <Link to={lab.route}>
+                      <Button
+                        variant="hero-outline"
+                        className="font-display gap-2"
+                      >
+                        Open Lab <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>

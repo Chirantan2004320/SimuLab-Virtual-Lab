@@ -11,12 +11,17 @@ import {
   Bar,
   Legend
 } from "recharts";
+import { LineChart as LineChartIcon, BarChart3, Activity } from "lucide-react";
 
 function GraphCard({ title, data, dataKey, xKey = "index", line = false, secondLineKey = null }) {
   return (
-    <div className="card" style={{ marginTop: "1rem" }}>
-      <h3>{title}</h3>
-      <div style={{ width: "100%", height: 300 }}>
+    <div className="overview-card" style={{ marginBottom: 18 }}>
+      <div className="overview-card-head">
+        <LineChartIcon size={18} />
+        <h4>{title}</h4>
+      </div>
+
+      <div style={{ width: "100%", height: 320 }}>
         <ResponsiveContainer>
           {line ? (
             <LineChart data={data}>
@@ -26,9 +31,9 @@ function GraphCard({ title, data, dataKey, xKey = "index", line = false, secondL
               <Tooltip />
               {secondLineKey ? <Legend /> : null}
               <Line type="monotone" dataKey={dataKey} stroke="#38bdf8" strokeWidth={2} />
-              {secondLineKey ? (
+              {secondLineKey && (
                 <Line type="monotone" dataKey={secondLineKey} stroke="#22c55e" strokeWidth={2} />
-              ) : null}
+              )}
             </LineChart>
           ) : (
             <BarChart data={data}>
@@ -45,54 +50,30 @@ function GraphCard({ title, data, dataKey, xKey = "index", line = false, secondL
   );
 }
 
-function SpectrumBars({ title, values, color = "#38bdf8", formatNumber, labelPrefix = "k" }) {
+function SpectrumBars({ title, values, formatNumber, labelPrefix = "k" }) {
   if (!values.length) return null;
 
   const maxValue = Math.max(...values.map((v) => Math.abs(v)), 1);
 
   return (
-    <div className="card" style={{ marginTop: "1rem" }}>
-      <h3>{title}</h3>
+    <div className="overview-card" style={{ marginBottom: 18 }}>
+      <div className="overview-card-head">
+        <BarChart3 size={18} />
+        <h4>{title}</h4>
+      </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: "12px",
-          minHeight: "220px",
-          padding: "20px 10px 10px",
-          overflowX: "auto"
-        }}
-      >
+      <div className="comparison-bars-area" style={{ height: 260, overflowX: "auto" }}>
         {values.map((value, index) => {
-          const height = `${Math.max((Math.abs(value) / maxValue) * 160, 8)}px`;
+          const heightPercent = Math.max((Math.abs(value) / maxValue) * 100, 8);
 
           return (
-            <div
-              key={index}
-              style={{
-                minWidth: "60px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "8px"
-              }}
-            >
-              <div style={{ color: "#e5e7eb", fontSize: "12px" }}>
-                {formatNumber(value)}
-              </div>
-
+            <div key={index} className="comparison-bar-column">
+              <div className="comparison-bar-value">{formatNumber(value)}</div>
               <div
-                style={{
-                  width: "38px",
-                  height,
-                  borderRadius: "8px 8px 0 0",
-                  background: color,
-                  boxShadow: `0 0 14px ${color}55`
-                }}
+                className="sorting-bar"
+                style={{ height: `${heightPercent}%` }}
               />
-
-              <div style={{ color: "#9ca3af", fontSize: "12px" }}>
+              <div className="sorting-bar-index">
                 {labelPrefix}={index}
               </div>
             </div>
@@ -143,19 +124,29 @@ export default function DTSPDFTIDFTGraphs({
   const phases = dftResult.map((x) => getPhase(x));
 
   return (
-    <section className="card experiment">
-      <h2>Graphs</h2>
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <LineChartIcon size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Graphs</h2>
+          <p className="sorting-sim-subtitle">
+            Visualize time-domain sequence, magnitude spectrum, phase spectrum, and IDFT reconstruction.
+          </p>
+        </div>
+      </div>
 
-      <div className="buttons" style={{ marginBottom: "1rem" }}>
+      <div className="er-chip-row" style={{ marginBottom: 20 }}>
         <button
-          className={`btn ${activeGraphTab === "dft" ? "primary" : "secondary"}`}
+          className={`er-chip ${activeGraphTab === "dft" ? "active" : ""}`}
           onClick={() => setActiveGraphTab("dft")}
         >
           DFT Graphs
         </button>
 
         <button
-          className={`btn ${activeGraphTab === "idft" ? "primary" : "secondary"}`}
+          className={`er-chip ${activeGraphTab === "idft" ? "active" : ""}`}
           onClick={() => setActiveGraphTab("idft")}
         >
           IDFT Graphs
@@ -165,16 +156,21 @@ export default function DTSPDFTIDFTGraphs({
       {activeGraphTab === "dft" && (
         <>
           {sequence.length === 0 ? (
-            <div className="info-box">
+            <div className="coding-empty-state">
               Please compute DFT first to view DFT graphs.
             </div>
           ) : (
             <>
+              <div className="sorting-info-box">
+                <Activity size={16} style={{ marginRight: 10 }} />
+                DFT graphs show how the input sequence is represented through magnitude and phase across frequency bins.
+              </div>
+
               <GraphCard
                 title="Input Time Domain Signal"
                 data={timeDomainData}
                 dataKey="value"
-                line={true}
+                line
               />
 
               <GraphCard
@@ -187,20 +183,18 @@ export default function DTSPDFTIDFTGraphs({
                 title="Phase Spectrum"
                 data={phaseData}
                 dataKey="phase"
-                line={true}
+                line
               />
 
               <SpectrumBars
                 title="Magnitude Spectrum Bars"
                 values={magnitudes}
-                color="#22c55e"
                 formatNumber={formatNumber}
               />
 
               <SpectrumBars
                 title="Phase Spectrum Bars"
                 values={phases}
-                color="#a855f7"
                 formatNumber={formatNumber}
               />
             </>
@@ -211,16 +205,21 @@ export default function DTSPDFTIDFTGraphs({
       {activeGraphTab === "idft" && (
         <>
           {reconstructed.length === 0 ? (
-            <div className="info-box">
+            <div className="coding-empty-state">
               Please compute IDFT first to view IDFT graphs.
             </div>
           ) : (
             <>
+              <div className="sorting-info-box">
+                <Activity size={16} style={{ marginRight: 10 }} />
+                IDFT graphs compare the reconstructed signal with the original input sequence.
+              </div>
+
               <GraphCard
                 title="Reconstructed Time Domain Signal"
                 data={reconstructedData}
                 dataKey="value"
-                line={true}
+                line
               />
 
               <GraphCard
@@ -228,7 +227,7 @@ export default function DTSPDFTIDFTGraphs({
                 data={compareData}
                 dataKey="original"
                 secondLineKey="reconstructed"
-                line={true}
+                line
               />
             </>
           )}

@@ -7,6 +7,7 @@ export default function TreeQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
@@ -47,7 +48,8 @@ export default function TreeQuiz({
         <div>
           <h2 className="sorting-sim-title">Quiz</h2>
           <p className="sorting-sim-subtitle">
-            Answer the questions below for {treeMode === "bst" ? "BST / Tree" : "Binary Tree"} concepts.
+            Answer the questions below for{" "}
+            {treeMode === "bst" ? "BST / Tree" : "Binary Tree"} concepts.
           </p>
         </div>
       </div>
@@ -95,6 +97,12 @@ export default function TreeQuiz({
               </p>
             </div>
           </div>
+
+          {quizSaveStatus && (
+            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
+          )}
 
           <div className="quiz-list">
             {quizQuestions.map((q, i) => (

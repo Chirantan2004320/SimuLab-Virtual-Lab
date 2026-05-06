@@ -1,24 +1,35 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Award, Download, CheckCircle2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import api from "../API/api";
 
 const Certificate = () => {
   const { user } = useAuth();
+  const [progress, setProgress] = useState(null);
+
+  useEffect(() => {
+    fetchProgress();
+  }, []);
+
+  const fetchProgress = async () => {
+    try {
+      const res = await api.get("/api/progress/me");
+      setProgress(res.data);
+    } catch (error) {
+      console.error("Certificate progress error:", error);
+    }
+  };
 
   if (!user) return null;
 
-  const progressKey = `vlab_progress_${user.id}`;
-  const progress = JSON.parse(localStorage.getItem(progressKey) || "{}");
+  const summary = progress?.summary || {};
+  const quizzes = progress?.quizzes || [];
 
-  const quizzes = progress.quizzes || [];
-  const experiments = progress.experiments || [];
+  const passedQuiz = quizzes.some((q) => Number(q.score_percentage) >= 70);
+  const hasEnoughWork =
+    Number(summary.completedExperiments || 0) >= 1 &&
+    Number(summary.quizzesTaken || 0) >= 1;
 
-  const passedQuiz = quizzes.some((q) => {
-    if (!q || typeof q.correct !== "number" || typeof q.total !== "number") return false;
-    return q.correct / q.total >= 0.7;
-  });
-
-  const hasEnoughWork = experiments.length >= 1 && quizzes.length >= 1;
   const eligible = passedQuiz && hasEnoughWork;
 
   if (!eligible) {
@@ -33,7 +44,8 @@ const Certificate = () => {
           </div>
 
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Complete at least one experiment and pass a quiz with 70% or more to unlock your certificate.
+            Complete at least one experiment and pass a quiz with 70% or more to
+            unlock your certificate.
           </p>
         </div>
       </div>
@@ -45,9 +57,9 @@ const Certificate = () => {
 
   const bestQuiz = quizzes.reduce((best, current) => {
     if (!best) return current;
-    const bestPct = best.total ? best.correct / best.total : 0;
-    const currPct = current.total ? current.correct / current.total : 0;
-    return currPct > bestPct ? current : best;
+    return Number(current.score_percentage) > Number(best.score_percentage)
+      ? current
+      : best;
   }, null);
 
   const completionDate = new Date().toLocaleDateString();
@@ -58,56 +70,14 @@ const Certificate = () => {
         <head>
           <title>SimuLab Certificate</title>
           <style>
-            body {
-              font-family: Arial, sans-serif;
-              background: #f4f7fb;
-              padding: 30px;
-            }
-            .certificate {
-              max-width: 900px;
-              margin: 0 auto;
-              background: white;
-              border: 8px solid #38bdf8;
-              padding: 50px 60px;
-              text-align: center;
-              box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-            }
-            .title {
-              font-size: 42px;
-              font-weight: bold;
-              margin-bottom: 10px;
-              color: #0f172a;
-            }
-            .subtitle {
-              font-size: 18px;
-              color: #475569;
-              margin-bottom: 30px;
-            }
-            .name {
-              font-size: 34px;
-              font-weight: bold;
-              color: #2563eb;
-              margin: 24px 0;
-            }
-            .text {
-              font-size: 18px;
-              color: #1e293b;
-              line-height: 1.7;
-            }
-            .footer {
-              margin-top: 40px;
-              font-size: 14px;
-              color: #64748b;
-            }
-            .badge {
-              display: inline-block;
-              margin-top: 20px;
-              padding: 10px 18px;
-              border-radius: 999px;
-              background: #e0f2fe;
-              color: #0369a1;
-              font-weight: bold;
-            }
+            body { font-family: Arial, sans-serif; background: #f4f7fb; padding: 30px; }
+            .certificate { max-width: 900px; margin: 0 auto; background: white; border: 8px solid #38bdf8; padding: 50px 60px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+            .title { font-size: 42px; font-weight: bold; margin-bottom: 10px; color: #0f172a; }
+            .subtitle { font-size: 18px; color: #475569; margin-bottom: 30px; }
+            .name { font-size: 34px; font-weight: bold; color: #2563eb; margin: 24px 0; }
+            .text { font-size: 18px; color: #1e293b; line-height: 1.7; }
+            .footer { margin-top: 40px; font-size: 14px; color: #64748b; }
+            .badge { display: inline-block; margin-top: 20px; padding: 10px 18px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-weight: bold; }
           </style>
         </head>
         <body>
@@ -121,11 +91,9 @@ const Certificate = () => {
               through assessed quiz performance on the SimuLab platform.
             </div>
             <div class="badge">
-              Best Quiz Score: ${bestQuiz?.correct || 0}/${bestQuiz?.total || 0}
+              Best Quiz Score: ${Number(bestQuiz?.score_percentage || 0)}%
             </div>
-            <div class="footer">
-              Issued on ${completionDate}
-            </div>
+            <div class="footer">Issued on ${completionDate}</div>
           </div>
         </body>
       </html>
@@ -159,19 +127,23 @@ const Certificate = () => {
                 Congratulations, {displayName}
               </p>
               <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                You have unlocked your SimuLab achievement certificate based on your experiment activity and quiz performance.
+                You have unlocked your SimuLab achievement certificate.
               </p>
             </div>
           </div>
 
           <div className="text-sm text-muted-foreground space-y-1 mt-4">
             <p>
-              <span className="text-foreground font-medium">Experiments completed:</span>{" "}
-              {experiments.length}
+              <span className="text-foreground font-medium">
+                Experiments completed:
+              </span>{" "}
+              {summary.completedExperiments || 0}
             </p>
             <p>
-              <span className="text-foreground font-medium">Best quiz score:</span>{" "}
-              {bestQuiz?.correct || 0}/{bestQuiz?.total || 0}
+              <span className="text-foreground font-medium">
+                Best quiz score:
+              </span>{" "}
+              {Number(bestQuiz?.score_percentage || 0)}%
             </p>
             <p>
               <span className="text-foreground font-medium">Issued on:</span>{" "}
