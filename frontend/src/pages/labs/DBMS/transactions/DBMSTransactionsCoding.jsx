@@ -81,7 +81,12 @@ function normalizeText(text) {
   return text.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-export default function DBMSTransactionsCoding({ transactionType }) {
+export default function DBMSTransactionsCoding({
+  transactionType,
+  codingSaveStatus,
+  setCodingSaveStatus,
+  saveCodingSubmission
+}) {
   const [currentProblems, setCurrentProblems] = useState([]);
   const [queries, setQueries] = useState({});
   const [results, setResults] = useState({});
@@ -92,7 +97,11 @@ export default function DBMSTransactionsCoding({ transactionType }) {
   );
 
   const generateProblems = () => {
-    const selected = shuffleArray(problemBank).slice(0, Math.min(3, problemBank.length));
+    const selected = shuffleArray(problemBank).slice(
+      0,
+      Math.min(3, problemBank.length)
+    );
+
     const initialQueries = {};
     const initialResults = {};
 
@@ -113,7 +122,7 @@ export default function DBMSTransactionsCoding({ transactionType }) {
     }));
   };
 
-  const runQuery = (problem) => {
+  const runQuery = async (problem) => {
     const userQuery = queries[problem.id] || "";
 
     if (!userQuery.trim()) {
@@ -129,18 +138,51 @@ export default function DBMSTransactionsCoding({ transactionType }) {
       normalizedQuery.includes(keyword.toLowerCase())
     );
 
-    if (matchedKeywords.length >= 3) {
-      setResults((prev) => ({
+    const passed = matchedKeywords.length >= 3;
+
+    setResults((prev) => ({
+      ...prev,
+      [problem.id]: passed
+        ? `Good Query!\n\nYour answer includes important transaction concepts such as: ${matchedKeywords.join(
+            ", "
+          )}.`
+        : `Your query needs improvement.\n\nTry including the required transaction control statements and update steps for ${transactionType.toUpperCase()}.`
+    }));
+
+    if (setCodingSaveStatus) {
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problem.id]:
-          `Good Query!\n\nYour answer includes important transaction concepts such as: ${matchedKeywords.join(", ")}.`
+        [problem.id]: "Saving submission..."
       }));
-    } else {
-      setResults((prev) => ({
-        ...prev,
-        [problem.id]:
-          `Your query needs improvement.\n\nTry including the required transaction control statements and update steps for ${transactionType.toUpperCase()}.`
-      }));
+    }
+
+    try {
+      if (saveCodingSubmission) {
+        await saveCodingSubmission({
+          labSlug: "dbms",
+          experimentSlug: "transactions",
+          problemTitle: `${transactionType.toUpperCase()} - ${problem.title}`,
+          language: "sql",
+          code: userQuery,
+          result: passed ? "passed" : "failed"
+        });
+      }
+
+      if (setCodingSaveStatus) {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problem.id]: "Submission saved to dashboard."
+        }));
+      }
+    } catch (error) {
+      console.error("Coding save failed:", error);
+
+      if (setCodingSaveStatus) {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problem.id]: "Query checked, but backend save failed."
+        }));
+      }
     }
   };
 
@@ -152,17 +194,19 @@ export default function DBMSTransactionsCoding({ transactionType }) {
       return;
     }
 
-    const analysisData = {
-      type: "transaction_query_analysis",
-      experiment: "transactions",
-      transactionType,
-      problemId: problem.id,
-      title: problem.title,
-      description: problem.description,
-      query
-    };
+    localStorage.setItem(
+      "vlab_transaction_query_analysis",
+      JSON.stringify({
+        type: "transaction_query_analysis",
+        experiment: "transactions",
+        transactionType,
+        problemId: problem.id,
+        title: problem.title,
+        description: problem.description,
+        query
+      })
+    );
 
-    localStorage.setItem("vlab_transaction_query_analysis", JSON.stringify(analysisData));
     alert("Query analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -174,18 +218,20 @@ export default function DBMSTransactionsCoding({ transactionType }) {
       return;
     }
 
-    const correctionData = {
-      type: "transaction_query_correction",
-      experiment: "transactions",
-      transactionType,
-      problemId: problem.id,
-      title: problem.title,
-      description: problem.description,
-      query,
-      expectedKeywords: problem.expectedKeywords
-    };
+    localStorage.setItem(
+      "vlab_transaction_query_correction",
+      JSON.stringify({
+        type: "transaction_query_correction",
+        experiment: "transactions",
+        transactionType,
+        problemId: problem.id,
+        title: problem.title,
+        description: problem.description,
+        query,
+        expectedKeywords: problem.expectedKeywords
+      })
+    );
 
-    localStorage.setItem("vlab_transaction_query_correction", JSON.stringify(correctionData));
     alert("Query correction request sent to AI Assistant. Check the AI chat for the corrected query!");
   };
 
@@ -195,6 +241,7 @@ export default function DBMSTransactionsCoding({ transactionType }) {
         <div className="sorting-sim-icon">
           <Code2 size={18} />
         </div>
+
         <div>
           <h2 className="sorting-sim-title">SQL Transaction Practice</h2>
           <p className="sorting-sim-subtitle">
@@ -209,11 +256,11 @@ export default function DBMSTransactionsCoding({ transactionType }) {
         </button>
       </div>
 
-      {currentProblems.length === 0 ? (
+      {currentProblems.length === 0 && (
         <div className="coding-empty-state">
           No problems generated yet. Click <b>Generate Problems</b> to begin.
         </div>
-      ) : null}
+      )}
 
       {currentProblems.map((problem, index) => (
         <div key={problem.id} className="coding-card-upgraded">
@@ -273,6 +320,12 @@ export default function DBMSTransactionsCoding({ transactionType }) {
               >
                 {results[problem.id]}
               </pre>
+            </div>
+          )}
+
+          {codingSaveStatus?.[problem.id] && (
+            <div className="coding-result-box">
+              {codingSaveStatus[problem.id]}
             </div>
           )}
         </div>

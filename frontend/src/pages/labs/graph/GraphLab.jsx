@@ -13,6 +13,8 @@ import GraphOverview from "./GraphOverview";
 import GraphSimulation from "./GraphSimulation";
 import GraphQuiz from "./GraphQuiz";
 import GraphCoding from "./GraphCoding";
+import MarkCompleteButton from "../../../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../../../API/progressApi";
 
 const simulabLogo = "/assets/logo.png";
 
@@ -347,6 +349,7 @@ const dfsProblemBank = [
   }
 ];
 
+//eslint-disable-next-line no-unused-vars
 const graphCodeTemplates = {
   bfs: {
     javascript: `function bfs(graph, start) {
@@ -671,6 +674,8 @@ export default function GraphLab() {
   const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   //const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [currentProblems, setCurrentProblems] = useState([]);
@@ -941,25 +946,31 @@ export default function GraphLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+  const submitQuiz = async () => {
+  let score = 0;
+
+  quizQuestions.forEach((q, i) => {
+    if (quizAnswers[i] === q.correct) score++;
+  });
+
+  setQuizScore(score);
+  setQuizSubmitted(true);
+  setQuizSaveStatus("Saving quiz result...");
+
+  try {
+    await saveQuizResult({
+      labSlug: "dsa",
+      experimentSlug: "graph-traversal",
+      correctAnswers: score,
+      totalQuestions: quizQuestions.length
     });
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
-
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: traversalType === "dfs" ? "dfs-graph" : "bfs-graph",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
-  };
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error("Graph quiz save failed:", error);
+    setQuizSaveStatus("Quiz submitted, but backend save failed.");
+  }
+};
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
@@ -1011,65 +1022,130 @@ export default function GraphLab() {
     }));
   };
 
-  const runCode = (problemId, language) => {
-    const problem = currentProblems.find((p) => p.id === problemId);
-    const codeKey = `${problemId}_${language}`;
-    const code = codes[codeKey];
+  const runCode = async (problemId, language) => {
+  const problem = currentProblems.find((p) => p.id === problemId);
+  const codeKey = `${problemId}_${language}`;
+  const code = codes[codeKey];
 
-    if (!problem || !code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code."
-      }));
-      return;
-    }
+  if (!problem || !code) {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: "Please enter code."
+    }));
+    return;
+  }
 
-    if (language !== "javascript") {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]:
-          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      }));
-      return;
-    }
+  if (language !== "javascript") {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+    }));
 
     try {
-      const allOutputs = [];
-      let allCorrect = true;
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "graph-traversal",
+        problemTitle: problem.title,
+        language,
+        code,
+        result: "attempted"
+      });
 
-      for (let i = 0; i < problem.tests.length; i++) {
-        const args = problem.tests[i].map((item) =>
-          typeof item === "object" && item !== null ? JSON.parse(JSON.stringify(item)) : item
-        );
-        const expected = problem.expected[i];
-
-        const fn = new Function(
-          ...Array.from({ length: args.length }, (_, index) => `arg${index}`),
-          `${code}; return ${problem.functionName}(${args.map((_, index) => `arg${index}`).join(", ")});`
-        );
-
-        const result = fn(...args);
-        allOutputs.push(result);
-
-        if (JSON.stringify(result) !== JSON.stringify(expected)) {
-          allCorrect = false;
-          break;
-        }
-      }
-
-      setResults((prev) => ({
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problemId]: allCorrect
-          ? `Correct! Your outputs: ${allOutputs.map((o) => JSON.stringify(o)).join(", ")}`
-          : "Incorrect Output"
+        [problemId]: "Submission saved to dashboard."
       }));
     } catch (error) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Error: ${error.message}`
-      }));
+      console.error("Graph coding save failed:", error);
     }
-  };
+
+    return;
+  }
+
+  try {
+    const allOutputs = [];
+    let allCorrect = true;
+
+    for (let i = 0; i < problem.tests.length; i++) {
+      const args = problem.tests[i].map((item) =>
+        typeof item === "object" && item !== null
+          ? JSON.parse(JSON.stringify(item))
+          : item
+      );
+
+      const expected = problem.expected[i];
+
+      // eslint-disable-next-line no-new-func
+      const fn = new Function(
+        ...Array.from({ length: args.length }, (_, index) => `arg${index}`),
+        `${code}; return ${problem.functionName}(${args
+          .map((_, index) => `arg${index}`)
+          .join(", ")});`
+      );
+
+      const result = fn(...args);
+      allOutputs.push(result);
+
+      if (JSON.stringify(result) !== JSON.stringify(expected)) {
+        allCorrect = false;
+        break;
+      }
+    }
+
+    const resultText = allCorrect
+      ? `Correct! Your outputs: ${allOutputs
+          .map((o) => JSON.stringify(o))
+          .join(", ")}`
+      : "Incorrect Output";
+
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: resultText
+    }));
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Saving submission..."
+    }));
+
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "graph-traversal",
+      problemTitle: problem.title,
+      language,
+      code,
+      result: allCorrect ? "passed" : "failed"
+    });
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problemId]: "Submission saved to dashboard."
+    }));
+  } catch (error) {
+    setResults((prev) => ({
+      ...prev,
+      [problemId]: `Error: ${error.message}`
+    }));
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dsa",
+        experimentSlug: "graph-traversal",
+        problemTitle: problem?.title || `Graph Problem ${problemId}`,
+        language,
+        code,
+        result: "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Failed submission saved to dashboard."
+      }));
+    } catch (saveError) {
+      console.error("Graph coding save failed:", saveError);
+    }
+  }
+};
 
   const analyzeCode = (problemId, language) => {
     const codeKey = `${problemId}_${language}`;
@@ -1264,6 +1340,13 @@ const complexityLabel = "O(V + E)";
             {experimentRun ? "Experiment Run" : "Not Started"}
           </button>
         </div>
+        <div style={{ marginTop: 18 }}>
+  <MarkCompleteButton
+    labSlug="dsa"
+    experimentSlug="graph-traversal"
+    points={10}
+  />
+</div>
       </section>
 
       <div className="er-content-layout">
@@ -1301,32 +1384,34 @@ const complexityLabel = "O(V + E)";
 
           {activeSection === "quiz" && (
             <GraphQuiz
-              traversalType={traversalType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-              redoQuiz={redoQuiz}
-            />
+  traversalType={traversalType}
+  quizQuestions={quizQuestions}
+  quizAnswers={quizAnswers}
+  quizSubmitted={quizSubmitted}
+  quizScore={quizScore}
+  quizSaveStatus={quizSaveStatus}
+  experimentRun={experimentRun}
+  handleQuizAnswer={handleQuizAnswer}
+  submitQuiz={submitQuiz}
+  redoQuiz={redoQuiz}
+/>
           )}
 
           {activeSection === "coding" && (
             <GraphCoding
-              traversalType={traversalType}
-              currentProblems={currentProblems}
-              selectedLanguages={selectedLanguages}
-              codes={codes}
-              results={results}
-              generateProblems={generateProblems}
-              handleLanguageChange={handleLanguageChange}
-              handleCodeChange={handleCodeChange}
-              runCode={runCode}
-              analyzeCode={analyzeCode}
-              correctCode={correctCode}
-            />
+  traversalType={traversalType}
+  currentProblems={currentProblems}
+  selectedLanguages={selectedLanguages}
+  codes={codes}
+  results={results}
+  codingSaveStatus={codingSaveStatus}
+  generateProblems={generateProblems}
+  handleLanguageChange={handleLanguageChange}
+  handleCodeChange={handleCodeChange}
+  runCode={runCode}
+  analyzeCode={analyzeCode}
+  correctCode={correctCode}
+/>
           )}
         </section>
       </div>

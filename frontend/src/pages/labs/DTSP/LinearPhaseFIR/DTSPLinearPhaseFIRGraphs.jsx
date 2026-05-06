@@ -10,12 +10,17 @@ import {
   BarChart,
   Bar
 } from "recharts";
+import { LineChart as LineChartIcon, Activity } from "lucide-react";
 
 function GraphCard({ title, data, dataKey, line = false }) {
   return (
-    <div className="card" style={{ marginTop: "1rem" }}>
-      <h3>{title}</h3>
-      <div style={{ width: "100%", height: 300 }}>
+    <div className="overview-card" style={{ marginBottom: 18 }}>
+      <div className="overview-card-head">
+        <LineChartIcon size={18} />
+        <h4>{title}</h4>
+      </div>
+
+      <div style={{ width: "100%", height: 320 }}>
         <ResponsiveContainer>
           {line ? (
             <LineChart data={data}>
@@ -48,9 +53,22 @@ export default function DTSPLinearPhaseFIRGraphs({
 }) {
   if (!impulseResponse.length) {
     return (
-      <section className="card experiment">
-        <h2>Graphs</h2>
-        <div className="info-box">Please run the simulation first to view graphs.</div>
+      <section className="comparison-shell">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <LineChartIcon size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Graphs</h2>
+            <p className="sorting-sim-subtitle">
+              Run the simulation first to view FIR response graphs.
+            </p>
+          </div>
+        </div>
+
+        <div className="coding-empty-state">
+          Please run the simulation first to view graphs.
+        </div>
       </section>
     );
   }
@@ -71,10 +89,21 @@ export default function DTSPLinearPhaseFIRGraphs({
   }));
 
   return (
-    <section className="card experiment">
-      <h2>Graphs</h2>
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <LineChartIcon size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Graphs</h2>
+          <p className="sorting-sim-subtitle">
+            Visualize impulse response, magnitude response, and phase response.
+          </p>
+        </div>
+      </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
+      <div className="sorting-info-box">
+        <Activity size={16} style={{ marginRight: 10 }} />
         {symmetryType === "Not Linear Phase"
           ? "This FIR filter does not satisfy linear phase symmetry conditions."
           : `This FIR filter is classified as ${symmetryType}.`}
@@ -90,14 +119,14 @@ export default function DTSPLinearPhaseFIRGraphs({
         title="Magnitude Response |H(e^jω)|"
         data={magnitudeData}
         dataKey="value"
-        line={true}
+        line
       />
 
       <GraphCard
         title="Phase Response ∠H(e^jω)"
         data={phaseData}
         dataKey="value"
-        line={true}
+        line
       />
     </section>
   );

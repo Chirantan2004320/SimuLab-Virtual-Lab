@@ -7,6 +7,7 @@ export default function HeapQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
@@ -93,6 +94,11 @@ export default function HeapQuiz({
               <p>
                 Score: <b>{quizScore}</b> / {total} ({percentage}%)
               </p>
+              {quizSaveStatus && (
+                <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+                  {quizSaveStatus}
+                </p>
+              )}
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Activity, Ruler, ShieldCheck, Sparkles, SlidersHorizontal } from "lucide-react";
 
 export default function DVLSILambdaRulesMicrowindSimulation({
   lambdaValue,
@@ -30,140 +31,155 @@ export default function DVLSILambdaRulesMicrowindSimulation({
   ]);
 
   return (
-    <section className="card experiment">
-      <h2>Simulation</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Simulation</h2>
+            <p className="sorting-sim-subtitle">
+              Adjust lambda dimensions and instantly check whether layout rules pass.
+            </p>
+          </div>
+        </div>
+      </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px",
-          marginTop: "1rem"
-        }}
-      >
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Lambda Value λ: <strong>{formatNumber(lambdaValue, 1)}</strong>
-          </label>
-          <input
-            type="range"
+      <div className="overview-grid" style={{ marginBottom: 18 }}>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Ruler size={18} />
+            <h4>Lambda Scaling</h4>
+          </div>
+          <p>
+            A dimension of 3λ becomes {formatNumber(lambdaValue * 3, 1)} physical units when λ ={" "}
+            {formatNumber(lambdaValue, 1)}.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <ShieldCheck size={18} />
+            <h4>DRC Result</h4>
+          </div>
+          <p>
+            Current layout status: <strong>{analysis.allPass ? "PASS" : "FAIL"}</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div className="sorting-info-box">
+        <Sparkles size={16} style={{ marginRight: 10 }} />
+        {analysis.summary}
+      </div>
+
+      <div className="overview-card" style={{ marginBottom: 18 }}>
+        <div className="overview-card-head">
+          <SlidersHorizontal size={18} />
+          <h4>Lambda and Layout Dimensions</h4>
+        </div>
+
+        <div className="er-config-grid">
+          <SliderControl
+            label={`Lambda Value λ: ${formatNumber(lambdaValue, 1)}`}
             min="1"
             max="5"
             step="0.5"
             value={lambdaValue}
-            onChange={(e) => setLambdaValue(Number(e.target.value))}
-            style={{ width: "100%" }}
+            onChange={setLambdaValue}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Poly Width (λ): <strong>{polyWidth}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Poly Width: ${polyWidth}λ`}
             min="1"
             max="8"
             step="1"
             value={polyWidth}
-            onChange={(e) => setPolyWidth(Number(e.target.value))}
-            style={{ width: "100%" }}
+            onChange={setPolyWidth}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Metal Width (λ): <strong>{metalWidth}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Metal Width: ${metalWidth}λ`}
             min="1"
             max="8"
             step="1"
             value={metalWidth}
-            onChange={(e) => setMetalWidth(Number(e.target.value))}
-            style={{ width: "100%" }}
+            onChange={setMetalWidth}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Diffusion Spacing (λ): <strong>{diffSpacing}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Diffusion Spacing: ${diffSpacing}λ`}
             min="1"
             max="8"
             step="1"
             value={diffSpacing}
-            onChange={(e) => setDiffSpacing(Number(e.target.value))}
-            style={{ width: "100%" }}
+            onChange={setDiffSpacing}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Poly Spacing (λ): <strong>{polySpacing}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Poly Spacing: ${polySpacing}λ`}
             min="1"
             max="8"
             step="1"
             value={polySpacing}
-            onChange={(e) => setPolySpacing(Number(e.target.value))}
-            style={{ width: "100%" }}
+            onChange={setPolySpacing}
           />
-        </div>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Contact Size (λ): <strong>{contactSize}</strong>
-          </label>
-          <input
-            type="range"
+          <SliderControl
+            label={`Contact Size: ${contactSize}λ`}
             min="1"
             max="6"
             step="1"
             value={contactSize}
-            onChange={(e) => setContactSize(Number(e.target.value))}
-            style={{ width: "100%" }}
+            onChange={setContactSize}
           />
         </div>
       </div>
 
-      <div
-        style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px"
-        }}
-      >
-        <div className="stat-card">
-          <strong>Poly Width</strong>
-          <div>{polyWidth}λ</div>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Poly Width</span>
+          <span className="sorting-stat-value">{polyWidth}λ</span>
         </div>
 
-        <div className="stat-card">
-          <strong>Metal Width</strong>
-          <div>{metalWidth}λ</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Metal Width</span>
+          <span className="sorting-stat-value">{metalWidth}λ</span>
         </div>
 
-        <div className="stat-card">
-          <strong>Poly Spacing</strong>
-          <div>{polySpacing}λ</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">Poly Spacing</span>
+          <span className="sorting-stat-value">{polySpacing}λ</span>
         </div>
 
-        <div className="stat-card">
-          <strong>DRC Status</strong>
-          <div>{analysis.allPass ? "PASS" : "FAIL"}</div>
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">DRC Status</span>
+          <span
+            className="sorting-stat-value"
+            style={{ color: analysis.allPass ? "#22c55e" : "#ef4444" }}
+          >
+            {analysis.allPass ? "PASS" : "FAIL"}
+          </span>
         </div>
-      </div>
-
-      <div className="info-box" style={{ marginTop: "1rem" }}>
-        {analysis.summary}
       </div>
     </section>
+  );
+}
+
+function SliderControl({ label, min, max, step, value, onChange }) {
+  return (
+    <div>
+      <label className="sorting-label">{label}</label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="sorting-range"
+      />
+    </div>
   );
 }

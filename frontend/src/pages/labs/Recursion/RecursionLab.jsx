@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
@@ -7,8 +8,13 @@ import {
   ChevronsLeft,
   Cpu
 } from "lucide-react";
+
 import "../../Lab.css";
 import "../../SortingLab.css";
+
+import MarkCompleteButton from "../../../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../../../API/progressApi";
+
 import RecursionOverview from "./RecursionOverview";
 import RecursionSimulation from "./RecursionSimulation";
 import RecursionQuiz from "./RecursionQuiz";
@@ -219,187 +225,90 @@ const fibonacciProblemBank = [
   }
 ];
 
-const recursionCodeTemplates = {
-  factorial: {
-    javascript: `function factorial(n) {
-  if (n === 0 || n === 1) return 1;
-  return n * factorial(n - 1);
-}`,
-    python: `def factorial(n):
-    if n == 0 or n == 1:
-        return 1
-    return n * factorial(n - 1)`,
-    cpp: `int factorial(int n) {
-    if (n == 0 || n == 1) return 1;
-    return n * factorial(n - 1);
-}`,
-    c: `int factorial(int n) {
-    if (n == 0 || n == 1) return 1;
-    return n * factorial(n - 1);
-}`,
-    java: `static int factorial(int n) {
-    if (n == 0 || n == 1) return 1;
-    return n * factorial(n - 1);
-}`
-  },
-  fibonacci: {
-    javascript: `function fibonacci(n) {
-  if (n === 0) return 0;
-  if (n === 1) return 1;
-  return fibonacci(n - 1) + fibonacci(n - 2);
-}`,
-    python: `def fibonacci(n):
-    if n == 0:
-        return 0
-    if n == 1:
-        return 1
-    return fibonacci(n - 1) + fibonacci(n - 2)`,
-    cpp: `int fibonacci(int n) {
-    if (n == 0) return 0;
-    if (n == 1) return 1;
-    return fibonacci(n - 1) + fibonacci(n - 2);
-}`,
-    c: `int fibonacci(int n) {
-    if (n == 0) return 0;
-    if (n == 1) return 1;
-    return fibonacci(n - 1) + fibonacci(n - 2);
-}`,
-    java: `static int fibonacci(int n) {
-    if (n == 0) return 0;
-    if (n == 1) return 1;
-    return fibonacci(n - 1) + fibonacci(n - 2);
-}`
-  }
-};
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function getStarterCode(problem, language) {
-  const fn = problem.functionName;
-
-  if (language === "python") {
-    const map = {
-      factorial: `def factorial(n):
-    # Write your solution here
-    return 1
-`,
-      factorialSum: `def factorialSum(n):
-    # Write your solution here
-    return 0
-`,
-      factorialDepth: `def factorialDepth(n):
-    # Write your solution here
-    return 0
-`,
-      factorialBaseReached: `def factorialBaseReached(n):
-    # Write your solution here
-    return True
-`,
-      multiply: `def multiply(a, b):
-    # Write your solution here
-    return 0
-`,
-      fibonacci: `def fibonacci(n):
-    # Write your solution here
-    return 0
-`,
-      fibonacciSum: `def fibonacciSum(n):
-    # Write your solution here
-    return 0
-`,
-      isFibonacciValue: `def isFibonacciValue(n):
-    # Write your solution here
-    return False
-`,
-      fibonacciDepth: `def fibonacciDepth(n):
-    # Write your solution here
-    return 0
-`,
-      tribonacci: `def tribonacci(n):
-    # Write your solution here
-    return 0
-`
-    };
-    return map[fn] || `def solve():
-    pass
-`;
-  }
-
-  if (language === "cpp") {
-    return `#include <bits/stdc++.h>
-using namespace std;
-
-// Write your solution here
-`;
-  }
-
-  if (language === "c") {
-    return `/* C execution template only. Browser execution is available for JavaScript for now. */`;
-  }
-
-  if (language === "java") {
-    return `import java.util.*;
-
-public class Main {
-    // Write your solution here
-}
-`;
+  if (language !== "javascript") {
+    return `// ${language.toUpperCase()} execution will be enabled later with Judge0.
+// For now, JavaScript runs directly in the browser.`;
   }
 
   const map = {
     factorial: `function factorial(n) {
-  // Write your solution here
-  return 1;
+  if (n === 0 || n === 1) return 1;
+  return n * factorial(n - 1);
 }
 `,
     factorialSum: `function factorialSum(n) {
-  // Write your solution here
-  return 0;
+  function factorial(x) {
+    if (x === 0 || x === 1) return 1;
+    return x * factorial(x - 1);
+  }
+
+  if (n === 1) return 1;
+  return factorial(n) + factorialSum(n - 1);
 }
 `,
     factorialDepth: `function factorialDepth(n) {
-  // Write your solution here
-  return 0;
+  if (n === 0 || n === 1) return 1;
+  return 1 + factorialDepth(n - 1);
 }
 `,
     factorialBaseReached: `function factorialBaseReached(n) {
-  // Write your solution here
-  return true;
+  if (n === 0 || n === 1) return true;
+  return factorialBaseReached(n - 1);
 }
 `,
     multiply: `function multiply(a, b) {
-  // Write your solution here
-  return 0;
+  if (b === 0) return 0;
+  return a + multiply(a, b - 1);
 }
 `,
     fibonacci: `function fibonacci(n) {
-  // Write your solution here
-  return 0;
+  if (n === 0) return 0;
+  if (n === 1) return 1;
+  return fibonacci(n - 1) + fibonacci(n - 2);
 }
 `,
     fibonacciSum: `function fibonacciSum(n) {
-  // Write your solution here
-  return 0;
+  function fibonacci(x) {
+    if (x === 0) return 0;
+    if (x === 1) return 1;
+    return fibonacci(x - 1) + fibonacci(x - 2);
+  }
+
+  if (n === 0) return 0;
+  return fibonacci(n) + fibonacciSum(n - 1);
 }
 `,
     isFibonacciValue: `function isFibonacciValue(n) {
-  // Write your solution here
+  function fibonacci(x) {
+    if (x === 0) return 0;
+    if (x === 1) return 1;
+    return fibonacci(x - 1) + fibonacci(x - 2);
+  }
+
+  for (let i = 0; i <= 10; i++) {
+    if (fibonacci(i) === n) return true;
+  }
+
   return false;
 }
 `,
     fibonacciDepth: `function fibonacciDepth(n) {
-  // Write your solution here
-  return 0;
+  if (n === 0 || n === 1) return 1;
+  return 1 + Math.max(fibonacciDepth(n - 1), fibonacciDepth(n - 2));
 }
 `,
     tribonacci: `function tribonacci(n) {
-  // Write your solution here
-  return 0;
+  if (n === 0) return 0;
+  if (n === 1 || n === 2) return 1;
+  return tribonacci(n - 1) + tribonacci(n - 2) + tribonacci(n - 3);
 }
 `
   };
 
-  return map[fn] || `function solve() {\n  // Write your solution here\n}\n`;
+  return map[problem.functionName] || `function solve() {\n  // Write your solution here\n}\n`;
 }
 
 export default function RecursionLab() {
@@ -429,11 +338,14 @@ export default function RecursionLab() {
   const [quizAnswers, setQuizAnswers] = useState([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState({});
   const [codes, setCodes] = useState({});
   const [results, setResults] = useState({});
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+  const [codingAttempted, setCodingAttempted] = useState(false);
 
   useEffect(() => {
     stopRequestedRef.current = false;
@@ -448,10 +360,13 @@ export default function RecursionLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
     setCurrentProblems([]);
     setSelectedLanguages({});
     setCodes({});
     setResults({});
+    setCodingSaveStatus({});
+    setCodingAttempted(false);
   }, [recursionType, quizQuestions.length]);
 
   const addStep = (text, level = 0) => {
@@ -470,9 +385,7 @@ export default function RecursionLab() {
   const completeCallFrame = (id, returnValue) => {
     setCallFrames((prev) =>
       prev.map((frame) =>
-        frame.id === id
-          ? { ...frame, status: "returned", returnValue }
-          : frame
+        frame.id === id ? { ...frame, status: "returned", returnValue } : frame
       )
     );
   };
@@ -549,18 +462,14 @@ export default function RecursionLab() {
 
           const frameId = addCallFrame(`factorial(${value})`, level);
 
-          const callStepIndex = stepCounter;
           addStep(`Call factorial(${value})`, level);
-          setActiveStepIndex(callStepIndex);
+          setActiveStepIndex(stepCounter);
           stepCounter++;
           await sleep(animationSpeed);
 
           if (value === 0 || value === 1) {
-            if (stopRequestedRef.current) return null;
-
-            const baseStepIndex = stepCounter;
             addStep(`Base case reached: factorial(${value}) = 1`, level);
-            setActiveStepIndex(baseStepIndex);
+            setActiveStepIndex(stepCounter);
             stepCounter++;
             await sleep(animationSpeed);
 
@@ -573,9 +482,8 @@ export default function RecursionLab() {
 
           const result = value * child;
 
-          const returnStepIndex = stepCounter;
           addStep(`Return factorial(${value}) = ${value} × ${child} = ${result}`, level);
-          setActiveStepIndex(returnStepIndex);
+          setActiveStepIndex(stepCounter);
           stepCounter++;
           await sleep(animationSpeed);
 
@@ -604,18 +512,14 @@ export default function RecursionLab() {
 
           const frameId = addCallFrame(`fibonacci(${value})`, level);
 
-          const callStepIndex = stepCounter;
           addStep(`Call fibonacci(${value})`, level);
-          setActiveStepIndex(callStepIndex);
+          setActiveStepIndex(stepCounter);
           stepCounter++;
           await sleep(animationSpeed);
 
           if (value === 0) {
-            if (stopRequestedRef.current) return null;
-
-            const baseStepIndex = stepCounter;
-            addStep(`Base case reached: fibonacci(0) = 0`, level);
-            setActiveStepIndex(baseStepIndex);
+            addStep("Base case reached: fibonacci(0) = 0", level);
+            setActiveStepIndex(stepCounter);
             stepCounter++;
             await sleep(animationSpeed);
 
@@ -624,11 +528,8 @@ export default function RecursionLab() {
           }
 
           if (value === 1) {
-            if (stopRequestedRef.current) return null;
-
-            const baseStepIndex = stepCounter;
-            addStep(`Base case reached: fibonacci(1) = 1`, level);
-            setActiveStepIndex(baseStepIndex);
+            addStep("Base case reached: fibonacci(1) = 1", level);
+            setActiveStepIndex(stepCounter);
             stepCounter++;
             await sleep(animationSpeed);
 
@@ -644,12 +545,11 @@ export default function RecursionLab() {
 
           const result = left + right;
 
-          const returnStepIndex = stepCounter;
           addStep(
             `Return fibonacci(${value}) = fibonacci(${value - 1}) + fibonacci(${value - 2}) = ${left} + ${right} = ${result}`,
             level
           );
-          setActiveStepIndex(returnStepIndex);
+          setActiveStepIndex(stepCounter);
           stepCounter++;
           await sleep(animationSpeed);
 
@@ -667,11 +567,6 @@ export default function RecursionLab() {
         setFinalResult(result);
         setMessage(`Final Result: fibonacci(${n}) = ${result}`);
       }
-
-      localStorage.setItem(
-        "vlab_last_experiment",
-        JSON.stringify({ name: `${recursionType}-recursion`, time: Date.now() })
-      );
     } finally {
       setIsRunning(false);
       stopRequestedRef.current = false;
@@ -697,30 +592,37 @@ export default function RecursionLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
+
     quizQuestions.forEach((q, i) => {
       if (quizAnswers[i] === q.correct) score++;
     });
 
     setQuizScore(score);
     setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: recursionType === "fibonacci" ? "fibonacci-recursion" : "factorial-recursion",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+    try {
+      await saveQuizResult({
+        labSlug: "dsa",
+        experimentSlug: "recursion",
+        correctAnswers: score,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Recursion quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
   };
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const generateProblems = () => {
@@ -740,6 +642,7 @@ export default function RecursionLab() {
     setSelectedLanguages(initialLanguages);
     setCodes(initialCodes);
     setResults({});
+    setCodingSaveStatus({});
   };
 
   const handleLanguageChange = (problemId, language, problem) => {
@@ -767,10 +670,23 @@ export default function RecursionLab() {
     }));
   };
 
-  const runCode = (problemId, language) => {
+  const saveRecursionCoding = async ({ problem, language, code, result }) => {
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "recursion",
+      problemTitle: problem?.title || "Recursion Problem",
+      language,
+      code,
+      result
+    });
+  };
+
+  const runCode = async (problemId, language) => {
     const problem = currentProblems.find((p) => p.id === problemId);
     const codeKey = `${problemId}_${language}`;
     const code = codes[codeKey];
+
+    setCodingAttempted(true);
 
     if (!problem || !code) {
       setResults((prev) => ({
@@ -783,9 +699,34 @@ export default function RecursionLab() {
     if (language !== "javascript") {
       setResults((prev) => ({
         ...prev,
-        [problemId]:
-          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+        [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving coding attempt..."
+        }));
+
+        await saveRecursionCoding({
+          problem,
+          language,
+          code,
+          result: "attempted"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempt saved to dashboard."
+        }));
+      } catch (error) {
+        console.error("Recursion coding save failed:", error);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempted, but backend save failed."
+        }));
+      }
+
       return;
     }
 
@@ -798,7 +739,9 @@ export default function RecursionLab() {
 
         const fn = new Function(
           ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
-          `${code}; return ${problem.functionName}(${args.map((_, i) => `arg${i}`).join(", ")});`
+          `${code}; return ${problem.functionName}(${args
+            .map((_, i) => `arg${i}`)
+            .join(", ")});`
         );
 
         const result = fn(...args);
@@ -816,11 +759,55 @@ export default function RecursionLab() {
           ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
           : "Incorrect Output"
       }));
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Saving coding submission..."
+      }));
+
+      await saveRecursionCoding({
+        problem,
+        language,
+        code,
+        result: allCorrect ? "passed" : "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? "Coding submission saved to dashboard."
+          : "Failed coding submission saved to dashboard."
+      }));
     } catch (error) {
       setResults((prev) => ({
         ...prev,
         [problemId]: `Error: ${error.message}`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving failed coding submission..."
+        }));
+
+        await saveRecursionCoding({
+          problem,
+          language,
+          code,
+          result: "failed"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Failed coding submission saved to dashboard."
+        }));
+      } catch (saveError) {
+        console.error("Recursion coding save failed:", saveError);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding failed, and backend save also failed."
+        }));
+      }
     }
   };
 
@@ -833,15 +820,17 @@ export default function RecursionLab() {
       return;
     }
 
-    const analysisData = {
-      code,
-      problemId,
-      topic: "recursion",
-      recursionType,
-      language
-    };
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "recursion",
+        recursionType,
+        language
+      })
+    );
 
-    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
     alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -854,236 +843,249 @@ export default function RecursionLab() {
       return;
     }
 
-    const correctionData = {
-      code,
-      problemId,
-      topic: "recursion",
-      recursionType,
-      language,
-      action: "correct"
-    };
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "recursion",
+        recursionType,
+        language,
+        action: "correct"
+      })
+    );
 
-    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
     alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   };
 
   const progressPercent =
-  activeSection === "overview"
-    ? 20
-    : activeSection === "simulation"
-    ? 52
-    : activeSection === "quiz"
-    ? 78
-    : 95;
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 52
+      : activeSection === "quiz"
+      ? 78
+      : 95;
 
-const recursionModeLabel =
-  recursionType === "fibonacci" ? "Fibonacci Recursion" : "Factorial Recursion";
+  const recursionModeLabel =
+    recursionType === "fibonacci" ? "Fibonacci Recursion" : "Factorial Recursion";
 
-const complexityLabel =
-  recursionType === "fibonacci" ? "O(2ⁿ)" : "O(n)";
+  const complexityLabel = recursionType === "fibonacci" ? "O(2ⁿ)" : "O(n)";
 
   return (
-  <div className="er-shell">
-    <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
-      <div className="er-brand">
-        <div className="er-brand-logo">
-          <img
-            src={simulabLogo}
-            alt="SimuLab"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSA Lab</div>
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+          >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
         </div>
 
         {!sidebarCollapsed && (
-          <div>
-            <div className="er-brand-title">SimuLab</div>
-            <div className="er-brand-subtitle">DSA Lab</div>
-          </div>
-        )}
-      </div>
-
-      <div className="er-collapse-wrap">
-        <button
-          type="button"
-          className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
-          onClick={() => setSidebarCollapsed((prev) => !prev)}
-        >
-          <ChevronsLeft size={18} />
-        </button>
-      </div>
-
-      <div className="er-nav">
-        {sidebarItems.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <button
-              key={item.key}
-              className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
-              onClick={() => setActiveSection(item.key)}
-              title={item.label}
-            >
-              <Icon size={18} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {!sidebarCollapsed && (
-        <div className="er-progress-card">
-          <div className="er-progress-title">Your Progress</div>
-          <div className="er-progress-ring">
-            <div
-              className="er-progress-circle"
-              style={{
-                background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
-              }}
-            >
-              <div className="er-progress-inner">
-                <div className="er-progress-value">{progressPercent}%</div>
-                <div className="er-progress-text">Complete</div>
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </aside>
+        )}
+      </aside>
 
-    <main className="er-main-area">
-      <div className="er-page-header">
-        <div>
-          <h1 className="er-page-title">{recursionModeLabel}</h1>
-          <p className="er-page-subtitle">
-            Visualize recursive calls, base cases, call stack growth, and return flow step by step.
-          </p>
-        </div>
-      </div>
-
-      <section className="er-config-card">
-        <div className="er-config-top">
+      <main className="er-main-area">
+        <div className="er-page-header">
           <div>
-            <h2>Recursion Configuration</h2>
-            <p>Select recursion type, animation speed, and observe call stack behavior.</p>
+            <h1 className="er-page-title">{recursionModeLabel}</h1>
+            <p className="er-page-subtitle">
+              Visualize recursive calls, base cases, call stack growth, and return flow step by step.
+            </p>
           </div>
+        </div>
 
-          <div className="er-mode-pill">
-            <div className="er-mode-pill-icon">
-              <Cpu size={18} />
-            </div>
+        <section className="er-config-card">
+          <div className="er-config-top">
             <div>
-              <strong>{recursionModeLabel}</strong>
-              <span>
-                Complexity: {complexityLabel}. Active frames: {callFrames.length}.
-              </span>
+              <h2>Recursion Configuration</h2>
+              <p>Select recursion type, animation speed, and observe call stack behavior.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>{recursionModeLabel}</strong>
+                <span>
+                  Complexity: {complexityLabel}. Active frames: {callFrames.length}.
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="er-config-grid">
-          <div>
-            <label className="sorting-label">Recursion Type</label>
-            <select
-              value={recursionType}
-              onChange={(e) => setRecursionType(e.target.value)}
-              className="sorting-select"
-              disabled={isRunning}
-            >
-              <option value="factorial">Factorial</option>
-              <option value="fibonacci">Fibonacci</option>
-            </select>
+          <div className="er-config-grid">
+            <div>
+              <label className="sorting-label">Recursion Type</label>
+              <select
+                value={recursionType}
+                onChange={(e) => setRecursionType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="factorial">Factorial</option>
+                <option value="fibonacci">Fibonacci</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="sorting-label">Animation Speed</label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="sorting-select"
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
+          <div className="er-chip-row">
+            <button className="er-chip active">Mode = {recursionModeLabel}</button>
+            <button className="er-chip active">Complexity = {complexityLabel}</button>
+            <button className="er-chip active">
+              Input n = {inputValue.trim() ? inputValue : "Not Set"}
+            </button>
+            <button className="er-chip active">Steps = {steps.length}</button>
+            <button className="er-chip active">
+              Result = {finalResult !== null ? finalResult : "Pending"}
+            </button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Experiment Run" : "Not Started"}
+            </button>
           </div>
-        </div>
 
-        <div className="er-chip-row">
-          <button className="er-chip active">Mode = {recursionModeLabel}</button>
-          <button className="er-chip active">Complexity = {complexityLabel}</button>
-          <button className="er-chip active">
-            Input n = {inputValue.trim() ? inputValue : "Not Set"}
-          </button>
-          <button className="er-chip active">Steps = {steps.length}</button>
-          <button className="er-chip active">
-            Result = {finalResult !== null ? finalResult : "Pending"}
-          </button>
-          <button className={`er-chip ${experimentRun ? "active" : ""}`}>
-            {experimentRun ? "Experiment Run" : "Not Started"}
-          </button>
-        </div>
-      </section>
-
-      <div className="er-content-layout">
-        <section className="er-content-card">
-          {activeSection === "overview" && (
-            <RecursionOverview recursionType={recursionType} />
-          )}
-
-          {activeSection === "simulation" && (
-            <RecursionSimulation
-              recursionType={recursionType}
-              inputValue={inputValue}
-              setInputValue={setInputValue}
-              runVisualization={runVisualization}
-              stopVisualization={stopVisualization}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              steps={steps}
-              activeStepIndex={activeStepIndex}
-              finalResult={finalResult}
-              inputRef={inputRef}
-              isRunning={isRunning}
-              callFrames={callFrames}
-            />
-          )}
-
-          {activeSection === "quiz" && (
-            <RecursionQuiz
-              recursionType={recursionType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-              redoQuiz={redoQuiz}
-            />
-          )}
-
-          {activeSection === "coding" && (
-            <RecursionCoding
-              recursionType={recursionType}
-              currentProblems={currentProblems}
-              selectedLanguages={selectedLanguages}
-              codes={codes}
-              results={results}
-              generateProblems={generateProblems}
-              handleLanguageChange={handleLanguageChange}
-              handleCodeChange={handleCodeChange}
-              runCode={runCode}
-              analyzeCode={analyzeCode}
-              correctCode={correctCode}
-            />
+          {experimentRun && quizSubmitted && codingAttempted && (
+            <div style={{ marginTop: 18 }}>
+              <MarkCompleteButton
+                labSlug="dsa"
+                experimentSlug="recursion"
+                points={10}
+              />
+            </div>
           )}
         </section>
-      </div>
-    </main>
-  </div>
-);
+
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <RecursionOverview recursionType={recursionType} />
+            )}
+
+            {activeSection === "simulation" && (
+              <RecursionSimulation
+                recursionType={recursionType}
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+                runVisualization={runVisualization}
+                stopVisualization={stopVisualization}
+                reset={reset}
+                loadSample={loadSample}
+                message={message}
+                steps={steps}
+                activeStepIndex={activeStepIndex}
+                finalResult={finalResult}
+                inputRef={inputRef}
+                isRunning={isRunning}
+                callFrames={callFrames}
+              />
+            )}
+
+            {activeSection === "quiz" && (
+              <RecursionQuiz
+                recursionType={recursionType}
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                experimentRun={experimentRun}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
+            )}
+
+            {activeSection === "coding" && (
+              <RecursionCoding
+                recursionType={recursionType}
+                currentProblems={currentProblems}
+                selectedLanguages={selectedLanguages}
+                codes={codes}
+                results={results}
+                codingSaveStatus={codingSaveStatus}
+                generateProblems={generateProblems}
+                handleLanguageChange={handleLanguageChange}
+                handleCodeChange={handleCodeChange}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+              />
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
+  );
 }

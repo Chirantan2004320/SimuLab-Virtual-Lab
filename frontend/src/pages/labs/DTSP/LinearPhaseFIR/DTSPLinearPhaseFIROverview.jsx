@@ -1,54 +1,112 @@
 import React from "react";
+import { Target, BookOpen, Activity, ShieldCheck, GitCompare } from "lucide-react";
 
 export default function DTSPLinearPhaseFIROverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To analyze the impulse response and frequency response of FIR filters
-          and determine whether they exhibit linear phase characteristics.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Study FIR symmetry, linear phase behavior, and filter type classification.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          A Finite Impulse Response (FIR) filter has a finite-duration impulse response,
-          which makes it inherently stable.
-        </p>
-        <p>
-          FIR filters have linear phase when their impulse response is symmetric or
-          antisymmetric about the center.
-        </p>
-        <p>
-          Linear phase is important because it preserves the waveform shape of signals
-          by delaying all frequency components equally.
-        </p>
-        <p>
-          Depending on symmetry and filter length, linear phase FIR filters are classified
-          into four types: Type I, II, III, and IV.
-        </p>
-      </section>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>Linear Phase FIR Filter</h3>
+          <span className="overview-badge">DTSP Experiment</span>
+        </div>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Enter FIR impulse response coefficients as comma-separated values.</li>
-          <li>Click <strong>Analyze FIR</strong>.</li>
-          <li>Observe whether the sequence is symmetric or antisymmetric.</li>
-          <li>Check the detected FIR type.</li>
-          <li>Study the magnitude and phase response in the graph section.</li>
+        <p className="overview-hero-text">
+          FIR filters have finite impulse responses, making them inherently stable.
+          A FIR filter shows linear phase when its impulse response is symmetric or
+          antisymmetric about the center. Linear phase is important because it delays
+          all frequency components equally and helps preserve waveform shape.
+        </p>
+      </div>
+
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            To analyze FIR impulse response and frequency response and determine whether
+            the filter has linear phase characteristics.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Activity size={18} />
+            <h4>Linear Phase</h4>
+          </div>
+          <p>
+            Linear phase occurs when the phase response is approximately linear with frequency.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <GitCompare size={18} />
+            <h4>Symmetry Rule</h4>
+          </div>
+          <p>
+            FIR filters are linear phase when h[n] is symmetric or antisymmetric around its center.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <ShieldCheck size={18} />
+            <h4>Stability</h4>
+          </div>
+          <p>
+            FIR filters are stable because their impulse response has finite duration.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {[
+            "Enter FIR impulse response coefficients as comma-separated values.",
+            "Click Analyze FIR.",
+            "Observe whether the sequence is symmetric or antisymmetric.",
+            "Check the detected FIR type.",
+            "Open the graph section.",
+            "Study magnitude and phase response."
+          ].map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Key Observation</h2>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Target size={18} />
+          <h4>Key Observation</h4>
+        </div>
         <p>
           Symmetry in the impulse response is the main indicator of linear phase behavior
-          in FIR filters.
+          in FIR filters. The length and symmetry type decide whether the filter is Type I,
+          Type II, Type III, or Type IV.
         </p>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

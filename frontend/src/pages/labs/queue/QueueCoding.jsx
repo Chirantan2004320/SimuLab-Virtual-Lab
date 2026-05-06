@@ -10,6 +10,7 @@ const QueueCoding = ({
   code,
   setCode,
   codeResult,
+  codingSaveStatus,
   runCode,
   analyzeCode,
   correctCode
@@ -23,20 +24,21 @@ const QueueCoding = ({
         <div>
           <h2 className="sorting-sim-title">Coding Practice</h2>
           <p className="sorting-sim-subtitle">
-            Solve queue operation problems and test your implementation.
+            Practice multiple queue-based coding problems and test your implementation.
           </p>
         </div>
       </div>
 
       <div className="coding-empty-state" style={{ marginBottom: 18 }}>
-        <strong>Practice Mode:</strong> Complete all queue problems below. JavaScript can run directly in browser.
+        <strong>Practice Mode:</strong> Select a problem from the dropdown above,
+        write code, and run it. JavaScript runs directly in browser.
       </div>
 
       {codingProblems.map((problem, index) => (
         <div key={index} className="coding-card-upgraded">
           <div className="coding-card-header">
             <div>
-              <h3>Problem {index + 1}</h3>
+              <h3>Problem {index + 1}: {problem.title}</h3>
               <p>{problem.description}</p>
             </div>
 
@@ -97,8 +99,12 @@ const QueueCoding = ({
             </div>
           )}
 
-          {codeResult && index === 0 && (
+          {codeResult && (
             <div className="coding-result-box">{codeResult}</div>
+          )}
+
+          {codingSaveStatus && (
+            <div className="coding-result-box">{codingSaveStatus}</div>
           )}
         </div>
       ))}

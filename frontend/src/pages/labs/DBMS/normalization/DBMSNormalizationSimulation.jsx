@@ -174,13 +174,10 @@ function ComparisonPanel({ normalForm, displayTables }) {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: hasAfterTables ? "1fr 1fr" : "1fr",
-          gap: 18
-        }}
-      >
+      {/* ✅ STACKED LAYOUT (FIXED) */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        
+        {/* BEFORE */}
         <div
           style={{
             background: "rgba(8, 20, 45, 0.78)",
@@ -208,11 +205,11 @@ function ComparisonPanel({ normalForm, displayTables }) {
               key={`before-${table.title}-${index}`}
               title={table.title}
               rows={table.rows}
-              highlightRows={[]}
             />
           ))}
         </div>
 
+        {/* AFTER */}
         {hasAfterTables && (
           <div
             style={{
@@ -241,7 +238,6 @@ function ComparisonPanel({ normalForm, displayTables }) {
                 key={`after-${table.title}-${index}`}
                 title={table.title}
                 rows={table.rows}
-                highlightRows={[]}
               />
             ))}
           </div>

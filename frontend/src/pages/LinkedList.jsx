@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
@@ -11,6 +12,9 @@ import {
 
 import "./Lab.css";
 import "./SortingLab.css";
+
+import MarkCompleteButton from "../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../API/progressApi";
 
 import LinkedListOverview from "./labs/linked-list/LinkedListOverview.jsx";
 import LinkedListSimulation from "./labs/linked-list/LinkedListSimulation.jsx";
@@ -154,11 +158,14 @@ export default function LinkedListLab() {
   const [quizAnswers, setQuizAnswers] = useState([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [codes, setCodes] = useState({});
   const [selectedLanguages, setSelectedLanguages] = useState({});
   const [results, setResults] = useState({});
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+  const [codingAttempted, setCodingAttempted] = useState(false);
 
   const inputRef = useRef(null);
 
@@ -188,10 +195,13 @@ export default function LinkedListLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
     setCurrentProblems([]);
     setCodes({});
     setSelectedLanguages({});
     setResults({});
+    setCodingSaveStatus({});
+    setCodingAttempted(false);
   }, [listType, quizQuestions.length]);
 
   const createNode = (value) => ({
@@ -349,7 +359,7 @@ export default function LinkedListLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
 
     quizQuestions.forEach((q, i) => {
@@ -358,31 +368,37 @@ export default function LinkedListLab() {
 
     setQuizScore(score);
     setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: listType === "doubly" ? "doubly-linked-list" : "singly-linked-list",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+    try {
+      await saveQuizResult({
+        labSlug: "dsa",
+        experimentSlug: "linked-list",
+        correctAnswers: score,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Linked List quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
   };
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const getStarterCode = (problem, language) => {
-    if (problem.title === "Insert at Head" && listType === "singly") {
-      if (language === "python") {
-        return `def insertAtHead(head, value):
-    return {"value": value, "next": head}`;
-      }
+    if (language !== "javascript") {
+      return `// ${language.toUpperCase()} starter will be executed later with Judge0.
+// For now, JavaScript runs in browser.`;
+    }
 
+    if (problem.title === "Insert at Head" && listType === "singly") {
       return `function insertAtHead(head, value) {
   return { value, next: head };
 }`;
@@ -464,6 +480,7 @@ export default function LinkedListLab() {
     setSelectedLanguages(initialLanguages);
     setCodes(initialCodes);
     setResults({});
+    setCodingSaveStatus({});
   };
 
   const handleLanguageChange = (problemId, language, problem) => {
@@ -488,10 +505,23 @@ export default function LinkedListLab() {
     setCodes((prev) => ({ ...prev, [key]: code }));
   };
 
-  const runCode = (problemId, language) => {
+  const saveLinkedListCoding = async ({ problem, language, userCode, result }) => {
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "linked-list",
+      problemTitle: problem?.title || "Linked List Problem",
+      language,
+      code: userCode,
+      result
+    });
+  };
+
+  const runCode = async (problemId, language) => {
     const problem = currentProblems.find((p) => p.id === problemId);
     const codeKey = `${problemId}_${language}`;
     const userCode = codes[codeKey];
+
+    setCodingAttempted(true);
 
     if (!userCode || !problem) {
       setResults((prev) => ({ ...prev, [problemId]: "Please enter code." }));
@@ -503,6 +533,32 @@ export default function LinkedListLab() {
         ...prev,
         [problemId]: `${language.toUpperCase()} execution will be added later. For now, use JavaScript.`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving coding attempt..."
+        }));
+
+        await saveLinkedListCoding({
+          problem,
+          language,
+          userCode,
+          result: "attempted"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempt saved to dashboard."
+        }));
+      } catch (error) {
+        console.error("Linked List coding save failed:", error);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempted, but backend save failed."
+        }));
+      }
+
       return;
     }
 
@@ -553,11 +609,53 @@ export default function LinkedListLab() {
         ...prev,
         [problemId]: `Output: ${JSON.stringify(result)}`
       }));
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Saving coding submission..."
+      }));
+
+      await saveLinkedListCoding({
+        problem,
+        language,
+        userCode,
+        result: "passed"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Coding submission saved to dashboard."
+      }));
     } catch (error) {
       setResults((prev) => ({
         ...prev,
         [problemId]: `Error: ${error.message}`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving failed coding submission..."
+        }));
+
+        await saveLinkedListCoding({
+          problem,
+          language,
+          userCode,
+          result: "failed"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Failed coding submission saved to dashboard."
+        }));
+      } catch (saveError) {
+        console.error("Linked List coding save failed:", saveError);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding failed, and backend save also failed."
+        }));
+      }
     }
   };
 
@@ -740,6 +838,16 @@ export default function LinkedListLab() {
               {experimentRun ? "Experiment Run" : "Not Started"}
             </button>
           </div>
+
+          {experimentRun && quizSubmitted && codingAttempted && (
+            <div style={{ marginTop: 18 }}>
+              <MarkCompleteButton
+                labSlug="dsa"
+                experimentSlug="linked-list"
+                points={10}
+              />
+            </div>
+          )}
         </section>
 
         <div className="er-content-layout">
@@ -779,6 +887,7 @@ export default function LinkedListLab() {
                 quizAnswers={quizAnswers}
                 quizSubmitted={quizSubmitted}
                 quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
                 experimentRun={experimentRun}
                 handleQuizAnswer={handleQuizAnswer}
                 submitQuiz={submitQuiz}
@@ -792,6 +901,7 @@ export default function LinkedListLab() {
                 codes={codes}
                 selectedLanguages={selectedLanguages}
                 results={results}
+                codingSaveStatus={codingSaveStatus}
                 generateProblems={generateProblems}
                 handleLanguageChange={handleLanguageChange}
                 handleCodeChange={handleCodeChange}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Brain, CheckCircle2, Lock } from "lucide-react";
+import { Brain, CheckCircle2, Lock, RotateCcw } from "lucide-react";
 
 export default function DBMSIndexingQuiz({
   searchMode,
@@ -7,9 +7,11 @@ export default function DBMSIndexingQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
-  submitQuiz
+  submitQuiz,
+  redoQuiz
 }) {
   const total = quizQuestions.length;
   const percentage = total ? Math.round((quizScore / total) * 100) : 0;
@@ -46,7 +48,8 @@ export default function DBMSIndexingQuiz({
         <div>
           <h2 className="sorting-sim-title">Quiz</h2>
           <p className="sorting-sim-subtitle">
-            Answer the questions below for {searchMode === "linear" ? "search without index" : "indexed search"}.
+            Answer the questions below for{" "}
+            {searchMode === "linear" ? "search without index" : "indexed search"}.
           </p>
         </div>
       </div>
@@ -61,7 +64,12 @@ export default function DBMSIndexingQuiz({
 
               <div className="quiz-options-grid">
                 {q.options.map((opt, j) => (
-                  <label key={j} className="quiz-option-card">
+                  <label
+                    key={j}
+                    className={`quiz-option-card ${
+                      quizAnswers[i] === j ? "selected" : ""
+                    }`}
+                  >
                     <input
                       type="radio"
                       name={`q${i}`}
@@ -92,6 +100,7 @@ export default function DBMSIndexingQuiz({
               <p>
                 Score: <b>{quizScore}</b> / {total} ({percentage}%)
               </p>
+              {quizSaveStatus && <p>{quizSaveStatus}</p>}
             </div>
           </div>
 
@@ -121,6 +130,13 @@ export default function DBMSIndexingQuiz({
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="quiz-actions-row">
+            <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+              <RotateCcw size={16} />
+              Redo Quiz
+            </button>
           </div>
         </div>
       )}

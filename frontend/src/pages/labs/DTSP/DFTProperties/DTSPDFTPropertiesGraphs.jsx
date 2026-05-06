@@ -11,12 +11,17 @@ import {
   Bar,
   Legend
 } from "recharts";
+import { LineChart as LineChartIcon, Activity } from "lucide-react";
 
 function GraphCard({ title, data, dataKey, secondLineKey = null, line = false }) {
   return (
-    <div className="card" style={{ marginTop: "1rem" }}>
-      <h3>{title}</h3>
-      <div style={{ width: "100%", height: 300 }}>
+    <div className="overview-card" style={{ marginBottom: 18 }}>
+      <div className="overview-card-head">
+        <LineChartIcon size={18} />
+        <h4>{title}</h4>
+      </div>
+
+      <div style={{ width: "100%", height: 320 }}>
         <ResponsiveContainer>
           {line ? (
             <LineChart data={data}>
@@ -26,9 +31,9 @@ function GraphCard({ title, data, dataKey, secondLineKey = null, line = false })
               <Tooltip />
               {secondLineKey ? <Legend /> : null}
               <Line type="monotone" dataKey={dataKey} stroke="#38bdf8" strokeWidth={2} />
-              {secondLineKey ? (
+              {secondLineKey && (
                 <Line type="monotone" dataKey={secondLineKey} stroke="#22c55e" strokeWidth={2} />
-              ) : null}
+              )}
             </LineChart>
           ) : (
             <BarChart data={data}>
@@ -38,7 +43,7 @@ function GraphCard({ title, data, dataKey, secondLineKey = null, line = false })
               <Tooltip />
               {secondLineKey ? <Legend /> : null}
               <Bar dataKey={dataKey} fill="#22c55e" />
-              {secondLineKey ? <Bar dataKey={secondLineKey} fill="#a855f7" /> : null}
+              {secondLineKey && <Bar dataKey={secondLineKey} fill="#a855f7" />}
             </BarChart>
           )}
         </ResponsiveContainer>
@@ -59,9 +64,22 @@ export default function DTSPDFTPropertiesGraphs({
 }) {
   if (!sequence.length) {
     return (
-      <section className="card experiment">
-        <h2>Graphs</h2>
-        <div className="info-box">Please run the simulation first to view graphs.</div>
+      <section className="comparison-shell">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <LineChartIcon size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Graphs</h2>
+            <p className="sorting-sim-subtitle">
+              Run the simulation first to view spectrum comparison graphs.
+            </p>
+          </div>
+        </div>
+
+        <div className="coding-empty-state">
+          Please run the simulation first to view graphs.
+        </div>
       </section>
     );
   }
@@ -105,10 +123,21 @@ export default function DTSPDFTPropertiesGraphs({
       : "Frequency shift redistributes energy across frequency bins.";
 
   return (
-    <section className="card experiment">
-      <h2>Graphs</h2>
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <LineChartIcon size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Graphs</h2>
+          <p className="sorting-sim-subtitle">
+            Compare original and transformed signals in time and frequency domain.
+          </p>
+        </div>
+      </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
+      <div className="sorting-info-box">
+        <Activity size={16} style={{ marginRight: 10 }} />
         {propertyText}
       </div>
 
@@ -116,14 +145,14 @@ export default function DTSPDFTPropertiesGraphs({
         title="Original Time-Domain Sequence"
         data={originalTimeData}
         dataKey="value"
-        line={true}
+        line
       />
 
       <GraphCard
         title="Transformed Time-Domain Sequence"
         data={transformedTimeData}
         dataKey="value"
-        line={true}
+        line
       />
 
       <GraphCard
@@ -131,7 +160,7 @@ export default function DTSPDFTPropertiesGraphs({
         data={compareTimeData}
         dataKey="original"
         secondLineKey="transformed"
-        line={true}
+        line
       />
 
       <GraphCard
@@ -158,7 +187,7 @@ export default function DTSPDFTPropertiesGraphs({
         data={comparePhaseData}
         dataKey="original"
         secondLineKey="transformed"
-        line={true}
+        line
       />
     </section>
   );

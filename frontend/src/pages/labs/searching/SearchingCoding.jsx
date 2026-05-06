@@ -15,6 +15,7 @@ export default function SearchingCoding({
   selectedLanguages,
   codes,
   results,
+  codingSaveStatus,
   generateProblems,
   handleLanguageChange,
   handleCodeChange,
@@ -127,6 +128,12 @@ export default function SearchingCoding({
             {results[problem.id] && (
               <div className="coding-result-box">
                 {results[problem.id]}
+              </div>
+            )}
+
+            {codingSaveStatus?.[problem.id] && (
+              <div className="coding-result-box">
+                {codingSaveStatus[problem.id]}
               </div>
             )}
           </div>

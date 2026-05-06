@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Code2, Play, Sparkles, Wrench } from "lucide-react";
+import { saveCodingSubmission } from "../../../../API/progressApi";
 
 const SAMPLE_STUDENTS = [
   { id: 1, name: "Aarav", department: "CSE", age: 20, marks: 82 },
@@ -55,9 +56,9 @@ const SQL_PROBLEM_BANK = [
     expectedQuery:
       "SELECT name, department, marks FROM students WHERE marks >= 85 ORDER BY marks DESC;",
     expectedResult: [
+      { name: "Rohan", department: "CSE", marks: 95 },
       { name: "Diya", department: "ECE", marks: 91 },
-      { name: "Meera", department: "ME", marks: 88 },
-      { name: "Rohan", department: "CSE", marks: 95 }
+      { name: "Meera", department: "ME", marks: 88 }
     ]
   },
   {
@@ -67,9 +68,7 @@ const SQL_PROBLEM_BANK = [
       "Write a SQL query to display id, name, department, and marks for all students from the ME department.",
     expectedQuery:
       "SELECT id, name, department, marks FROM students WHERE department = 'ME';",
-    expectedResult: [
-      { id: 4, name: "Meera", department: "ME", marks: 88 }
-    ]
+    expectedResult: [{ id: 4, name: "Meera", department: "ME", marks: 88 }]
   }
 ];
 
@@ -97,20 +96,24 @@ export default function DBMSSQLBasicsCoding() {
   const [currentProblems, setCurrentProblems] = useState([]);
   const [queries, setQueries] = useState({});
   const [results, setResults] = useState({});
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   const generateProblems = () => {
     const selected = shuffleArray(SQL_PROBLEM_BANK).slice(0, 3);
     const initialQueries = {};
     const initialResults = {};
+    const initialSaveStatus = {};
 
     selected.forEach((problem) => {
       initialQueries[problem.id] = "-- Write your SQL query here\n";
       initialResults[problem.id] = "";
+      initialSaveStatus[problem.id] = "";
     });
 
     setCurrentProblems(selected);
     setQueries(initialQueries);
     setResults(initialResults);
+    setCodingSaveStatus(initialSaveStatus);
   };
 
   const handleQueryChange = (problemId, value) => {
@@ -120,7 +123,7 @@ export default function DBMSSQLBasicsCoding() {
     }));
   };
 
-  const runQuery = (problem) => {
+  const runQuery = async (problem) => {
     const userQuery = queries[problem.id] || "";
 
     if (!userQuery.trim()) {
@@ -133,17 +136,40 @@ export default function DBMSSQLBasicsCoding() {
 
     const normalizedUserQuery = normalizeSql(userQuery);
     const normalizedExpectedQuery = normalizeSql(problem.expectedQuery);
+    const isCorrect = normalizedUserQuery === normalizedExpectedQuery;
 
-    if (normalizedUserQuery === normalizedExpectedQuery) {
-      setResults((prev) => ({
+    setResults((prev) => ({
+      ...prev,
+      [problem.id]: isCorrect
+        ? `Correct Query!\n\nResult:\n${renderTable(problem.expectedResult)}`
+        : "Incorrect Query.\n\nTry checking your SELECT columns, WHERE condition, ORDER BY clause, and LIMIT."
+    }));
+
+    setCodingSaveStatus((prev) => ({
+      ...prev,
+      [problem.id]: "Saving submission..."
+    }));
+
+    try {
+      await saveCodingSubmission({
+        labSlug: "dbms",
+        experimentSlug: "sql-basics",
+        problemTitle: problem.title,
+        language: "sql",
+        code: userQuery,
+        result: isCorrect ? "passed" : "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problem.id]: `Correct Query!\n\nResult:\n${renderTable(problem.expectedResult)}`
+        [problem.id]: "Submission saved to dashboard."
       }));
-    } else {
-      setResults((prev) => ({
+    } catch (error) {
+      console.error("SQL coding save failed:", error);
+
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problem.id]:
-          "Incorrect Query.\n\nTry checking your SELECT columns, WHERE condition, ORDER BY clause, and LIMIT."
+        [problem.id]: "Query checked, but backend save failed."
       }));
     }
   };
@@ -156,17 +182,19 @@ export default function DBMSSQLBasicsCoding() {
       return;
     }
 
-    const analysisData = {
-      type: "sql_query_analysis",
-      experiment: "sql-basics",
-      problemId: problem.id,
-      title: problem.title,
-      description: problem.description,
-      sampleTable: SAMPLE_STUDENTS,
-      query
-    };
+    localStorage.setItem(
+      "vlab_sql_query_analysis",
+      JSON.stringify({
+        type: "sql_query_analysis",
+        experiment: "sql-basics",
+        problemId: problem.id,
+        title: problem.title,
+        description: problem.description,
+        sampleTable: SAMPLE_STUDENTS,
+        query
+      })
+    );
 
-    localStorage.setItem("vlab_sql_query_analysis", JSON.stringify(analysisData));
     alert("Query analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -178,18 +206,20 @@ export default function DBMSSQLBasicsCoding() {
       return;
     }
 
-    const correctionData = {
-      type: "sql_query_correction",
-      experiment: "sql-basics",
-      problemId: problem.id,
-      title: problem.title,
-      description: problem.description,
-      sampleTable: SAMPLE_STUDENTS,
-      query,
-      expectedQuery: problem.expectedQuery
-    };
+    localStorage.setItem(
+      "vlab_sql_query_correction",
+      JSON.stringify({
+        type: "sql_query_correction",
+        experiment: "sql-basics",
+        problemId: problem.id,
+        title: problem.title,
+        description: problem.description,
+        sampleTable: SAMPLE_STUDENTS,
+        query,
+        expectedQuery: problem.expectedQuery
+      })
+    );
 
-    localStorage.setItem("vlab_sql_query_correction", JSON.stringify(correctionData));
     alert("Query correction request sent to AI Assistant. Check the AI chat for the corrected query!");
   };
 
@@ -213,11 +243,11 @@ export default function DBMSSQLBasicsCoding() {
         </button>
       </div>
 
-      {currentProblems.length === 0 ? (
+      {currentProblems.length === 0 && (
         <div className="coding-empty-state">
           No problems generated yet. Click <b>Generate Problems</b> to begin.
         </div>
-      ) : null}
+      )}
 
       {currentProblems.map((problem, index) => (
         <div key={problem.id} className="coding-card-upgraded">
@@ -277,6 +307,12 @@ export default function DBMSSQLBasicsCoding() {
               >
                 {results[problem.id]}
               </pre>
+            </div>
+          )}
+
+          {codingSaveStatus[problem.id] && (
+            <div className="coding-result-box">
+              {codingSaveStatus[problem.id]}
             </div>
           )}
         </div>

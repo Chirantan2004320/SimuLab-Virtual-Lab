@@ -34,6 +34,8 @@ import DTSPLinearPhaseFIRLab from "./pages/labs/DTSP/LinearPhaseFIR/DTSPLinearPh
 import DTSPAliasingLab from "./pages/labs/DTSP/SamplingAliasing/DTSPAliasingLab.jsx";
 import DTSPFFTvsDFTLab from "./pages/labs/DTSP/FFTvsDFT/DTSPFFTvsDFTLab.jsx";
 import DTSPFilterDesignLab from "./pages/labs/DTSP/DTSPFilterDesign/DTSPFilterDesignLab.jsx";
+import DTSPIIRFilterDesignLab from "./pages/labs/DTSP/IIRFilterDesign/DTSPIIRFilterDesignLab.jsx";
+import DTSPWindowingTechniquesLab from "./pages/labs/DTSP/WindowingTechniques/DTSPWindowingTechniquesLab.jsx";
 import DSDLabIndex from "./pages/DSDLabIndex.jsx";
 import DSDLogicGatesLab from "./pages/labs/DSD/LogicGates/DSDLogicGatesLab.jsx";
 import AIAssistant from "./components/AIAssistant.jsx";
@@ -168,55 +170,16 @@ function AppContent() {
 
         {/* DTSP Lab index and experiments (frontend-only for now) */}
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
-        <Route
-          path="/labs/dtsp/pole-zero-analysis"
-          element={
-          <ProtectedRoute>
-          <DTSPPoleZeroAnalysisLab />
-          </ProtectedRoute>
-       }
-      />
+        <Route path="/labs/dtsp/pole-zero-analysis" element={<ProtectedRoute><DTSPPoleZeroAnalysisLab /></ProtectedRoute>}/>
         <Route path="/labs/dtsp/dft-idft" element={<ProtectedRoute><DTSPDFTIDFT /></ProtectedRoute>} />
-        <Route
-         path="/labs/dtsp/dft-properties"
-        element={
-        <ProtectedRoute>
-        <DTSPDFTPropertiesLab />
-        </ProtectedRoute>
-        }
-      />
-        <Route
-          path="/labs/dtsp/linear-convolution-using-circular-convolution"
-          element={<ProtectedRoute><DTSPLinearCircularConvolutionLab /></ProtectedRoute>}
-        />
-        <Route
-          path="/labs/dtsp/linear-phase-fir-analysis"
-          element={
-          <ProtectedRoute>
-          <DTSPLinearPhaseFIRLab />
-          </ProtectedRoute>
-          }
-        />
-
-        <Route
-  path="/labs/dtsp/sampling-aliasing"
-  element={
-    <ProtectedRoute>
-      <DTSPAliasingLab />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/labs/dtsp/fft-vs-dft"
-  element={
-    <ProtectedRoute>
-      <DTSPFFTvsDFTLab />
-    </ProtectedRoute>
-  }
-/>
-
-<Route path="/labs/dtsp/filter-design" element={<ProtectedRoute><DTSPFilterDesignLab /></ProtectedRoute>} />
+        <Route path="/labs/dtsp/dft-properties"element={<ProtectedRoute><DTSPDFTPropertiesLab /></ProtectedRoute>}/>
+        <Route path="/labs/dtsp/linear-convolution-using-circular-convolution" element={<ProtectedRoute><DTSPLinearCircularConvolutionLab /></ProtectedRoute>}/>
+        <Route path="/labs/dtsp/linear-phase-fir-analysis" element={<ProtectedRoute><DTSPLinearPhaseFIRLab /></ProtectedRoute>}/>
+        <Route path="/labs/dtsp/sampling-aliasing" element={<ProtectedRoute><DTSPAliasingLab /></ProtectedRoute>}/>
+        <Route path="/labs/dtsp/fft-vs-dft" element={<ProtectedRoute><DTSPFFTvsDFTLab /></ProtectedRoute>}/>
+        <Route path="/labs/dtsp/filter-design" element={<ProtectedRoute><DTSPFilterDesignLab /></ProtectedRoute>} />
+        <Route path="/labs/dtsp/iir-filter-design" element={<ProtectedRoute><DTSPIIRFilterDesignLab /></ProtectedRoute>} />
+        <Route path="/labs/dtsp/windowing-techniques" element={<ProtectedRoute><DTSPWindowingTechniquesLab /></ProtectedRoute>} />
 
         {/* DSD Lab index (frontend-only for now) */}
         <Route path="/labs/dsd" element={<ProtectedRoute><DSDLabIndex /></ProtectedRoute>} />

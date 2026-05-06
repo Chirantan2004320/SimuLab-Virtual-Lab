@@ -1,59 +1,114 @@
 import React from "react";
+import { Target, BookOpen, Activity, Waves, CheckCircle2 } from "lucide-react";
 
 export default function DTSPDFTIDFTOverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To compute the Discrete Fourier Transform (DFT) and Inverse Discrete
-          Fourier Transform (IDFT) of a finite-length sequence and study the
-          relation between time-domain and frequency-domain representations.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Learn how DFT and IDFT connect time-domain and frequency-domain representations.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          The Discrete Fourier Transform converts a discrete-time sequence x[n]
-          of length N into N complex-valued frequency-domain coefficients X[k].
-        </p>
-        <p>
-          Each DFT coefficient describes the strength and phase of a frequency
-          component present in the original signal.
-        </p>
-        <p>
-          The IDFT reconstructs the original sequence from the frequency-domain
-          coefficients, showing that no information is lost when all DFT values
-          are preserved.
-        </p>
-        <p>
-          Magnitude tells how strong a frequency component is, while phase tells
-          its angular shift.
-        </p>
-      </section>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>DFT and IDFT</h3>
+          <span className="overview-badge">DTSP Experiment</span>
+        </div>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Enter a discrete-time sequence as comma-separated values.</li>
-          <li>Click on <strong>Compute DFT</strong>.</li>
-          <li>Observe real, imaginary, magnitude, and phase values.</li>
-          <li>Click on <strong>Compute IDFT</strong>.</li>
-          <li>Compare the reconstructed sequence with the original input.</li>
+        <p className="overview-hero-text">
+          The Discrete Fourier Transform converts a finite discrete-time sequence into
+          complex frequency-domain coefficients. Each coefficient shows how much of a
+          particular frequency component is present in the original signal. The IDFT performs
+          the reverse operation and reconstructs the original sequence from those coefficients.
+        </p>
+      </div>
+
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            To compute the DFT and IDFT of a finite-length sequence and study the relation
+            between time-domain and frequency-domain representations.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Activity size={18} />
+            <h4>DFT</h4>
+          </div>
+          <p>
+            DFT converts a discrete-time signal x[n] into complex-valued frequency-domain
+            coefficients X[k].
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Waves size={18} />
+            <h4>Magnitude and Phase</h4>
+          </div>
+          <p>
+            Magnitude shows the strength of each frequency component, while phase shows its
+            angular shift.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>IDFT</h4>
+          </div>
+          <p>
+            IDFT reconstructs the time-domain sequence from all DFT coefficients, proving that
+            no information is lost when all coefficients are preserved.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {[
+            "Enter a discrete-time sequence as comma-separated values.",
+            "Click Compute DFT to generate frequency-domain coefficients.",
+            "Observe real part, imaginary part, magnitude, and phase.",
+            "Select a frequency bin k to inspect step-by-step contribution.",
+            "Click Compute IDFT to reconstruct the original sequence.",
+            "Compare the reconstructed output with the original input."
+          ].map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Applications</h2>
-        <ul>
-          <li>Frequency analysis of discrete signals</li>
-          <li>Digital communication systems</li>
-          <li>Speech and audio processing</li>
-          <li>Image and video processing</li>
-          <li>Filter design and spectrum analysis</li>
-        </ul>
-      </section>
-    </div>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Target size={18} />
+          <h4>Applications</h4>
+        </div>
+        <p>
+          DFT and IDFT are used in signal spectrum analysis, digital communication, audio
+          processing, image processing, filtering, compression, and frequency-domain system design.
+        </p>
+      </div>
+    </section>
   );
 }

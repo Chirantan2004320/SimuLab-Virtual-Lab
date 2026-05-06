@@ -72,6 +72,20 @@ export default function DTSPLabIndex() {
       icon: "🎛️",
       color: "258 90% 66%",
     },
+    {
+  name: "IIR Filter Design",
+  path: "/labs/dtsp/iir-filter-design",
+  desc: "Design Butterworth-style IIR filters and analyze order, cutoff, pole locations, stability, and response.",
+  icon: "🌀",
+  color: "45 93% 47%",
+},
+{
+  name: "Windowing Techniques",
+  path: "/labs/dtsp/windowing-techniques",
+  desc: "Explore Rectangular, Hanning, Hamming, Blackman, and Bartlett windows and understand spectral leakage.",
+  icon: "🪟",
+  color: "160 84% 39%",
+},
   ];
 
   return (

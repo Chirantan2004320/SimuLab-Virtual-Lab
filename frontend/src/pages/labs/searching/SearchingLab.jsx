@@ -1,3 +1,4 @@
+/* eslint-disable no-new-func */
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
@@ -7,8 +8,13 @@ import {
   ChevronsLeft,
   Cpu
 } from "lucide-react";
+
 import "../../Lab.css";
 import "../../SortingLab.css";
+
+import MarkCompleteButton from "../../../components/MarkCompleteButton";
+import { saveQuizResult, saveCodingSubmission } from "../../../API/progressApi";
+
 import SearchingOverview from "./SearchingOverview";
 import SearchingSimulation from "./SearchingSimulation";
 import SearchingQuiz from "./SearchingQuiz";
@@ -233,124 +239,123 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 function getStarterCode(problem, language) {
   const fn = problem.functionName;
 
-  if (language === "python") {
-    const map = {
-      linearSearch: `def linearSearch(arr, target):
-    # Write your solution here
-    return -1
-`,
-      countLinearComparisons: `def countLinearComparisons(arr, target):
-    # Write your solution here
-    return 0
-`,
-      firstOccurrence: `def firstOccurrence(arr, target):
-    # Write your solution here
-    return -1
-`,
-      existsLinear: `def existsLinear(arr, target):
-    # Write your solution here
-    return False
-`,
-      lastOccurrence: `def lastOccurrence(arr, target):
-    # Write your solution here
-    return -1
-`,
-      binarySearch: `def binarySearch(arr, target):
-    # Write your solution here
-    return -1
-`,
-      countBinarySteps: `def countBinarySteps(arr, target):
-    # Write your solution here
-    return 0
-`,
-      existsBinary: `def existsBinary(arr, target):
-    # Write your solution here
-    return False
-`,
-      insertionPosition: `def insertionPosition(arr, target):
-    # Write your solution here
-    return 0
-`,
-      lowerBound: `def lowerBound(arr, target):
-    # Write your solution here
-    return 0
-`
-    };
-    return map[fn] || `def solve():
-    pass
-`;
-  }
-
-  if (language === "cpp") {
-    return `#include <bits/stdc++.h>
-using namespace std;
-
-// Write your solution here
-`;
-  }
-
-  if (language === "c") {
-    return `/* C execution template only. Browser execution is available for JavaScript for now. */`;
-  }
-
-  if (language === "java") {
-    return `import java.util.*;
-
-public class Main {
-    // Write your solution here
-}
-`;
+  if (language !== "javascript") {
+    return `// ${language.toUpperCase()} execution will be enabled later with Judge0.
+// For now, JavaScript runs directly in the browser.`;
   }
 
   const map = {
     linearSearch: `function linearSearch(arr, target) {
-  // Write your solution here
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === target) return i;
+  }
   return -1;
 }
 `,
     countLinearComparisons: `function countLinearComparisons(arr, target) {
-  // Write your solution here
-  return 0;
+  let comparisons = 0;
+  for (let i = 0; i < arr.length; i++) {
+    comparisons++;
+    if (arr[i] === target) return comparisons;
+  }
+  return comparisons;
 }
 `,
     firstOccurrence: `function firstOccurrence(arr, target) {
-  // Write your solution here
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === target) return i;
+  }
   return -1;
 }
 `,
     existsLinear: `function existsLinear(arr, target) {
-  // Write your solution here
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === target) return true;
+  }
   return false;
 }
 `,
     lastOccurrence: `function lastOccurrence(arr, target) {
-  // Write your solution here
-  return -1;
+  let index = -1;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] === target) index = i;
+  }
+  return index;
 }
 `,
     binarySearch: `function binarySearch(arr, target) {
-  // Write your solution here
+  let low = 0;
+  let high = arr.length - 1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+
+    if (arr[mid] === target) return mid;
+    if (arr[mid] < target) low = mid + 1;
+    else high = mid - 1;
+  }
+
   return -1;
 }
 `,
     countBinarySteps: `function countBinarySteps(arr, target) {
-  // Write your solution here
-  return 0;
+  let low = 0;
+  let high = arr.length - 1;
+  let steps = 0;
+
+  while (low <= high) {
+    steps++;
+    const mid = Math.floor((low + high) / 2);
+
+    if (arr[mid] === target) return steps;
+    if (arr[mid] < target) low = mid + 1;
+    else high = mid - 1;
+  }
+
+  return steps;
 }
 `,
     existsBinary: `function existsBinary(arr, target) {
-  // Write your solution here
+  let low = 0;
+  let high = arr.length - 1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+
+    if (arr[mid] === target) return true;
+    if (arr[mid] < target) low = mid + 1;
+    else high = mid - 1;
+  }
+
   return false;
 }
 `,
     insertionPosition: `function insertionPosition(arr, target) {
-  // Write your solution here
-  return 0;
+  let low = 0;
+  let high = arr.length;
+
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+
+    if (arr[mid] < target) low = mid + 1;
+    else high = mid;
+  }
+
+  return low;
 }
 `,
     lowerBound: `function lowerBound(arr, target) {
-  // Write your solution here
-  return 0;
+  let low = 0;
+  let high = arr.length;
+
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2);
+
+    if (arr[mid] < target) low = mid + 1;
+    else high = mid;
+  }
+
+  return low;
 }
 `
   };
@@ -388,11 +393,14 @@ export default function SearchingLab() {
   const [quizAnswers, setQuizAnswers] = useState([]);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const [currentProblems, setCurrentProblems] = useState([]);
   const [selectedLanguages, setSelectedLanguages] = useState({});
   const [codes, setCodes] = useState({});
   const [results, setResults] = useState({});
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+  const [codingAttempted, setCodingAttempted] = useState(false);
 
   useEffect(() => {
     stopRequestedRef.current = false;
@@ -410,10 +418,13 @@ export default function SearchingLab() {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
     setCurrentProblems([]);
     setSelectedLanguages({});
     setCodes({});
     setResults({});
+    setCodingSaveStatus({});
+    setCodingAttempted(false);
   }, [searchType, quizQuestions.length]);
 
   const addStep = (text) => {
@@ -561,18 +572,14 @@ export default function SearchingLab() {
             setMessage(
               `${sorted[mid]} is less than ${targetValue}. Searching in the right half.`
             );
-            addStep(
-              `${sorted[mid]} < ${targetValue}, so move right: new low becomes ${mid + 1}.`
-            );
+            addStep(`${sorted[mid]} < ${targetValue}, so move right: new low becomes ${mid + 1}.`);
             await sleep(animationSpeed);
             low = mid + 1;
           } else {
             setMessage(
               `${sorted[mid]} is greater than ${targetValue}. Searching in the left half.`
             );
-            addStep(
-              `${sorted[mid]} > ${targetValue}, so move left: new high becomes ${mid - 1}.`
-            );
+            addStep(`${sorted[mid]} > ${targetValue}, so move left: new high becomes ${mid - 1}.`);
             await sleep(animationSpeed);
             high = mid - 1;
           }
@@ -588,11 +595,6 @@ export default function SearchingLab() {
           addStep(`Target ${targetValue} was not found in the sorted array.`);
         }
       }
-
-      localStorage.setItem(
-        "vlab_last_experiment",
-        JSON.stringify({ name: `${searchType}-search`, time: Date.now() })
-      );
     } finally {
       setIsRunning(false);
       stopRequestedRef.current = false;
@@ -622,30 +624,37 @@ export default function SearchingLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
+  const submitQuiz = async () => {
     let score = 0;
+
     quizQuestions.forEach((q, i) => {
       if (quizAnswers[i] === q.correct) score++;
     });
 
     setQuizScore(score);
     setQuizSubmitted(true);
+    setQuizSaveStatus("Saving quiz result...");
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DSA",
-      experiment: searchType === "binary" ? "binary-search" : "linear-search",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+    try {
+      await saveQuizResult({
+        labSlug: "dsa",
+        experimentSlug: "searching",
+        correctAnswers: score,
+        totalQuestions: quizQuestions.length
+      });
+
+      setQuizSaveStatus("Quiz result saved to dashboard.");
+    } catch (error) {
+      console.error("Searching quiz save failed:", error);
+      setQuizSaveStatus("Quiz submitted, but backend save failed.");
+    }
   };
 
   const redoQuiz = () => {
     setQuizAnswers(Array(quizQuestions.length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
+    setQuizSaveStatus("");
   };
 
   const generateProblems = () => {
@@ -665,6 +674,7 @@ export default function SearchingLab() {
     setSelectedLanguages(initialLanguages);
     setCodes(initialCodes);
     setResults({});
+    setCodingSaveStatus({});
   };
 
   const handleLanguageChange = (problemId, language, problem) => {
@@ -692,10 +702,23 @@ export default function SearchingLab() {
     }));
   };
 
-  const runCode = (problemId, language) => {
+  const saveSearchingCoding = async ({ problem, language, code, result }) => {
+    await saveCodingSubmission({
+      labSlug: "dsa",
+      experimentSlug: "searching",
+      problemTitle: problem?.title || "Searching Problem",
+      language,
+      code,
+      result
+    });
+  };
+
+  const runCode = async (problemId, language) => {
     const problem = currentProblems.find((p) => p.id === problemId);
     const codeKey = `${problemId}_${language}`;
     const code = codes[codeKey];
+
+    setCodingAttempted(true);
 
     if (!problem || !code) {
       setResults((prev) => ({
@@ -708,9 +731,34 @@ export default function SearchingLab() {
     if (language !== "javascript") {
       setResults((prev) => ({
         ...prev,
-        [problemId]:
-          `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+        [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving coding attempt..."
+        }));
+
+        await saveSearchingCoding({
+          problem,
+          language,
+          code,
+          result: "attempted"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempt saved to dashboard."
+        }));
+      } catch (error) {
+        console.error("Searching coding save failed:", error);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding attempted, but backend save failed."
+        }));
+      }
+
       return;
     }
 
@@ -721,7 +769,6 @@ export default function SearchingLab() {
       for (const test of problem.tests) {
         const args = test.input.map((item) => (Array.isArray(item) ? [...item] : item));
 
-        // eslint-disable-next-line no-new-func
         const fn = new Function(
           ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
           `${code}; return ${problem.functionName}(${args
@@ -744,11 +791,55 @@ export default function SearchingLab() {
           ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
           : "Incorrect Output"
       }));
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: "Saving coding submission..."
+      }));
+
+      await saveSearchingCoding({
+        problem,
+        language,
+        code,
+        result: allCorrect ? "passed" : "failed"
+      });
+
+      setCodingSaveStatus((prev) => ({
+        ...prev,
+        [problemId]: allCorrect
+          ? "Coding submission saved to dashboard."
+          : "Failed coding submission saved to dashboard."
+      }));
     } catch (error) {
       setResults((prev) => ({
         ...prev,
         [problemId]: `Error: ${error.message}`
       }));
+
+      try {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Saving failed coding submission..."
+        }));
+
+        await saveSearchingCoding({
+          problem,
+          language,
+          code,
+          result: "failed"
+        });
+
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Failed coding submission saved to dashboard."
+        }));
+      } catch (saveError) {
+        console.error("Searching coding save failed:", saveError);
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problemId]: "Coding failed, and backend save also failed."
+        }));
+      }
     }
   };
 
@@ -761,15 +852,17 @@ export default function SearchingLab() {
       return;
     }
 
-    const analysisData = {
-      code,
-      problemId,
-      topic: "searching",
-      searchType,
-      language
-    };
+    localStorage.setItem(
+      "vlab_code_analysis",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "searching",
+        searchType,
+        language
+      })
+    );
 
-    localStorage.setItem("vlab_code_analysis", JSON.stringify(analysisData));
     alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
   };
 
@@ -782,240 +875,251 @@ export default function SearchingLab() {
       return;
     }
 
-    const correctionData = {
-      code,
-      problemId,
-      topic: "searching",
-      searchType,
-      language,
-      action: "correct"
-    };
+    localStorage.setItem(
+      "vlab_code_correction",
+      JSON.stringify({
+        code,
+        problemId,
+        topic: "searching",
+        searchType,
+        language,
+        action: "correct"
+      })
+    );
 
-    localStorage.setItem("vlab_code_correction", JSON.stringify(correctionData));
     alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
   };
 
   const progressPercent =
-  activeSection === "overview"
-    ? 20
-    : activeSection === "simulation"
-    ? 52
-    : activeSection === "quiz"
-    ? 78
-    : 95;
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 52
+      : activeSection === "quiz"
+      ? 78
+      : 95;
 
-const searchModeLabel =
-  searchType === "binary" ? "Binary Search" : "Linear Search";
+  const searchModeLabel =
+    searchType === "binary" ? "Binary Search" : "Linear Search";
 
-const complexityLabel =
-  searchType === "binary" ? "O(log n)" : "O(n)";
+  const complexityLabel = searchType === "binary" ? "O(log n)" : "O(n)";
 
   return (
-  <div className="er-shell">
-    <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
-      <div className="er-brand">
-        <div className="er-brand-logo">
-          <img
-            src={simulabLogo}
-            alt="SimuLab"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          </div>
+
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DSA Lab</div>
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+          >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
         </div>
 
         {!sidebarCollapsed && (
-          <div>
-            <div className="er-brand-title">SimuLab</div>
-            <div className="er-brand-subtitle">DSA Lab</div>
-          </div>
-        )}
-      </div>
-
-      <div className="er-collapse-wrap">
-        <button
-          type="button"
-          className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
-          onClick={() => setSidebarCollapsed((prev) => !prev)}
-        >
-          <ChevronsLeft size={18} />
-        </button>
-      </div>
-
-      <div className="er-nav">
-        {sidebarItems.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <button
-              key={item.key}
-              className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
-              onClick={() => setActiveSection(item.key)}
-              title={item.label}
-            >
-              <Icon size={18} />
-              {!sidebarCollapsed && <span>{item.label}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {!sidebarCollapsed && (
-        <div className="er-progress-card">
-          <div className="er-progress-title">Your Progress</div>
-          <div className="er-progress-ring">
-            <div
-              className="er-progress-circle"
-              style={{
-                background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
-              }}
-            >
-              <div className="er-progress-inner">
-                <div className="er-progress-value">{progressPercent}%</div>
-                <div className="er-progress-text">Complete</div>
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
-    </aside>
+        )}
+      </aside>
 
-    <main className="er-main-area">
-      <div className="er-page-header">
-        <div>
-          <h1 className="er-page-title">{searchModeLabel}</h1>
-          <p className="er-page-subtitle">
-            Explore searching algorithms through animated visualization, quiz practice, and coding challenges.
-          </p>
-        </div>
-      </div>
-
-      <section className="er-config-card">
-        <div className="er-config-top">
+      <main className="er-main-area">
+        <div className="er-page-header">
           <div>
-            <h2>Search Configuration</h2>
-            <p>Select search type, animation speed, and observe how the target is found.</p>
+            <h1 className="er-page-title">{searchModeLabel}</h1>
+            <p className="er-page-subtitle">
+              Explore searching algorithms through animated visualization, quiz practice, and coding challenges.
+            </p>
           </div>
+        </div>
 
-          <div className="er-mode-pill">
-            <div className="er-mode-pill-icon">
-              <Cpu size={18} />
-            </div>
+        <section className="er-config-card">
+          <div className="er-config-top">
             <div>
-              <strong>{searchModeLabel}</strong>
-              <span>
-                Current complexity: {complexityLabel}. Array size: {array.length || "Not loaded"}.
-              </span>
+              <h2>Search Configuration</h2>
+              <p>Select search type, animation speed, and observe how the target is found.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>{searchModeLabel}</strong>
+                <span>
+                  Current complexity: {complexityLabel}. Array size: {array.length || "Not loaded"}.
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="er-config-grid">
-          <div>
-            <label className="sorting-label">Search Type</label>
-            <select
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
-              className="sorting-select"
-              disabled={isRunning}
-            >
-              <option value="linear">Linear Search</option>
-              <option value="binary">Binary Search</option>
-            </select>
+          <div className="er-config-grid">
+            <div>
+              <label className="sorting-label">Search Type</label>
+              <select
+                value={searchType}
+                onChange={(e) => setSearchType(e.target.value)}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value="linear">Linear Search</option>
+                <option value="binary">Binary Search</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="sorting-label">Animation Speed</label>
+              <select
+                value={animationSpeed}
+                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                className="sorting-select"
+                disabled={isRunning}
+              >
+                <option value={1100}>Slow</option>
+                <option value={700}>Normal</option>
+                <option value={350}>Fast</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="sorting-label">Animation Speed</label>
-            <select
-              value={animationSpeed}
-              onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-              className="sorting-select"
-              disabled={isRunning}
-            >
-              <option value={1100}>Slow</option>
-              <option value={700}>Normal</option>
-              <option value={350}>Fast</option>
-            </select>
+          <div className="er-chip-row">
+            <button className="er-chip active">Mode = {searchModeLabel}</button>
+            <button className="er-chip active">Complexity = {complexityLabel}</button>
+            <button className="er-chip active">
+              Target = {target.trim() ? target : "Not Set"}
+            </button>
+            <button className="er-chip active">Steps = {stepHistory.length}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Experiment Run" : "Not Started"}
+            </button>
           </div>
-        </div>
 
-        <div className="er-chip-row">
-          <button className="er-chip active">Mode = {searchModeLabel}</button>
-          <button className="er-chip active">Complexity = {complexityLabel}</button>
-          <button className="er-chip active">
-            Target = {target.trim() ? target : "Not Set"}
-          </button>
-          <button className="er-chip active">
-            Steps = {stepHistory.length}
-          </button>
-          <button className={`er-chip ${experimentRun ? "active" : ""}`}>
-            {experimentRun ? "Experiment Run" : "Not Started"}
-          </button>
-        </div>
-      </section>
-
-      <div className="er-content-layout">
-        <section className="er-content-card">
-          {activeSection === "overview" && (
-            <SearchingOverview searchType={searchType} />
-          )}
-
-          {activeSection === "simulation" && (
-            <SearchingSimulation
-              searchType={searchType}
-              arrayInput={arrayInput}
-              setArrayInput={setArrayInput}
-              target={target}
-              setTarget={setTarget}
-              runSearch={runSearch}
-              stopSearch={stopSearch}
-              reset={reset}
-              loadSample={loadSample}
-              message={message}
-              array={array}
-              currentIndex={currentIndex}
-              foundIndex={foundIndex}
-              lowIndex={lowIndex}
-              highIndex={highIndex}
-              midIndex={midIndex}
-              targetRef={targetRef}
-              isRunning={isRunning}
-              stepHistory={stepHistory}
-            />
-          )}
-
-          {activeSection === "quiz" && (
-            <SearchingQuiz
-              searchType={searchType}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-              redoQuiz={redoQuiz}
-            />
-          )}
-
-          {activeSection === "coding" && (
-            <SearchingCoding
-              searchType={searchType}
-              currentProblems={currentProblems}
-              selectedLanguages={selectedLanguages}
-              codes={codes}
-              results={results}
-              generateProblems={generateProblems}
-              handleLanguageChange={handleLanguageChange}
-              handleCodeChange={handleCodeChange}
-              runCode={runCode}
-              analyzeCode={analyzeCode}
-              correctCode={correctCode}
-            />
+          {experimentRun && quizSubmitted && codingAttempted && (
+            <div style={{ marginTop: 18 }}>
+              <MarkCompleteButton
+                labSlug="dsa"
+                experimentSlug="searching"
+                points={10}
+              />
+            </div>
           )}
         </section>
-      </div>
-    </main>
-  </div>
-);
+
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <SearchingOverview searchType={searchType} />
+            )}
+
+            {activeSection === "simulation" && (
+              <SearchingSimulation
+                searchType={searchType}
+                arrayInput={arrayInput}
+                setArrayInput={setArrayInput}
+                target={target}
+                setTarget={setTarget}
+                runSearch={runSearch}
+                stopSearch={stopSearch}
+                reset={reset}
+                loadSample={loadSample}
+                message={message}
+                array={array}
+                currentIndex={currentIndex}
+                foundIndex={foundIndex}
+                lowIndex={lowIndex}
+                highIndex={highIndex}
+                midIndex={midIndex}
+                targetRef={targetRef}
+                isRunning={isRunning}
+                stepHistory={stepHistory}
+              />
+            )}
+
+            {activeSection === "quiz" && (
+              <SearchingQuiz
+                searchType={searchType}
+                quizQuestions={quizQuestions}
+                quizAnswers={quizAnswers}
+                quizSubmitted={quizSubmitted}
+                quizScore={quizScore}
+                quizSaveStatus={quizSaveStatus}
+                experimentRun={experimentRun}
+                handleQuizAnswer={handleQuizAnswer}
+                submitQuiz={submitQuiz}
+                redoQuiz={redoQuiz}
+              />
+            )}
+
+            {activeSection === "coding" && (
+              <SearchingCoding
+                searchType={searchType}
+                currentProblems={currentProblems}
+                selectedLanguages={selectedLanguages}
+                codes={codes}
+                results={results}
+                codingSaveStatus={codingSaveStatus}
+                generateProblems={generateProblems}
+                handleLanguageChange={handleLanguageChange}
+                handleCodeChange={handleCodeChange}
+                runCode={runCode}
+                analyzeCode={analyzeCode}
+                correctCode={correctCode}
+              />
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
+  );
 }

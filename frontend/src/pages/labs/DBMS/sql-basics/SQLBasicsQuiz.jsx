@@ -6,6 +6,7 @@ export default function DBMSSQLBasicsQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
@@ -63,7 +64,9 @@ export default function DBMSSQLBasicsQuiz({
                 {q.options.map((opt, j) => (
                   <label
                     key={j}
-                    className={`quiz-option-card ${quizAnswers[i] === j ? "selected" : ""}`}
+                    className={`quiz-option-card ${
+                      quizAnswers[i] === j ? "selected" : ""
+                    }`}
                   >
                     <input
                       type="radio"
@@ -98,6 +101,12 @@ export default function DBMSSQLBasicsQuiz({
               </p>
             </div>
           </div>
+
+          {quizSaveStatus && (
+            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
+          )}
 
           <div className="quiz-list">
             {quizQuestions.map((q, i) => (

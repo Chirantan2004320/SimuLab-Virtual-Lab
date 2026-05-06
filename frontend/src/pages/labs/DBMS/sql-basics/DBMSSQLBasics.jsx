@@ -1,11 +1,42 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  Cpu,
+} from "lucide-react";
+
 import "../../../SortingLab.css";
-import { FlaskConical } from "lucide-react";
+
+import { saveQuizResult} from "../../../../API/progressApi";
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
 
 import DBMSSQLBasicsOverview from "./SQLBasicsOverview.jsx";
 import DBMSSQLBasicsSimulation from "./SQLBasicsSimulation.jsx";
 import DBMSSQLBasicsQuiz from "./SQLBasicsQuiz.jsx";
 import DBMSSQLBasicsCoding from "./SQLBasicsCoding.jsx";
+
+const simulabLogo = "/assets/logo.png";
+
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+];
+
+const sampleTable = [
+  { id: 1, name: "Aarav", department: "CSE", age: 20, marks: 82 },
+  { id: 2, name: "Diya", department: "ECE", age: 21, marks: 91 },
+  { id: 3, name: "Kabir", department: "CSE", age: 19, marks: 76 },
+  { id: 4, name: "Meera", department: "ME", age: 22, marks: 88 },
+  { id: 5, name: "Rohan", department: "CSE", age: 20, marks: 95 },
+  { id: 6, name: "Ishita", department: "ECE", age: 19, marks: 84 }
+];
+
+const allColumns = ["id", "name", "department", "age", "marks"];
 
 const sqlQuizQuestions = [
   {
@@ -35,57 +66,6 @@ const sqlQuizQuestions = [
   }
 ];
 
-const codingProblem = {
-  title: "Implement applyQuery(students)",
-  description:
-    "Write a function that returns only CSE students with marks >= 80, sorted by marks in descending order, and limited to top 3 rows."
-};
-
-const sqlCodeTemplates = {
-  javascript: `function applyQuery(students) {
-  return students
-    .filter((student) => student.department === "CSE" && student.marks >= 80)
-    .sort((a, b) => b.marks - a.marks)
-    .slice(0, 3);
-}`,
-  python: `def apply_query(students):
-    result = [
-        student for student in students
-        if student["department"] == "CSE" and student["marks"] >= 80
-    ]
-    result.sort(key=lambda x: x["marks"], reverse=True)
-    return result[:3]`,
-  cpp: `vector<Student> applyQuery(vector<Student> students) {
-    vector<Student> result;
-    // filter department == "CSE" and marks >= 80
-    // sort by marks in descending order
-    // return first 3
-    return result;
-}`,
-  c: `// C version outline
-// filter rows where department = CSE and marks >= 80
-// sort by marks descending
-// return top 3`,
-  java: `static List<Student> applyQuery(List<Student> students) {
-    List<Student> result = new ArrayList<>();
-    // filter department == "CSE" and marks >= 80
-    // sort by marks in descending order
-    // return first 3
-    return result;
-}`
-};
-
-const sampleTable = [
-  { id: 1, name: "Aarav", department: "CSE", age: 20, marks: 82 },
-  { id: 2, name: "Diya", department: "ECE", age: 21, marks: 91 },
-  { id: 3, name: "Kabir", department: "CSE", age: 19, marks: 76 },
-  { id: 4, name: "Meera", department: "ME", age: 22, marks: 88 },
-  { id: 5, name: "Rohan", department: "CSE", age: 20, marks: 95 },
-  { id: 6, name: "Ishita", department: "ECE", age: 19, marks: 84 }
-];
-
-const allColumns = ["id", "name", "department", "age", "marks"];
-
 function projectColumns(rows, columns) {
   return rows.map((row) => {
     const projected = {};
@@ -99,13 +79,19 @@ function projectColumns(rows, columns) {
 export default function DBMSSQLBasicsLab() {
   const [queryType, setQueryType] = useState("select-where-order-limit");
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [message, setMessage] = useState("DBMS SQL Basics lab initialized.");
   const [experimentRun, setExperimentRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState(700);
   const [stepHistory, setStepHistory] = useState([]);
 
-  const [selectedColumns, setSelectedColumns] = useState(["name", "department", "marks"]);
+  const [selectedColumns, setSelectedColumns] = useState([
+    "name",
+    "department",
+    "marks"
+  ]);
   const [whereColumn, setWhereColumn] = useState("department");
   const [whereOperator, setWhereOperator] = useState("=");
   const [whereValue, setWhereValue] = useState("CSE");
@@ -118,29 +104,32 @@ export default function DBMSSQLBasicsLab() {
   const [selectedStep, setSelectedStep] = useState("");
   const [generatedSQL, setGeneratedSQL] = useState("");
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(sqlQuizQuestions.length).fill(null));
+  const quizQuestions = useMemo(() => sqlQuizQuestions, []);
+  const [quizAnswers, setQuizAnswers] = useState(
+    Array(sqlQuizQuestions.length).fill(null)
+  );
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(sqlCodeTemplates.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 55
+      : activeSection === "quiz"
+      ? 82
+      : 95;
 
-  const quizQuestions = useMemo(() => sqlQuizQuestions, []);
-
-  useEffect(() => {
-    setCode(sqlCodeTemplates[selectedLanguage]);
-    setCodeResult("");
-  }, [selectedLanguage]);
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const addStep = (text) => {
     setStepHistory((prev) => [...prev, text]);
   };
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
   const buildSQLQuery = () => {
-    const selectClause = selectedColumns.length > 0 ? selectedColumns.join(", ") : "*";
+    const selectClause =
+      selectedColumns.length > 0 ? selectedColumns.join(", ") : "*";
 
     const isNumericColumn =
       whereColumn === "id" || whereColumn === "age" || whereColumn === "marks";
@@ -200,7 +189,9 @@ export default function DBMSSQLBasicsLab() {
     }
 
     if (
-      (whereColumn === "id" || whereColumn === "age" || whereColumn === "marks") &&
+      (whereColumn === "id" ||
+        whereColumn === "age" ||
+        whereColumn === "marks") &&
       whereValue.trim() !== "" &&
       Number.isNaN(Number(whereValue))
     ) {
@@ -217,15 +208,18 @@ export default function DBMSSQLBasicsLab() {
 
     try {
       let rows = [...sampleTable];
+
       setDisplayRows(rows);
-      setMessage("Loaded original table.");
-      addStep("Loaded the original students table.");
+      setMessage("Loaded original students table.");
       setSelectedStep("Initial Table");
+      addStep("Loaded the original students table.");
       await sleep(animationSpeed);
 
       if (whereValue.trim() !== "") {
         const typedWhereValue =
-          whereColumn === "id" || whereColumn === "age" || whereColumn === "marks"
+          whereColumn === "id" ||
+          whereColumn === "age" ||
+          whereColumn === "marks"
             ? Number(whereValue)
             : whereValue;
 
@@ -234,11 +228,13 @@ export default function DBMSSQLBasicsLab() {
         );
 
         setHighlightedRowIds(matchedRows.map((row) => row.id));
-        setMessage(`Applying WHERE ${whereColumn} ${whereOperator} ${whereValue}...`);
-        addStep(
-          `Applied WHERE condition: ${whereColumn} ${whereOperator} ${whereValue}. Matching rows were selected.`
+        setMessage(
+          `Applying WHERE ${whereColumn} ${whereOperator} ${whereValue}...`
         );
         setSelectedStep("WHERE Applied");
+        addStep(
+          `Applied WHERE condition: ${whereColumn} ${whereOperator} ${whereValue}.`
+        );
         await sleep(animationSpeed);
 
         rows = matchedRows;
@@ -247,7 +243,7 @@ export default function DBMSSQLBasicsLab() {
       }
 
       if (orderByColumn) {
-        const sortedRows = [...rows].sort((a, b) => {
+        rows = [...rows].sort((a, b) => {
           const first = a[orderByColumn];
           const second = b[orderByColumn];
 
@@ -260,37 +256,41 @@ export default function DBMSSQLBasicsLab() {
           return orderDirection === "asc" ? first - second : second - first;
         });
 
-        rows = sortedRows;
         setDisplayRows(rows);
         setHighlightedRowIds(rows.map((row) => row.id));
-        setMessage(`Applying ORDER BY ${orderByColumn} ${orderDirection.toUpperCase()}...`);
-        addStep(
-          `Applied ORDER BY on column ${orderByColumn} in ${orderDirection.toUpperCase()} order.`
+        setMessage(
+          `Applying ORDER BY ${orderByColumn} ${orderDirection.toUpperCase()}...`
         );
         setSelectedStep("ORDER BY Applied");
+        addStep(
+          `Applied ORDER BY on ${orderByColumn} in ${orderDirection.toUpperCase()} order.`
+        );
         await sleep(animationSpeed);
       }
 
       if (limitValue.trim() !== "") {
         rows = rows.slice(0, Number(limitValue));
+
         setDisplayRows(rows);
         setHighlightedRowIds(rows.map((row) => row.id));
         setMessage(`Applying LIMIT ${limitValue}...`);
-        addStep(`Applied LIMIT ${limitValue}. Only the first ${limitValue} row(s) remain.`);
         setSelectedStep("LIMIT Applied");
+        addStep(`Applied LIMIT ${limitValue}.`);
         await sleep(animationSpeed);
       }
 
       const projectedRows = projectColumns(rows, selectedColumns);
+
       setDisplayRows(projectedRows);
       setHighlightedRowIds([]);
       setMessage("Applying SELECT projection...");
-      addStep(`Projected only selected columns: ${selectedColumns.join(", ")}.`);
       setSelectedStep("SELECT Applied");
+      addStep(`Projected selected columns: ${selectedColumns.join(", ")}.`);
       await sleep(animationSpeed);
 
       setMessage("SQL query simulation completed.");
       addStep("Simulation completed successfully.");
+
       localStorage.setItem(
         "vlab_last_experiment",
         JSON.stringify({ name: "dbms-sql-basics", time: Date.now() })
@@ -314,7 +314,7 @@ export default function DBMSSQLBasicsLab() {
     setDisplayRows([]);
     setHighlightedRowIds([]);
     setSelectedStep("");
-    setStepHistory(["Sample SQL query loaded for SQL Basics experiment."]);
+    setStepHistory(["Sample SQL query loaded."]);
     setMessage("Loaded sample query.");
   };
 
@@ -343,85 +343,143 @@ export default function DBMSSQLBasicsLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+  const submitQuiz = async () => {
+  let score = 0;
+
+  quizQuestions.forEach((q, i) => {
+    if (quizAnswers[i] === q.correct) score++;
+  });
+
+  setQuizScore(score);
+  setQuizSubmitted(true);
+  setQuizSaveStatus("Saving quiz result...");
+
+  try {
+    await saveQuizResult({
+      labSlug: "dbms",
+      experimentSlug: "sql-basics",
+      correctAnswers: score,
+      totalQuestions: quizQuestions.length
     });
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
-
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DBMS",
-      experiment: "sql-basics",
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
-  };
-
-  const redoQuiz = () => {
-  setQuizAnswers(Array(quizQuestions.length).fill(null));
-  setQuizSubmitted(false);
-  setQuizScore(0);
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error("Quiz save failed:", error);
+    setQuizSaveStatus("Quiz submitted, but backend save failed.");
+  }
 };
 
-
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
-      return;
-    }
-
-    try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function("students", `${code}; return applyQuery(students);`);
-      const result = fn(sampleTable);
-      setCodeResult(`Output: ${JSON.stringify(result, null, 2)}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
+  const redoQuiz = () => {
+    setQuizAnswers(Array(quizQuestions.length).fill(null));
+    setQuizSubmitted(false);
+    setQuizScore(0);
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive SQL Experiment
-            </span>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img
+              src={simulabLogo}
+              alt="SimuLab"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            SQL Basics
-          </h1>
-
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Explore SQL visually through query simulation, quiz, and coding practice.
-          </p>
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DBMS Lab</div>
+            </div>
+          )}
         </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">Query Mode</h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 16
-            }}
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
           >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${
+                  activeSection === item.key ? "active" : ""
+                }`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">SQL Basics</h1>
+            <p className="er-page-subtitle">
+              Explore SQL visually through query simulation, quiz, and coding
+              practice.
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Query Configuration</h2>
+              <p>
+                Build a SELECT pipeline and observe how rows and columns change
+                during execution.
+              </p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <Cpu size={18} />
+              </div>
+              <div>
+                <strong>SELECT Pipeline</strong>
+                <span>WHERE • ORDER BY • LIMIT</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
             <div>
               <label className="sorting-label">Query Type</label>
               <select
@@ -450,104 +508,81 @@ export default function DBMSSQLBasicsLab() {
               </select>
             </div>
           </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Table: students</button>
+            <button className="er-chip active">Rows: {sampleTable.length}</button>
+            <button className="er-chip active">
+              Selected Columns: {selectedColumns.length}
+            </button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Simulation Run" : "Status: Ready"}
+            </button>
+          </div>
+          <div style={{ marginTop: 18 }}>
+  <MarkCompleteButton
+    labSlug="dbms"
+    experimentSlug="sql-basics"
+    points={10}
+  />
+</div>
         </section>
 
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <DBMSSQLBasicsOverview sampleTable={sampleTable} />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
+            {activeSection === "simulation" && (
+              <DBMSSQLBasicsSimulation
+                sampleTable={sampleTable}
+                allColumns={allColumns}
+                selectedColumns={selectedColumns}
+                setSelectedColumns={setSelectedColumns}
+                whereColumn={whereColumn}
+                setWhereColumn={setWhereColumn}
+                whereOperator={whereOperator}
+                setWhereOperator={setWhereOperator}
+                whereValue={whereValue}
+                setWhereValue={setWhereValue}
+                orderByColumn={orderByColumn}
+                setOrderByColumn={setOrderByColumn}
+                orderDirection={orderDirection}
+                setOrderDirection={setOrderDirection}
+                limitValue={limitValue}
+                setLimitValue={setLimitValue}
+                runSimulation={runSimulation}
+                reset={reset}
+                loadSample={loadSample}
+                message={message}
+                displayRows={displayRows}
+                highlightedRowIds={highlightedRowIds}
+                stepHistory={stepHistory}
+                selectedStep={selectedStep}
+                generatedSQL={generatedSQL}
+                isRunning={isRunning}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
+            {activeSection === "quiz" && (
+              <DBMSSQLBasicsQuiz
+  quizQuestions={quizQuestions}
+  quizAnswers={quizAnswers}
+  quizSubmitted={quizSubmitted}
+  quizScore={quizScore}
+  quizSaveStatus={quizSaveStatus}
+  experimentRun={experimentRun}
+  handleQuizAnswer={handleQuizAnswer}
+  submitQuiz={submitQuiz}
+  redoQuiz={redoQuiz}
+/>
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
-
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "overview" && (
-                <DBMSSQLBasicsOverview sampleTable={sampleTable} />
-              )}
-
-              {activeSection === "simulation" && (
-                <DBMSSQLBasicsSimulation
-                  sampleTable={sampleTable}
-                  allColumns={allColumns}
-                  selectedColumns={selectedColumns}
-                  setSelectedColumns={setSelectedColumns}
-                  whereColumn={whereColumn}
-                  setWhereColumn={setWhereColumn}
-                  whereOperator={whereOperator}
-                  setWhereOperator={setWhereOperator}
-                  whereValue={whereValue}
-                  setWhereValue={setWhereValue}
-                  orderByColumn={orderByColumn}
-                  setOrderByColumn={setOrderByColumn}
-                  orderDirection={orderDirection}
-                  setOrderDirection={setOrderDirection}
-                  limitValue={limitValue}
-                  setLimitValue={setLimitValue}
-                  runSimulation={runSimulation}
-                  reset={reset}
-                  loadSample={loadSample}
-                  message={message}
-                  displayRows={displayRows}
-                  highlightedRowIds={highlightedRowIds}
-                  stepHistory={stepHistory}
-                  selectedStep={selectedStep}
-                  generatedSQL={generatedSQL}
-                  isRunning={isRunning}
-                />
-              )}
-
-              {activeSection === "quiz" && (
-                <DBMSSQLBasicsQuiz
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  experimentRun={experimentRun}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                  redoQuiz={redoQuiz}
-                />
-              )}
-
-              {activeSection === "coding" && (
-                <DBMSSQLBasicsCoding
-                  codingProblem={codingProblem}
-                  selectedLanguage={selectedLanguage}
-                  setSelectedLanguage={setSelectedLanguage}
-                  code={code}
-                  setCode={setCode}
-                  codeResult={codeResult}
-                  runCode={runCode}
-                />
-              )}
-            </div>
-          </main>
+            {activeSection === "coding" && <DBMSSQLBasicsCoding />}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

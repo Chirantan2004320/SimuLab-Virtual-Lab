@@ -15,6 +15,7 @@ export default function GraphCoding({
   selectedLanguages,
   codes,
   results,
+  codingSaveStatus,
   generateProblems,
   handleLanguageChange,
   handleCodeChange,
@@ -46,11 +47,11 @@ export default function GraphCoding({
         </button>
       </div>
 
-      {currentProblems.length === 0 ? (
+      {currentProblems.length === 0 && (
         <div className="coding-empty-state">
           No problems generated yet. Click <b>Generate Problems</b> to begin.
         </div>
-      ) : null}
+      )}
 
       {currentProblems.map((problem, index) => {
         const selectedLanguage = selectedLanguages[problem.id] || "javascript";
@@ -127,6 +128,12 @@ export default function GraphCoding({
             {results[problem.id] && (
               <div className="coding-result-box">
                 {results[problem.id]}
+              </div>
+            )}
+
+            {codingSaveStatus?.[problem.id] && (
+              <div className="coding-result-box">
+                {codingSaveStatus[problem.id]}
               </div>
             )}
           </div>

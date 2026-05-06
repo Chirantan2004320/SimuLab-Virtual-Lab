@@ -1,84 +1,111 @@
 import React from "react";
+import { Target, BookOpen, SlidersHorizontal, Waves, ShieldCheck } from "lucide-react";
 
 export default function DTSPFilterDesignOverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To design FIR filters using the window method and study how filter type,
-          cutoff frequency, filter length, and window choice affect the impulse
-          response and frequency response.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Learn FIR filter design using cutoff frequency, windowing, and filter length.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          FIR filters can be designed by starting from an ideal frequency response
-          and then computing the corresponding ideal impulse response.
-        </p>
-        <p>
-          Since the ideal impulse response is usually infinite in length, it must
-          be truncated to obtain a practical FIR filter. This truncation is done
-          using a window function.
-        </p>
-        <p>
-          Common window functions include:
-        </p>
-        <ul>
-          <li><strong>Rectangular Window:</strong> simplest truncation, but produces more ripple.</li>
-          <li><strong>Hamming Window:</strong> smoother response with reduced ripple.</li>
-          <li><strong>Hanning Window:</strong> also reduces ripple and smooths the transition.</li>
-        </ul>
-        <p>
-          The cutoff frequency determines which frequency range is passed, while
-          the filter length affects the sharpness of the transition band.
-        </p>
-      </section>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>FIR Filter Design</h3>
+          <span className="overview-badge">DTSP Experiment</span>
+        </div>
 
-      <section className="card">
-        <h2>Filter Types</h2>
-        <p>
-          <strong>Low-pass filter:</strong> allows low-frequency components to pass
-          and attenuates high-frequency components.
+        <p className="overview-hero-text">
+          FIR filters can be designed by starting from an ideal frequency response and
+          converting it into an impulse response. Since the ideal response is usually infinite,
+          it is truncated using a window function. Window choice affects ripple and smoothness,
+          while filter length controls transition sharpness.
         </p>
-        <p>
-          <strong>High-pass filter:</strong> allows high-frequency components to pass
-          and attenuates low-frequency components.
-        </p>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Select the filter type: Low-pass or High-pass.</li>
-          <li>Choose a cutoff frequency.</li>
-          <li>Select an odd filter length.</li>
-          <li>Choose a window function.</li>
-          <li>Click <strong>Generate Filter</strong>.</li>
-          <li>Observe the impulse response and frequency response graphs.</li>
-          <li>Compare the signal before and after filtering.</li>
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            To design FIR filters using the window method and study how type, cutoff, length,
+            and window affect the response.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Waves size={18} />
+            <h4>Filter Types</h4>
+          </div>
+          <p>
+            Low-pass filters pass low frequencies. High-pass filters pass high frequencies.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <SlidersHorizontal size={18} />
+            <h4>Window Method</h4>
+          </div>
+          <p>
+            Rectangular, Hamming, and Hanning windows control ripple and smoothness.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <ShieldCheck size={18} />
+            <h4>FIR Benefit</h4>
+          </div>
+          <p>
+            FIR filters are always stable and can be designed with linear phase.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {[
+            "Select Low-pass or High-pass filter.",
+            "Choose the normalized cutoff frequency.",
+            "Select an odd FIR filter length.",
+            "Choose a window function.",
+            "Click Generate Filter.",
+            "Observe impulse response, frequency response, and filtered output."
+          ].map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Key Observation</h2>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Target size={18} />
+          <h4>Key Observation</h4>
+        </div>
         <p>
-          Window choice affects ripple and smoothness, while filter length affects
-          how sharp the filter transition is. A longer FIR filter generally gives
-          better selectivity, but at the cost of more computation.
+          Window choice affects ripple and smoothness, while filter length affects transition
+          sharpness. Longer filters usually provide better selectivity but require more computation.
         </p>
-      </section>
-
-      <section className="card">
-        <h2>Practical Insight</h2>
-        <p>
-          FIR filters are widely used in digital signal processing because they are
-          always stable and can be designed with linear phase, which preserves signal
-          shape more effectively than many other filter types.
-        </p>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

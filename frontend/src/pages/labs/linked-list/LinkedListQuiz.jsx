@@ -7,6 +7,7 @@ const LinkedListQuiz = ({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
@@ -148,6 +149,12 @@ const LinkedListQuiz = ({
                   </span>
                 </div>
               </div>
+
+              {quizSaveStatus && (
+                <div className="sorting-info-box" style={{ marginBottom: 12 }}>
+                  {quizSaveStatus}
+                </div>
+              )}
 
               <div className="sorting-info-box" style={{ marginBottom: 0 }}>
                 Review the highlighted answers above to improve your understanding.

@@ -13,6 +13,7 @@ const SortingCoding = ({
   codes,
   selectedLanguages,
   results,
+  codingSaveStatus,
   handleLanguageChange,
   handleCodeChange,
   runCode,
@@ -40,11 +41,11 @@ const SortingCoding = ({
         </button>
       </div>
 
-      {currentProblems.length === 0 ? (
+      {currentProblems.length === 0 && (
         <div className="coding-empty-state">
           No problems generated yet. Click <b>Generate Problems</b> to begin.
         </div>
-      ) : null}
+      )}
 
       {currentProblems.map((problem, index) => {
         const selectedLanguage = selectedLanguages[problem.id] || "javascript";
@@ -62,7 +63,9 @@ const SortingCoding = ({
                 <label className="sorting-label">Language</label>
                 <select
                   value={selectedLanguage}
-                  onChange={(e) => handleLanguageChange(problem.id, e.target.value, problem)}
+                  onChange={(e) =>
+                    handleLanguageChange(problem.id, e.target.value, problem)
+                  }
                   className="sorting-select"
                 >
                   {LANGUAGES.map((lang) => (
@@ -111,8 +114,12 @@ const SortingCoding = ({
             </div>
 
             {results[problem.id] && (
+              <div className="coding-result-box">{results[problem.id]}</div>
+            )}
+
+            {codingSaveStatus?.[problem.id] && (
               <div className="coding-result-box">
-                {results[problem.id]}
+                {codingSaveStatus[problem.id]}
               </div>
             )}
           </div>

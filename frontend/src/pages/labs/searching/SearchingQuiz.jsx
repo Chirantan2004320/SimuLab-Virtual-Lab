@@ -7,6 +7,7 @@ export default function SearchingQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
@@ -96,6 +97,12 @@ export default function SearchingQuiz({
               </p>
             </div>
           </div>
+
+          {quizSaveStatus && (
+            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
+          )}
 
           <div className="quiz-list">
             {quizQuestions.map((q, i) => (

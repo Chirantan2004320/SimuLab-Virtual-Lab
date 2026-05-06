@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "../../../SortingLab.css";
-import { FlaskConical } from "lucide-react";
+import {
+  BookOpen,
+  PlayCircle,
+  GitCompare,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  ShieldCheck
+} from "lucide-react";
+
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import {saveQuizResult,saveCodingSubmission} from "../../../../API/progressApi";
 
 import DBMSTransactionsOverview from "./DBMSTransactionsOverview";
 import DBMSTransactionsSimulation from "./DBMSTransactionsSimulation";
@@ -8,98 +19,73 @@ import DBMSTransactionsComparison from "./DBMSTransactionsComparison";
 import DBMSTransactionsQuiz from "./DBMSTransactionsQuiz";
 import DBMSTransactionsCoding from "./DBMSTransactionsCoding";
 
+const simulabLogo = "/assets/logo.png";
+
+const initialAccounts = [
+  { account_id: "A101", holder: "Aarav", balance: 5000 },
+  { account_id: "B205", holder: "Diya", balance: 3000 }
+];
+
 const transactionQuizQuestionsByType = {
   commit: [
     {
       question: "What does COMMIT do in a transaction?",
-      options: [
-        "Cancels all changes",
-        "Permanently saves all changes",
-        "Deletes the table",
-        "Locks the database forever"
-      ],
+      options: ["Cancels all changes", "Permanently saves all changes", "Deletes the table", "Locks the database forever"],
       correct: 1
     },
     {
-      question: "After COMMIT, the transaction changes are:",
-      options: [
-        "Temporary only",
-        "Saved permanently",
-        "Automatically rolled back",
-        "Hidden from all users"
-      ],
+      question: "After COMMIT, transaction changes are:",
+      options: ["Temporary only", "Saved permanently", "Automatically rolled back", "Hidden"],
       correct: 1
     },
     {
-      question: "COMMIT is most closely related to which ACID property?",
+      question: "COMMIT is mainly related to:",
       options: ["Durability", "Redundancy", "Indexing", "Normalization"],
       correct: 0
     }
   ],
   rollback: [
     {
-      question: "What does ROLLBACK do in a transaction?",
-      options: [
-        "Saves all changes",
-        "Reverses uncommitted changes",
-        "Creates an index",
-        "Drops a table"
-      ],
+      question: "What does ROLLBACK do?",
+      options: ["Saves changes", "Reverses uncommitted changes", "Creates index", "Deletes database"],
       correct: 1
     },
     {
       question: "ROLLBACK is used when:",
-      options: [
-        "Everything succeeds",
-        "The query output is large",
-        "An error occurs and changes should be undone",
-        "A table has NULL values"
-      ],
+      options: ["Everything succeeds", "Output is large", "Error occurs", "Rows are sorted"],
       correct: 2
     },
     {
-      question: "After ROLLBACK, the database returns to:",
-      options: [
-        "A random state",
-        "The previous consistent state",
-        "A deleted state",
-        "A sorted state"
-      ],
+      question: "After ROLLBACK, database returns to:",
+      options: ["Random state", "Previous consistent state", "Deleted state", "Sorted state"],
       correct: 1
     }
   ],
   atomicity: [
     {
       question: "Atomicity means:",
-      options: [
-        "A transaction is split across many databases",
-        "A transaction is all-or-nothing",
-        "A transaction must use one table only",
-        "A transaction is always successful"
-      ],
+      options: ["Split transaction", "All-or-nothing transaction", "One table only", "Always successful"],
       correct: 1
     },
     {
-      question: "If one step of a transaction fails under Atomicity:",
-      options: [
-        "Only failed step is ignored",
-        "Everything stays partially updated",
-        "Entire transaction is undone",
-        "The database shuts down"
-      ],
+      question: "If one step fails under atomicity:",
+      options: ["Ignore failed step", "Keep partial update", "Undo entire transaction", "Shutdown database"],
       correct: 2
     },
     {
-      question: "A bank transfer is a common example of:",
+      question: "A bank transfer is an example of:",
       options: ["Sorting", "Atomicity", "Hashing", "Searching"],
       correct: 1
     }
   ]
 };
 
-const initialAccounts = [
-  { account_id: "A101", holder: "Aarav", balance: 5000 },
-  { account_id: "B205", holder: "Diya", balance: 3000 }
+const sidebarItems = [
+  { key: "overview", label: "Overview", icon: BookOpen },
+  { key: "simulation", label: "Simulation", icon: PlayCircle },
+  { key: "comparison", label: "Comparison", icon: GitCompare },
+  { key: "quiz", label: "Quiz", icon: Brain },
+  { key: "coding", label: "Coding Practice", icon: FileCode2 }
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -107,6 +93,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export default function DBMSTransactionsLab() {
   const [transactionType, setTransactionType] = useState("commit");
   const [activeSection, setActiveSection] = useState("overview");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   const [message, setMessage] = useState("Transactions lab initialized.");
   const [experimentRun, setExperimentRun] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
@@ -125,13 +113,15 @@ export default function DBMSTransactionsLab() {
     [transactionType]
   );
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
+  const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+  const [codingSaveStatus, setCodingSaveStatus] = useState({});
 
   useEffect(() => {
     setStepHistory([]);
-    setAccounts(initialAccounts);
+    setAccounts(initialAccounts.map((acc) => ({ ...acc })));
     setSelectedAccountId(null);
     setCurrentStage("");
     setTransactionState("Not Started");
@@ -141,20 +131,16 @@ export default function DBMSTransactionsLab() {
     setQuizAnswers(Array(transactionQuizQuestionsByType[transactionType].length).fill(null));
     setQuizSubmitted(false);
     setQuizScore(0);
-    setTotalBefore(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
-    setTotalAfter(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
-    setActiveSection("overview");
+    setTotalBefore(8000);
+    setTotalAfter(8000);
   }, [transactionType]);
 
-  const addStep = (text) => {
-    setStepHistory((prev) => [...prev, text]);
-  };
+  const addStep = (text) => setStepHistory((prev) => [...prev, text]);
 
   const runSimulation = async () => {
     if (isRunning) return;
 
     const amount = Number(transferAmount);
-
     if (Number.isNaN(amount) || amount <= 0) {
       setMessage("Please enter a valid positive transfer amount.");
       return;
@@ -175,7 +161,7 @@ export default function DBMSTransactionsLab() {
 
     try {
       setMessage(`Starting ${transactionType.toUpperCase()} transaction...`);
-      addStep(`Transaction started for transferring ₹${amount} from A101 to B205.`);
+      addStep(`Transaction started: transfer ₹${amount} from A101 to B205.`);
       await sleep(animationSpeed);
 
       const workingAccounts = startingAccounts.map((acc) => ({ ...acc }));
@@ -184,8 +170,8 @@ export default function DBMSTransactionsLab() {
 
       setCurrentStage("Debit Step");
       setSelectedAccountId("A101");
-      setMessage(`Debiting ₹${amount} from account A101...`);
-      addStep(`Debit step: subtract ₹${amount} from account A101.`);
+      setMessage(`Debiting ₹${amount} from A101...`);
+      addStep(`Debit: subtract ₹${amount} from account A101.`);
       await sleep(animationSpeed);
 
       workingAccounts[fromIndex].balance -= amount;
@@ -197,13 +183,13 @@ export default function DBMSTransactionsLab() {
         setCurrentStage("Error Occurred");
         setSelectedAccountId(null);
         setTransactionState("Failed");
-        setMessage("An error occurred before crediting the second account.");
-        addStep("Error detected after debit step. Credit step could not be completed.");
+        setMessage("Error occurred before crediting B205.");
+        addStep("Error detected after debit. Credit step failed.");
         await sleep(animationSpeed);
 
         setCurrentStage("Rollback");
         setTransactionState("Rolling Back");
-        setMessage("Rolling back transaction...");
+        setMessage("ROLLBACK executing...");
         addStep("ROLLBACK executed. Undoing all uncommitted changes.");
         await sleep(animationSpeed);
 
@@ -211,14 +197,13 @@ export default function DBMSTransactionsLab() {
         setTotalAfter(totalStart);
         setTransactionState("Rolled Back");
         setCurrentStage("Rollback Complete");
-        setMessage("Transaction rolled back. Database returned to previous consistent state.");
-        addStep("Transaction rolled back successfully. Original balances restored.");
-        await sleep(animationSpeed);
+        setMessage("Rollback complete. Original balances restored.");
+        addStep("Database restored to previous consistent state.");
       } else {
         setCurrentStage("Credit Step");
         setSelectedAccountId("B205");
-        setMessage(`Crediting ₹${amount} to account B205...`);
-        addStep(`Credit step: add ₹${amount} to account B205.`);
+        setMessage(`Crediting ₹${amount} to B205...`);
+        addStep(`Credit: add ₹${amount} to account B205.`);
         await sleep(animationSpeed);
 
         workingAccounts[toIndex].balance += amount;
@@ -230,8 +215,8 @@ export default function DBMSTransactionsLab() {
           setCurrentStage("Atomicity Check");
           setSelectedAccountId(null);
           setTransactionState("Verifying");
-          setMessage("Checking Atomicity: either both updates happen or neither happens.");
-          addStep("Atomicity check: verified that debit and credit completed together.");
+          setMessage("Atomicity check: both debit and credit completed together.");
+          addStep("Atomicity verified: no partial update remains.");
           await sleep(animationSpeed);
         }
 
@@ -239,24 +224,11 @@ export default function DBMSTransactionsLab() {
         setTransactionState("Committed");
         setSelectedAccountId(null);
         setMessage("COMMIT executed. Transaction saved permanently.");
-        addStep("COMMIT executed. All transaction changes saved permanently.");
-        await sleep(animationSpeed);
-
-        if (transactionType === "atomicity") {
-          addStep("Atomicity preserved: no partial update remained in the database.");
-        }
+        addStep("COMMIT executed. All changes are now durable.");
       }
 
-      const finalTotal =
-        transactionType === "rollback"
-          ? totalStart
-          : workingAccounts.reduce((sum, acc) => sum + acc.balance, 0);
-
-      setTotalAfter(finalTotal);
       setCurrentStage("Complete");
-      setMessage(`${transactionType.toUpperCase()} simulation completed.`);
-      addStep(`${transactionType.toUpperCase()} transaction simulation completed successfully.`);
-
+      addStep(`${transactionType.toUpperCase()} simulation completed.`);
       localStorage.setItem(
         "vlab_last_experiment",
         JSON.stringify({ name: `dbms-${transactionType}-transaction`, time: Date.now() })
@@ -269,21 +241,20 @@ export default function DBMSTransactionsLab() {
 
   const loadSample = () => {
     if (isRunning) return;
-
     setTransferAmount("1000");
     setAccounts(initialAccounts.map((acc) => ({ ...acc })));
     setSelectedAccountId(null);
     setCurrentStage("Sample Ready");
     setTransactionState("Ready");
-    setTotalBefore(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
-    setTotalAfter(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
+    setTotalBefore(8000);
+    setTotalAfter(8000);
     setStepHistory([`Sample loaded for ${transactionType.toUpperCase()} transaction demo.`]);
     setMessage(`Sample loaded for ${transactionType.toUpperCase()} transaction.`);
+    setExperimentRun(true);
   };
 
   const reset = () => {
     if (isRunning) return;
-
     setAccounts(initialAccounts.map((acc) => ({ ...acc })));
     setSelectedAccountId(null);
     setCurrentStage("");
@@ -292,8 +263,8 @@ export default function DBMSTransactionsLab() {
     setTransferAmount("1000");
     setMessage("Transactions lab reset.");
     setExperimentRun(false);
-    setTotalBefore(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
-    setTotalAfter(initialAccounts.reduce((sum, acc) => sum + acc.balance, 0));
+    setTotalBefore(8000);
+    setTotalAfter(8000);
   };
 
   const handleQuizAnswer = (i, v) => {
@@ -302,60 +273,159 @@ export default function DBMSTransactionsLab() {
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
+  const submitQuiz = async () => {
+  let score = 0;
+
+  quizQuestions.forEach((q, i) => {
+    if (quizAnswers[i] === q.correct) score++;
+  });
+
+  setQuizScore(score);
+  setQuizSubmitted(true);
+  setQuizSaveStatus("Saving quiz result...");
+
+  try {
+    await saveQuizResult({
+      labSlug: "dbms",
+      experimentSlug: "transactions",
+      correctAnswers: score,
+      totalQuestions: quizQuestions.length
     });
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error("Quiz save failed:", error);
+    setQuizSaveStatus("Quiz submitted, but backend save failed.");
+  }
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "DBMS",
-      experiment: `${transactionType}-transaction`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
-  };
+  const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
+  scores.push({
+    subject: "DBMS",
+    experiment: "transactions",
+    mode: transactionType,
+    correct: score,
+    total: quizQuestions.length,
+    time: Date.now()
+  });
+  localStorage.setItem("vlab_scores", JSON.stringify(scores));
+};
+
+const redoQuiz = () => {
+  setQuizAnswers(Array(quizQuestions.length).fill(null));
+  setQuizSubmitted(false);
+  setQuizScore(0);
+  setQuizSaveStatus("");
+};
+
+  const progressPercent =
+    activeSection === "overview"
+      ? 20
+      : activeSection === "simulation"
+      ? 50
+      : activeSection === "comparison"
+      ? 70
+      : activeSection === "quiz"
+      ? 85
+      : 95;
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <div className="fixed inset-0 grid-pattern opacity-20 pointer-events-none" />
-      <div className="fixed top-[-220px] left-[-120px] w-[620px] h-[620px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="fixed bottom-[-220px] right-[-120px] w-[520px] h-[520px] rounded-full bg-accent/5 blur-3xl pointer-events-none" />
-
-      <div className="container mx-auto max-w-7xl px-4 pt-24 pb-16 relative z-10">
-        <div className="mb-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-5">
-            <FlaskConical className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display text-primary tracking-wide">
-              Interactive Transactions Experiment
-            </span>
+    <div className="er-shell">
+      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+        <div className="er-brand">
+          <div className="er-brand-logo">
+            <img src={simulabLogo} alt="SimuLab" onError={(e) => (e.currentTarget.style.display = "none")} />
           </div>
 
-          <h1 className="font-display text-4xl sm:text-5xl font-bold mb-3">
-            Transactions / ACID
-          </h1>
-
-          <p className="text-muted-foreground text-base sm:text-lg max-w-3xl leading-relaxed">
-            Explore COMMIT, ROLLBACK, and Atomicity through visual simulation, quiz, and SQL transaction practice.
-          </p>
+          {!sidebarCollapsed && (
+            <div>
+              <div className="er-brand-title">SimuLab</div>
+              <div className="er-brand-subtitle">DBMS Lab</div>
+            </div>
+          )}
         </div>
 
-        <section className="glass rounded-2xl p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4">Transaction Configuration</h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 16
-            }}
+        <div className="er-collapse-wrap">
+          <button
+            type="button"
+            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
           >
+            <ChevronsLeft size={18} />
+          </button>
+        </div>
+
+        <div className="er-nav">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.key}
+                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
+                onClick={() => setActiveSection(item.key)}
+                title={item.label}
+              >
+                <Icon size={18} />
+                {!sidebarCollapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {!sidebarCollapsed && (
+          <div className="er-progress-card">
+            <div className="er-progress-title">Your Progress</div>
+            <div className="er-progress-ring">
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                }}
+              >
+                <div className="er-progress-inner">
+                  <div className="er-progress-value">{progressPercent}%</div>
+                  <div className="er-progress-text">Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+        <div className="er-page-header">
+          <div>
+            <h1 className="er-page-title">Transactions / ACID</h1>
+            <p className="er-page-subtitle">
+              Explore COMMIT, ROLLBACK, and Atomicity using a bank transfer transaction.
+            </p>
+          </div>
+        </div>
+
+        <section className="er-config-card">
+          <div className="er-config-top">
+            <div>
+              <h2>Transaction Configuration</h2>
+              <p>Choose a transaction behavior and control the bank transfer simulation.</p>
+            </div>
+
+            <div className="er-mode-pill">
+              <div className="er-mode-pill-icon">
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <strong>{transactionType.toUpperCase()} Demo</strong>
+                <span>
+                  {transactionType === "commit"
+                    ? "Successful transaction saved permanently."
+                    : transactionType === "rollback"
+                    ? "Failed transaction restored safely."
+                    : "All-or-nothing transaction behavior."}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="er-config-grid">
             <div>
               <label className="sorting-label">Transaction Type</label>
               <select
@@ -394,101 +464,79 @@ export default function DBMSTransactionsLab() {
               </select>
             </div>
           </div>
+
+          <div className="er-chip-row">
+            <button className="er-chip active">Accounts: 2</button>
+            <button className="er-chip active">Before Total: ₹{totalBefore}</button>
+            <button className="er-chip active">After Total: ₹{totalAfter}</button>
+            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
+              {experimentRun ? "Experiment Run" : "Not Started"}
+            </button>
+          </div>
+          <div style={{ marginTop: 24 }}>
+  <MarkCompleteButton
+    labSlug="dbms"
+    experimentSlug="transactions"
+    points={10}
+  />
+</div>
         </section>
 
-        <div className="sorting-lab-layout">
-          <aside className="sorting-sidebar glass">
-            <button
-              className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-              onClick={() => setActiveSection("overview")}
-            >
-              Overview
-            </button>
+        <div className="er-content-layout">
+          <section className="er-content-card">
+            {activeSection === "overview" && (
+              <DBMSTransactionsOverview transactionType={transactionType} initialAccounts={initialAccounts} />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-              onClick={() => setActiveSection("simulation")}
-            >
-              Simulation
-            </button>
+            {activeSection === "simulation" && (
+              <DBMSTransactionsSimulation
+                transactionType={transactionType}
+                accounts={accounts}
+                runSimulation={runSimulation}
+                reset={reset}
+                loadSample={loadSample}
+                message={message}
+                selectedAccountId={selectedAccountId}
+                stepHistory={stepHistory}
+                currentStage={currentStage}
+                transactionState={transactionState}
+                totalBefore={totalBefore}
+                totalAfter={totalAfter}
+                transferAmount={transferAmount}
+                isRunning={isRunning}
+              />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "comparison" ? "active" : ""}`}
-              onClick={() => setActiveSection("comparison")}
-            >
-              Comparison
-            </button>
+            {activeSection === "comparison" && (
+              <DBMSTransactionsComparison transactionType={transactionType} initialAccounts={initialAccounts} />
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-              onClick={() => setActiveSection("quiz")}
-            >
-              Quiz
-            </button>
+            {activeSection === "quiz" && (
+              <DBMSTransactionsQuiz
+  transactionType={transactionType}
+  quizQuestions={quizQuestions}
+  quizAnswers={quizAnswers}
+  quizSubmitted={quizSubmitted}
+  quizScore={quizScore}
+  quizSaveStatus={quizSaveStatus}
+  experimentRun={experimentRun}
+  handleQuizAnswer={handleQuizAnswer}
+  submitQuiz={submitQuiz}
+  redoQuiz={redoQuiz}
+/>
+            )}
 
-            <button
-              className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-              onClick={() => setActiveSection("coding")}
-            >
-              Coding
-            </button>
-          </aside>
-
-          <main className="sorting-content">
-            <div className="glass rounded-3xl p-5 sm:p-6">
-              {activeSection === "overview" && (
-                <DBMSTransactionsOverview
-                  transactionType={transactionType}
-                  initialAccounts={initialAccounts}
-                />
-              )}
-
-              {activeSection === "simulation" && (
-                <DBMSTransactionsSimulation
-                  transactionType={transactionType}
-                  accounts={accounts}
-                  runSimulation={runSimulation}
-                  reset={reset}
-                  loadSample={loadSample}
-                  message={message}
-                  selectedAccountId={selectedAccountId}
-                  stepHistory={stepHistory}
-                  currentStage={currentStage}
-                  transactionState={transactionState}
-                  totalBefore={totalBefore}
-                  totalAfter={totalAfter}
-                  transferAmount={transferAmount}
-                  isRunning={isRunning}
-                />
-              )}
-
-              {activeSection === "comparison" && (
-                <DBMSTransactionsComparison
-                  transactionType={transactionType}
-                  initialAccounts={initialAccounts}
-                />
-              )}
-
-              {activeSection === "quiz" && (
-                <DBMSTransactionsQuiz
-                  transactionType={transactionType}
-                  quizQuestions={quizQuestions}
-                  quizAnswers={quizAnswers}
-                  quizSubmitted={quizSubmitted}
-                  quizScore={quizScore}
-                  experimentRun={experimentRun}
-                  handleQuizAnswer={handleQuizAnswer}
-                  submitQuiz={submitQuiz}
-                />
-              )}
-
-              {activeSection === "coding" && (
-                <DBMSTransactionsCoding transactionType={transactionType} />
-              )}
-            </div>
-          </main>
+            {activeSection === "coding" && (
+              <DBMSTransactionsCoding
+  transactionType={transactionType}
+  codingSaveStatus={codingSaveStatus}
+  setCodingSaveStatus={setCodingSaveStatus}
+  saveCodingSubmission={saveCodingSubmission}
+/>
+            )}
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -1,16 +1,16 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FlaskConical, Menu, X, User, LogOut } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
+import SimuLabLogo from "./SimuLabLogo";
 
 const navItems = (user) => [
   { label: "Home", path: "/" },
   { label: "Labs", path: "/labs" },
   ...(user ? [{ label: "Dashboard", path: "/dashboard" }] : []),
 ];
-
 
 const SimulabNavbar = () => {
   const location = useLocation();
@@ -49,19 +49,15 @@ const SimulabNavbar = () => {
         boxShadow: "0 6px 24px rgba(0,0,0,0.22)",
       }}
     >
-      <div className="container mx-auto flex items-center justify-between h-20 px-5 md:px-8">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/10 group-hover:scale-105 transition-transform duration-300">
-            <FlaskConical className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <span className="font-display text-[2rem] font-bold text-gradient tracking-tight">
-            SIMULAB
-          </span>
+      <div className="container mx-auto flex items-center justify-between h-24 px-5 md:px-8">
+        <Link to="/" className="flex items-center gap-4 group">
+          <SimuLabLogo size={58} showText={true} />
         </Link>
 
         <div className="hidden md:flex items-center gap-3">
           {navItems(user).map((item) => {
             const isActive = location.pathname === item.path;
+
             return (
               <Link key={item.label} to={item.path}>
                 <Button
@@ -117,6 +113,7 @@ const SimulabNavbar = () => {
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-primary-foreground">
                   {initials}
                 </div>
+
                 <div className="hidden lg:block">
                   <p className="text-sm font-medium text-foreground leading-none">
                     {displayName}
@@ -191,6 +188,7 @@ const SimulabNavbar = () => {
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-primary-foreground">
                     {initials}
                   </div>
+
                   <div>
                     <p className="text-sm font-medium text-foreground">
                       {displayName}
@@ -210,13 +208,21 @@ const SimulabNavbar = () => {
               </>
             ) : (
               <div className="flex gap-3 mt-4">
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="flex-1">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1"
+                >
                   <Button variant="ghost" size="sm" className="w-full">
                     Log in
                   </Button>
                 </Link>
 
-                <Link to="/register" onClick={() => setMobileOpen(false)} className="flex-1">
+                <Link
+                  to="/register"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex-1"
+                >
                   <Button variant="hero" size="sm" className="w-full">
                     Get Started
                   </Button>

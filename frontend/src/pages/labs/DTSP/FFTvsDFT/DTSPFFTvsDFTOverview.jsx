@@ -1,49 +1,102 @@
 import React from "react";
+import { Target, BookOpen, Zap, Gauge, CheckCircle2 } from "lucide-react";
 
 export default function DTSPFFTvsDFTOverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To compare the Discrete Fourier Transform (DFT) and the Fast Fourier
-          Transform (FFT) in terms of output and computational efficiency.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 20 }}>
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Overview</h2>
+          <p className="sorting-sim-subtitle">
+            Compare DFT and FFT output accuracy, speed, and operation count.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          The DFT converts a time-domain sequence into its frequency-domain representation.
-          However, direct computation of DFT requires O(N²) operations.
-        </p>
-        <p>
-          The FFT is an efficient algorithm to compute the same spectrum as the DFT,
-          usually in O(N log N) time by recursively dividing the sequence into smaller parts.
-        </p>
-        <p>
-          FFT is especially efficient when the sequence length is a power of two.
-        </p>
-      </section>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>FFT vs DFT</h3>
+          <span className="overview-badge">DTSP Experiment</span>
+        </div>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Enter a numeric sequence.</li>
-          <li>Click <strong>Analyze FFT vs DFT</strong>.</li>
-          <li>Observe padding to power-of-two length if needed.</li>
-          <li>Compare DFT and FFT outputs.</li>
-          <li>Study operation counts and FFT stage breakdown.</li>
+        <p className="overview-hero-text">
+          The Discrete Fourier Transform converts a sequence from time domain to frequency domain.
+          Direct DFT is simple but computationally expensive. FFT is an optimized algorithm that
+          computes the same frequency spectrum much faster by breaking the sequence into smaller
+          parts recursively.
+        </p>
+      </div>
+
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+          <p>
+            To compare DFT and FFT in terms of output spectrum and computational efficiency.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge size={18} />
+            <h4>DFT Complexity</h4>
+          </div>
+          <p>
+            Direct DFT requires approximately O(N²) operations because every output bin uses
+            all input samples.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Zap size={18} />
+            <h4>FFT Complexity</h4>
+          </div>
+          <p>
+            FFT computes the same result in approximately O(N log N), making it much faster for
+            large sequences.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <CheckCircle2 size={18} />
+            <h4>Key Point</h4>
+          </div>
+          <p>
+            FFT does not produce a different transform. It produces the same spectrum as DFT,
+            but more efficiently.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {[
+            "Enter a numeric sequence.",
+            "Click Analyze FFT vs DFT.",
+            "Observe whether zero padding is added to reach a power-of-two length.",
+            "Compare DFT and FFT magnitude values.",
+            "Study DFT and FFT operation counts.",
+            "Analyze the FFT stage breakdown."
+          ].map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">{index + 1}</span>
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
-      </section>
-
-      <section className="card">
-        <h2>Key Observation</h2>
-        <p>
-          FFT does not change the transform result. It computes the same spectrum
-          as the DFT, but far more efficiently for larger input sizes.
-        </p>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

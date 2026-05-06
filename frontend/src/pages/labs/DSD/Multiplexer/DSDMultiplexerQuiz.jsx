@@ -1,69 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { Brain, Lock, Trophy, RotateCcw } from "lucide-react";
 
-const questions = [
-  {
-    q: "A multiplexer is mainly used to:",
-    options: [
-      "Store data permanently",
-      "Select one input from many and route it to output",
-      "Invert a signal only",
-      "Generate clock signals",
-    ],
-    correct: 1,
-  },
-  {
-    q: "A 4-to-1 multiplexer has how many select lines?",
-    options: ["1", "2", "3", "4"],
-    correct: 1,
-  },
-  {
-    q: "If S1S0 = 10, which input is selected?",
-    options: ["I0", "I1", "I2", "I3"],
-    correct: 2,
-  },
-  {
-    q: "If S1S0 = 01, the output is connected to:",
-    options: ["I0", "I1", "I2", "I3"],
-    correct: 1,
-  },
-  {
-    q: "Multiplexers are examples of:",
-    options: [
-      "Sequential circuits",
-      "Combinational circuits",
-      "Analog amplifiers",
-      "Memory cells",
-    ],
-    correct: 1,
-  },
-];
-
-export default function DSDMultiplexerQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const handleAnswer = (index, value) => {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+export default function DSDMultiplexerQuiz({
+  experimentRun,
+  questions,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total = questions.length;
+  const percentage = total ? Math.round((score / total) * 100) : 0;
 
   return (
     <section className="quiz-shell">
@@ -82,7 +32,9 @@ export default function DSDMultiplexerQuiz({ experimentRun }) {
       {!experimentRun ? (
         <div className="quiz-locked-box">
           <Lock size={18} />
-          <span>Please interact with the multiplexer simulation before attempting the quiz.</span>
+          <span>
+            Please interact with the multiplexer simulation before attempting the quiz.
+          </span>
         </div>
       ) : !submitted ? (
         <div className="quiz-list">
@@ -96,7 +48,9 @@ export default function DSDMultiplexerQuiz({ experimentRun }) {
                 {q.options.map((opt, j) => (
                   <label
                     key={j}
-                    className={`quiz-option-card ${answers[i] === j ? "selected" : ""}`}
+                    className={`quiz-option-card ${
+                      answers[i] === j ? "selected" : ""
+                    }`}
                   >
                     <input
                       type="radio"
@@ -112,7 +66,11 @@ export default function DSDMultiplexerQuiz({ experimentRun }) {
           ))}
 
           <div className="quiz-actions-row">
-            <button className="sim-btn sim-btn-primary" onClick={submitQuiz} disabled={answers.includes(null)}>
+            <button
+              className="sim-btn sim-btn-primary"
+              onClick={submitQuiz}
+              disabled={answers.includes(null)}
+            >
               Submit Quiz
             </button>
           </div>
@@ -124,9 +82,46 @@ export default function DSDMultiplexerQuiz({ experimentRun }) {
             <div>
               <h3>Quiz Completed</h3>
               <p>
-                Your score: <strong>{score} / {questions.length}</strong>
+                Score: <strong>{score} / {total}</strong> ({percentage}%)
               </p>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p
+              className="text-sm text-muted-foreground"
+              style={{ marginTop: 8 }}
+            >
+              {quizSaveStatus}
+            </p>
+          )}
+
+          <div className="quiz-list">
+            {questions.map((q, i) => (
+              <div key={i} className="quiz-card-upgraded">
+                <div className="quiz-question-title">
+                  {i + 1}. {q.q}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect = j === q.correct;
+                    const isWrong = answers[i] === j && j !== q.correct;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect ? "correct" : isWrong ? "wrong" : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="quiz-actions-row">

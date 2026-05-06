@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Code2, Play, Sparkles, Wrench } from "lucide-react";
 
 const LANGUAGES = [
@@ -14,6 +14,7 @@ const LinkedListCoding = ({
   codes,
   selectedLanguages,
   results,
+  codingSaveStatus,
   generateProblems,
   handleLanguageChange,
   handleCodeChange,
@@ -21,14 +22,11 @@ const LinkedListCoding = ({
   analyzeCode,
   correctCode
 }) => {
-  
-  
-  React.useEffect(() => {
-  if (currentProblems.length === 0) {
-    generateProblems();
-  }
-}, [currentProblems.length, generateProblems]);
-
+  useEffect(() => {
+    if (currentProblems.length === 0) {
+      generateProblems();
+    }
+  }, [currentProblems.length, generateProblems]);
 
   return (
     <section className="coding-shell">
@@ -54,10 +52,11 @@ const LinkedListCoding = ({
 
         return (
           <div key={problem.id} className="coding-card-upgraded">
-            {/* HEADER */}
             <div className="coding-card-header">
               <div>
-                <h3>Problem {index + 1} • {problem.type}</h3>
+                <h3>
+                  Problem {index + 1} • {problem.type}
+                </h3>
                 <p>{problem.description}</p>
               </div>
 
@@ -79,7 +78,6 @@ const LinkedListCoding = ({
               </div>
             </div>
 
-            {/* CODE EDITOR */}
             <textarea
               value={codes[codeKey] || ""}
               onChange={(e) =>
@@ -90,7 +88,6 @@ const LinkedListCoding = ({
               placeholder="Write your solution here..."
             />
 
-            {/* ACTIONS */}
             <div className="coding-actions-upgraded">
               <button
                 className="sim-btn sim-btn-primary"
@@ -117,17 +114,19 @@ const LinkedListCoding = ({
               </button>
             </div>
 
-            {/* NOTE */}
             {selectedLanguage !== "javascript" && (
               <div className="modern-coding-note">
                 Execution for {selectedLanguage.toUpperCase()} will be enabled later.
               </div>
             )}
 
-            {/* RESULT */}
             {results[problem.id] && (
+              <div className="coding-result-box">{results[problem.id]}</div>
+            )}
+
+            {codingSaveStatus?.[problem.id] && (
               <div className="coding-result-box">
-                {results[problem.id]}
+                {codingSaveStatus[problem.id]}
               </div>
             )}
           </div>

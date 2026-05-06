@@ -11,6 +11,7 @@ import {
   ScatterChart,
   Scatter
 } from "recharts";
+import { LineChart as LineChartIcon, Activity } from "lucide-react";
 
 export default function DVLSIMOSFETGraphs({
   vgs,
@@ -22,8 +23,10 @@ export default function DVLSIMOSFETGraphs({
   formatNumber
 }) {
   const idVsVdsData = [];
+
   for (let x = 0; x <= 5; x += 0.1) {
     let id = 0;
+
     if (vgs < vt) {
       id = 0;
     } else if (x < vgs - vt) {
@@ -39,8 +42,10 @@ export default function DVLSIMOSFETGraphs({
   }
 
   const idVsVgsData = [];
+
   for (let x = 0; x <= 5; x += 0.1) {
     let id = 0;
+
     if (x < vt) {
       id = 0;
     } else if (vds < x - vt) {
@@ -58,17 +63,31 @@ export default function DVLSIMOSFETGraphs({
   const operatingPoint = [{ vds, id: Number(analysis.id.toFixed(4)) }];
 
   return (
-    <section className="card experiment">
-      <h2>Graphs</h2>
-
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        The first graph shows how drain current varies with VDS for the chosen VGS.
-        The second graph shows how drain current varies with VGS for the chosen VDS.
+    <section className="comparison-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <LineChartIcon size={18} />
+        </div>
+        <div>
+          <h2 className="sorting-sim-title">Graphs</h2>
+          <p className="sorting-sim-subtitle">
+            Visualize Id–Vds and Id–Vgs characteristics for the selected operating point.
+          </p>
+        </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Id vs Vds</h3>
-        <div style={{ width: "100%", height: 320 }}>
+      <div className="sorting-info-box">
+        <Activity size={16} style={{ marginRight: 10 }} />
+        The operating point is in the <strong style={{ marginLeft: 4 }}>{analysis.region}</strong> region with ID = {formatNumber(analysis.id, 4)} A.
+      </div>
+
+      <div className="overview-card" style={{ marginBottom: 18 }}>
+        <div className="overview-card-head">
+          <LineChartIcon size={18} />
+          <h4>Id vs Vds</h4>
+        </div>
+
+        <div style={{ width: "100%", height: 340 }}>
           <ResponsiveContainer>
             <ScatterChart>
               <CartesianGrid stroke="#334155" />
@@ -91,9 +110,13 @@ export default function DVLSIMOSFETGraphs({
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Id vs Vgs</h3>
-        <div style={{ width: "100%", height: 320 }}>
+      <div className="overview-card" style={{ marginBottom: 18 }}>
+        <div className="overview-card-head">
+          <LineChartIcon size={18} />
+          <h4>Id vs Vgs</h4>
+        </div>
+
+        <div style={{ width: "100%", height: 340 }}>
           <ResponsiveContainer>
             <LineChart data={idVsVgsData}>
               <CartesianGrid stroke="#334155" />
@@ -114,11 +137,14 @@ export default function DVLSIMOSFETGraphs({
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Current Interpretation</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <Activity size={18} />
+          <h4>Current Interpretation</h4>
+        </div>
+        <p>
           For the current operating point, <strong>Id = {formatNumber(analysis.id, 4)} A</strong>.
-          The device is in the <strong>{analysis.region}</strong> region.
+          The device is operating in the <strong>{analysis.region}</strong> region.
         </p>
       </div>
     </section>

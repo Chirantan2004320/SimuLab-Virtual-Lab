@@ -81,7 +81,12 @@ function normalizeText(text) {
   return text.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-export default function DBMSNormalizationCoding({ normalForm }) {
+export default function DBMSNormalizationCoding({
+  normalForm,
+  codingSaveStatus,
+  setCodingSaveStatus,
+  saveCodingSubmission
+}) {
   const [currentProblems, setCurrentProblems] = useState([]);
   const [answers, setAnswers] = useState({});
   const [results, setResults] = useState({});
@@ -113,7 +118,7 @@ export default function DBMSNormalizationCoding({ normalForm }) {
     }));
   };
 
-  const runAnswer = (problem) => {
+  const runAnswer = async (problem) => {
     const userAnswer = answers[problem.id] || "";
 
     if (!userAnswer.trim()) {
@@ -129,18 +134,49 @@ export default function DBMSNormalizationCoding({ normalForm }) {
       normalizedAnswer.includes(keyword.toLowerCase())
     );
 
-    if (matchedKeywords.length >= 2) {
-      setResults((prev) => ({
+    const passed = matchedKeywords.length >= 2;
+
+    setResults((prev) => ({
+      ...prev,
+      [problem.id]: passed
+        ? `Good Answer!\n\nYour explanation includes important normalization ideas such as: ${matchedKeywords.join(", ")}.`
+        : `Your answer needs improvement.\n\nTry mentioning the dependency issue clearly and explain how the table should be split to achieve ${normalForm.toUpperCase()}.`
+    }));
+
+    if (setCodingSaveStatus) {
+      setCodingSaveStatus((prev) => ({
         ...prev,
-        [problem.id]:
-          `Good Answer!\n\nYour explanation includes important normalization ideas such as: ${matchedKeywords.join(", ")}.`
+        [problem.id]: "Saving submission..."
       }));
-    } else {
-      setResults((prev) => ({
-        ...prev,
-        [problem.id]:
-          `Your answer needs improvement.\n\nTry mentioning the dependency issue clearly and explain how the table should be split to achieve ${normalForm.toUpperCase()}.`
-      }));
+    }
+
+    try {
+      if (saveCodingSubmission) {
+        await saveCodingSubmission({
+          labSlug: "dbms",
+          experimentSlug: "normalization",
+          problemTitle: `${normalForm.toUpperCase()} - ${problem.title}`,
+          language: "text",
+          code: userAnswer,
+          result: passed ? "passed" : "failed"
+        });
+      }
+
+      if (setCodingSaveStatus) {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problem.id]: "Submission saved to dashboard."
+        }));
+      }
+    } catch (error) {
+      console.error("Coding save failed:", error);
+
+      if (setCodingSaveStatus) {
+        setCodingSaveStatus((prev) => ({
+          ...prev,
+          [problem.id]: "Answer checked, but backend save failed."
+        }));
+      }
     }
   };
 
@@ -273,6 +309,12 @@ export default function DBMSNormalizationCoding({ normalForm }) {
               >
                 {results[problem.id]}
               </pre>
+            </div>
+          )}
+
+          {codingSaveStatus?.[problem.id] && (
+            <div className="coding-result-box">
+              {codingSaveStatus[problem.id]}
             </div>
           )}
         </div>

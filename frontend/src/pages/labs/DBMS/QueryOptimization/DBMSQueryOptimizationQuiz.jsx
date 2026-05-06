@@ -1,3 +1,5 @@
+// DBMSQueryOptimizationQuiz.jsx
+
 import React from "react";
 import { Brain, CheckCircle2, Lock, RotateCcw } from "lucide-react";
 
@@ -7,12 +9,44 @@ export default function DBMSQueryOptimizationQuiz({
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
+  redoQuiz
 }) {
   const total = quizQuestions.length;
   const percentage = total ? Math.round((quizScore / total) * 100) : 0;
+
+  const modeLabel =
+    mode === "selection"
+      ? "Selection Pushdown"
+      : mode === "projection"
+      ? "Projection Pushdown"
+      : "Join Order Optimization";
+
+  if (!experimentRun) {
+    return (
+      <section className="quiz-shell">
+        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+          <div className="sorting-sim-icon">
+            <Brain size={18} />
+          </div>
+          <div>
+            <h2 className="sorting-sim-title">Quiz</h2>
+            <p className="sorting-sim-subtitle">
+              Test your understanding after running the query optimization simulation.
+            </p>
+          </div>
+        </div>
+
+        <div className="quiz-locked-box">
+          <Lock size={18} />
+          <span>Please run the experiment at least once before attempting the quiz.</span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="quiz-shell">
@@ -23,18 +57,12 @@ export default function DBMSQueryOptimizationQuiz({
         <div>
           <h2 className="sorting-sim-title">Quiz</h2>
           <p className="sorting-sim-subtitle">
-            Check your understanding of {mode.toUpperCase()} optimization
-            concepts.
+            Answer the questions below for {modeLabel}.
           </p>
         </div>
       </div>
 
-      {!experimentRun ? (
-        <div className="quiz-locked-box">
-          <Lock size={18} />
-          <span>Please run the experiment at least once before attempting the quiz.</span>
-        </div>
-      ) : !quizSubmitted ? (
+      {!quizSubmitted ? (
         <div className="quiz-list">
           {quizQuestions.map((q, i) => (
             <div key={i} className="quiz-card-upgraded">
@@ -46,7 +74,9 @@ export default function DBMSQueryOptimizationQuiz({
                 {q.options.map((opt, j) => (
                   <label
                     key={j}
-                    className={`quiz-option-card ${quizAnswers[i] === j ? "selected" : ""}`}
+                    className={`quiz-option-card ${
+                      quizAnswers[i] === j ? "selected" : ""
+                    }`}
                   >
                     <input
                       type="radio"
@@ -78,6 +108,7 @@ export default function DBMSQueryOptimizationQuiz({
               <p>
                 Score: <b>{quizScore}</b> / {total} ({percentage}%)
               </p>
+              {quizSaveStatus && <p>{quizSaveStatus}</p>}
             </div>
           </div>
 
@@ -109,13 +140,12 @@ export default function DBMSQueryOptimizationQuiz({
             ))}
           </div>
 
-          <button
-            className="sim-btn sim-btn-muted"
-            onClick={() => window.location.reload()}
-          >
-            <RotateCcw size={16} />
-            Retry Later
-          </button>
+          <div className="quiz-actions-row">
+            <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+              <RotateCcw size={16} />
+              Redo Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>
