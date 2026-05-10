@@ -38,7 +38,7 @@ import DTSPIIRFilterDesignLab from "./pages/labs/DTSP/IIRFilterDesign/DTSPIIRFil
 import DTSPWindowingTechniquesLab from "./pages/labs/DTSP/WindowingTechniques/DTSPWindowingTechniquesLab.jsx";
 import DSDLabIndex from "./pages/DSDLabIndex.jsx";
 import DSDLogicGatesLab from "./pages/labs/DSD/LogicGates/DSDLogicGatesLab.jsx";
-import AIAssistant from "./components/AIAssistant.jsx";
+import AIAssistant from "./components/ai-assistant/AIAssistant.jsx";
 import DSDAddersLab from "./pages/labs/DSD/Adders/DSDAddersLab.jsx";
 import DSDMultiplexerLab from "./pages/labs/DSD/Multiplexer/DSDMultiplexerLab.jsx";
 import DSDFlipFlopsLab from "./pages/labs/DSD/FlipFlops/DSDFlipFlopsLab.jsx";
