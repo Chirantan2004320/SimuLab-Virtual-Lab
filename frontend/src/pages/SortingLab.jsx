@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useRef,
+  useCallback,
 } from "react";
 
 import axios from "axios";
@@ -266,99 +267,92 @@ export default function SortingLab() {
   // =========================
 
   const fetchQuizQuestions =
-    async () => {
+  useCallback(async () => {
 
-      try {
+    try {
 
-        const token =
-          localStorage.getItem(
-            "token"
-          );
+      const token =
+        localStorage.getItem(
+          "token"
+        );
 
-        const res =
-          await axios.get(
-            `${API_BASE_URL}/api/student/quizzes`,
-            {
-              headers: {
-                Authorization:
-                  `Bearer ${token}`,
-              },
-            }
-          );
-
-        const filtered =
-          res.data.questions.filter(
-            (q) =>
-              q.lab ===
-                "DSA" &&
-              q.experiment ===
-                "Sorting"
-          );
-
-        const grouped = {
-          bubble: [],
-          selection: [],
-          insertion: [],
-        };
-
-        filtered.forEach((q) => {
-
-          const algorithm =
-            (
-              q.topic ||
-              "bubble"
-            ).toLowerCase();
-
-          if (
-            grouped[
-              algorithm
-            ]
-          ) {
-
-            grouped[
-              algorithm
-            ].push({
-              id: q.id,
-
-              question:
-                q.question,
-
-              options: [
-                q.option_a,
-                q.option_b,
-                q.option_c,
-                q.option_d,
-              ],
-
-              correct_answer:
-                q.correct_answer,
-            });
+      const res =
+        await axios.get(
+          `${API_BASE_URL}/api/student/quizzes`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
           }
-        });
-
-        setQuizQuestions(
-          grouped
         );
 
-        setQuizAnswers(
-          Array(
-            grouped[
-              selectedAlgorithm
-            ]?.length || 0
-          ).fill(null)
+      const filtered =
+        res.data.questions.filter(
+          (q) =>
+            q.lab ===
+              "DSA" &&
+            q.experiment ===
+              "Sorting"
         );
 
-      } catch (error) {
+      const grouped = {
+        bubble: [],
+        selection: [],
+        insertion: [],
+      };
 
-        console.error(error);
-      }
-    };
+      filtered.forEach((q) => {
 
+        const algorithm =
+          (
+            q.topic ||
+            "bubble"
+          ).toLowerCase();
+
+        if (
+          grouped[
+            algorithm
+          ]
+        ) {
+
+          grouped[
+            algorithm
+          ].push({
+            id: q.id,
+
+            question:
+              q.question,
+
+            options: [
+              q.option_a,
+              q.option_b,
+              q.option_c,
+              q.option_d,
+            ],
+
+            correct_answer:
+              q.correct_answer,
+          });
+        }
+      });
+
+      setQuizQuestions(
+        grouped
+      );
+
+    } catch (error) {
+
+      console.error(error);
+    }
+
+  }, []);
+  
   useEffect(() => {
 
     fetchQuizQuestions();
 
-  }, []);
+  }, [fetchQuizQuestions]);
 
   // =========================
   // SORTING LOGIC

@@ -67,6 +67,7 @@ export const analyzeCode = (
   let feedback = [];
 
   try {
+    // eslint-disable-next-line no-new-func
     new Function("arr", code);
   } catch (e) {
     return configs.general.syntaxError.replace(
