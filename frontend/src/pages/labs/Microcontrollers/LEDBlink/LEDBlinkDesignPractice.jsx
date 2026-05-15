@@ -1,162 +1,1063 @@
-import React, { useMemo, useState } from "react";
-import { FileCode2, CheckCircle2, Lightbulb, RefreshCcw } from "lucide-react";
+import React, {
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 
-const problemBank = [
+import {
+  FileCode2,
+  Play,
+  Wrench,
+  Sparkles,
+  CheckCircle2,
+  XCircle,
+  Cpu,
+  Zap,
+  Gauge
+} from "lucide-react";
+
+import { saveCodingSubmission } from "../../../../API/progressApi";
+
+const LANGUAGES = [
   {
-    id: 1,
-    title: "Configure LED pin",
-    description: "Write Arduino setup code to configure pin 13 as OUTPUT.",
-    answer: "pinMode(13, OUTPUT);",
-    placeholder: "Example: pinMode(...);"
+    value: "javascript",
+    label: "JavaScript"
   },
+
   {
-    id: 2,
-    title: "Turn LED ON",
-    description: "Write the Arduino statement to set pin 13 HIGH.",
-    answer: "digitalWrite(13, HIGH);",
-    placeholder: "Example: digitalWrite(...);"
+    value: "python",
+    label: "Python"
   },
+
   {
-    id: 3,
-    title: "Add delay",
-    description: "Write an Arduino statement to wait for 500 milliseconds.",
-    answer: "delay(500);",
-    placeholder: "Example: delay(...);"
+    value: "cpp",
+    label: "C++"
   },
+
   {
-    id: 4,
-    title: "Turn LED OFF",
-    description: "Write the Arduino statement to set pin 13 LOW.",
-    answer: "digitalWrite(13, LOW);",
-    placeholder: "Example: digitalWrite(...);"
+    value: "c",
+    label: "C"
+  },
+
+  {
+    value: "java",
+    label: "Java"
   }
 ];
 
-function normalizeText(value) {
-  return value.toLowerCase().replace(/\s+/g, " ").replace(/;/g, "").trim();
+const problems = [
+  {
+    id: 1,
+
+    title: "LED Blink Logic",
+
+    description:
+      "Write a function blinkLed(state) that toggles the LED state between ON and OFF.",
+
+    functionName: "blinkLed",
+
+    tests: [
+      {
+        input: ["ON"],
+        expected: "OFF"
+      },
+
+      {
+        input: ["OFF"],
+        expected: "ON"
+      }
+    ]
+  },
+
+  {
+    id: 2,
+
+    title: "Blink Delay",
+
+    description:
+      "Write a function blinkDelay(speed) that returns delay in milliseconds for SLOW, MEDIUM, and FAST blink modes.",
+
+    functionName: "blinkDelay",
+
+    tests: [
+      {
+        input: ["SLOW"],
+        expected: 1000
+      },
+
+      {
+        input: ["MEDIUM"],
+        expected: 500
+      },
+
+      {
+        input: ["FAST"],
+        expected: 200
+      }
+    ]
+  },
+
+  {
+    id: 3,
+
+    title: "GPIO Output Voltage",
+
+    description:
+      "Write a function gpioVoltage(ledState) that returns 5 when LED is ON and 0 when LED is OFF.",
+
+    functionName: "gpioVoltage",
+
+    tests: [
+      {
+        input: ["ON"],
+        expected: 5
+      },
+
+      {
+        input: ["OFF"],
+        expected: 0
+      }
+    ]
+  }
+];
+
+const templates = {
+  javascript: [
+    `function blinkLed(state) {
+  return state === "ON" ? "OFF" : "ON";
+}`,
+
+    `function blinkDelay(speed) {
+  if (speed === "SLOW") {
+    return 1000;
+  }
+
+  if (speed === "MEDIUM") {
+    return 500;
+  }
+
+  return 200;
+}`,
+
+    `function gpioVoltage(ledState) {
+  return ledState === "ON" ? 5 : 0;
+}`
+  ],
+
+  python: [
+    `def blinkLed(state):
+    return "OFF" if state == "ON" else "ON"`,
+
+    `def blinkDelay(speed):
+    if speed == "SLOW":
+        return 1000
+
+    if speed == "MEDIUM":
+        return 500
+
+    return 200`,
+
+    `def gpioVoltage(ledState):
+    return 5 if ledState == "ON" else 0`
+  ],
+
+  cpp: [
+    `string blinkLed(string state) {
+  return state == "ON" ? "OFF" : "ON";
+}`,
+
+    `int blinkDelay(string speed) {
+  if (speed == "SLOW") {
+    return 1000;
+  }
+
+  if (speed == "MEDIUM") {
+    return 500;
+  }
+
+  return 200;
+}`,
+
+    `int gpioVoltage(string ledState) {
+  return ledState == "ON" ? 5 : 0;
+}`
+  ],
+
+  c: [
+    `char* blinkLed(char state[]) {
+  return strcmp(state, "ON") == 0 ? "OFF" : "ON";
+}`,
+
+    `int blinkDelay(char speed[]) {
+  if (strcmp(speed, "SLOW") == 0) {
+    return 1000;
+  }
+
+  if (strcmp(speed, "MEDIUM") == 0) {
+    return 500;
+  }
+
+  return 200;
+}`,
+
+    `int gpioVoltage(char ledState[]) {
+  return strcmp(ledState, "ON") == 0 ? 5 : 0;
+}`
+  ],
+
+  java: [
+    `public static String blinkLed(String state) {
+  return state.equals("ON") ? "OFF" : "ON";
+}`,
+
+    `public static int blinkDelay(String speed) {
+  if (speed.equals("SLOW")) {
+    return 1000;
+  }
+
+  if (speed.equals("MEDIUM")) {
+    return 500;
+  }
+
+  return 200;
+}`,
+
+    `public static int gpioVoltage(String ledState) {
+  return ledState.equals("ON") ? 5 : 0;
+}`
+  ]
+};
+
+function deepEqual(a, b) {
+  return (
+    JSON.stringify(a) ===
+    JSON.stringify(b)
+  );
 }
 
-export default function LEDBlinkDesignPractice({ analysis }) {
-  const [responses, setResponses] = useState(() =>
-    problemBank.reduce((acc, item) => {
-      acc[item.id] = "";
-      return acc;
-    }, {})
+function runJavascript(
+  problem,
+  code
+) {
+  // eslint-disable-next-line no-new-func
+  const fn = new Function(
+    `${code}; return ${problem.functionName};`
+  )();
+
+  const testResults =
+    problem.tests.map(
+      (test) => {
+        const actual =
+          fn(...test.input);
+
+        const passed =
+          deepEqual(
+            actual,
+            test.expected
+          );
+
+        return {
+          input:
+            test.input,
+
+          expected:
+            test.expected,
+
+          actual,
+
+          passed
+        };
+      }
+    );
+
+  return {
+    passed:
+      testResults.every(
+        (test) =>
+          test.passed
+      ),
+
+    testResults
+  };
+}
+
+function TestCaseTable({
+  testResults
+}) {
+  if (!testResults?.length)
+    return null;
+
+  return (
+    <div
+      style={{
+        marginTop: 14,
+        overflowX: "auto"
+      }}
+    >
+      <table className="dbms-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+
+            <th>Input</th>
+
+            <th>Expected</th>
+
+            <th>Actual</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {testResults.map(
+            (
+              test,
+              index
+            ) => (
+              <tr key={index}>
+                <td>
+                  <span
+                    style={{
+                      display:
+                        "inline-flex",
+
+                      alignItems:
+                        "center",
+
+                      gap: 6,
+
+                      color:
+                        test.passed
+                          ? "#22c55e"
+                          : "#ef4444",
+
+                      fontWeight: 800
+                    }}
+                  >
+                    {test.passed ? (
+                      <CheckCircle2
+                        size={15}
+                      />
+                    ) : (
+                      <XCircle
+                        size={15}
+                      />
+                    )}
+
+                    {test.passed
+                      ? "Passed"
+                      : "Failed"}
+                  </span>
+                </td>
+
+                <td>
+                  {JSON.stringify(
+                    test.input
+                  )}
+                </td>
+
+                <td>
+                  <code>
+                    {JSON.stringify(
+                      test.expected
+                    )}
+                  </code>
+                </td>
+
+                <td>
+                  <code>
+                    {JSON.stringify(
+                      test.actual
+                    )}
+                  </code>
+                </td>
+              </tr>
+            )
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function LEDBlinkDesignPractice({
+  analysis
+}) {
+  const [
+    selectedLanguage,
+    setSelectedLanguage
+  ] = useState(
+    "javascript"
   );
 
-  const [feedback, setFeedback] = useState({});
+  const [codes, setCodes] =
+    useState([]);
 
-  const handleChange = (id, value) => {
-    setResponses((prev) => ({ ...prev, [id]: value }));
-  };
+  const [
+    results,
+    setResults
+  ] = useState([]);
 
-  const checkAnswer = (problem) => {
-    const userValue = normalizeText(responses[problem.id] || "");
-    const correctValue = normalizeText(problem.answer);
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus
+  ] = useState([]);
 
-    let result = "";
-
-    if (!userValue) {
-      result = "Please write your answer first.";
-    } else if (
-      userValue === correctValue ||
-      userValue.includes(correctValue) ||
-      correctValue.includes(userValue)
-    ) {
-      result = "Correct. Your answer matches the expected LED blink concept.";
-    } else {
-      result = "Partially correct or incorrect. Review the blink logic and try again.";
-    }
-
-    setFeedback((prev) => ({
-      ...prev,
-      [problem.id]: result
-    }));
-  };
-
-  const showModelAnswer = (problem) => {
-    setResponses((prev) => ({
-      ...prev,
-      [problem.id]: problem.answer
-    }));
-
-    setFeedback((prev) => ({
-      ...prev,
-      [problem.id]: "Model answer loaded."
-    }));
-  };
-
-  const clearAll = () => {
-    setResponses(
-      problemBank.reduce((acc, item) => {
-        acc[item.id] = "";
-        return acc;
-      }, {})
+  useEffect(() => {
+    setCodes(
+      templates[
+        selectedLanguage
+      ]
     );
-    setFeedback({});
+
+    setResults(
+      Array(
+        problems.length
+      ).fill(null)
+    );
+
+    setCodingSaveStatus(
+      Array(
+        problems.length
+      ).fill("")
+    );
+  }, [selectedLanguage]);
+
+  const currentInsight =
+    useMemo(() => {
+      return `Current state: LED is ${analysis.ledState ? "ON" : "OFF"}, Blink Speed = ${analysis.blinkSpeed}, Delay = ${analysis.delayMs} ms, Cycles = ${analysis.cycleCount}.`;
+    }, [analysis]);
+
+  const handleCodeChange = (
+    index,
+    value
+  ) => {
+    setCodes((prev) =>
+      prev.map(
+        (item, i) =>
+          i === index
+            ? value
+            : item
+      )
+    );
   };
 
-  const currentInsight = useMemo(() => {
-    return `Current state: LED is ${analysis.ledState ? "ON" : "OFF"}, blink speed is ${analysis.blinkSpeed}, delay is ${analysis.delayMs} ms.`;
-  }, [analysis]);
+  const setResultAt = (
+    index,
+    value
+  ) => {
+    setResults((prev) =>
+      prev.map(
+        (item, i) =>
+          i === index
+            ? value
+            : item
+      )
+    );
+  };
+
+  const setSaveStatusAt = (
+    index,
+    value
+  ) => {
+    setCodingSaveStatus(
+      (prev) =>
+        prev.map(
+          (
+            item,
+            i
+          ) =>
+            i === index
+              ? value
+              : item
+        )
+    );
+  };
+
+  const saveSubmission =
+    async ({
+      index,
+      problem,
+      code,
+      result
+    }) => {
+      setSaveStatusAt(
+        index,
+        "Saving submission..."
+      );
+
+      try {
+        await saveCodingSubmission(
+          {
+            labSlug:
+              "microcontroller",
+
+            experimentSlug:
+              "led-blink",
+
+            problemTitle:
+              problem.title,
+
+            language:
+              selectedLanguage,
+
+            code,
+
+            result
+          }
+        );
+
+        setSaveStatusAt(
+          index,
+          "Submission saved to dashboard."
+        );
+      } catch (error) {
+        console.error(
+          "LED Blink coding save failed:",
+          error
+        );
+
+        setSaveStatusAt(
+          index,
+          "Code checked, but backend save failed."
+        );
+      }
+    };
+
+  const runCode =
+    async (index) => {
+      const problem =
+        problems[index];
+
+      const code =
+        codes[index];
+
+      if (!code?.trim()) {
+        setResultAt(
+          index,
+          {
+            message:
+              "Please enter code first.",
+
+            passed: false,
+
+            testResults:
+              []
+          }
+        );
+
+        return;
+      }
+
+      if (
+        selectedLanguage !==
+        "javascript"
+      ) {
+        setResultAt(
+          index,
+          {
+            message: `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Saved as attempted submission.`,
+
+            passed: null,
+
+            testResults:
+              []
+          }
+        );
+
+        await saveSubmission(
+          {
+            index,
+            problem,
+            code,
+            result:
+              "attempted"
+          }
+        );
+
+        return;
+      }
+
+      try {
+        const output =
+          runJavascript(
+            problem,
+            code
+          );
+
+        setResultAt(
+          index,
+          {
+            message:
+              output.passed
+                ? "All test cases passed."
+                : "Some test cases failed. Check the table below.",
+
+            passed:
+              output.passed,
+
+            testResults:
+              output.testResults
+          }
+        );
+
+        await saveSubmission(
+          {
+            index,
+            problem,
+            code,
+
+            result:
+              output.passed
+                ? "passed"
+                : "failed"
+          }
+        );
+      } catch (error) {
+        setResultAt(
+          index,
+          {
+            message: `Error: ${error.message}`,
+
+            passed: false,
+
+            testResults:
+              []
+          }
+        );
+
+        await saveSubmission(
+          {
+            index,
+            problem,
+            code,
+            result:
+              "failed"
+          }
+        );
+      }
+    };
+
+  const analyzeCode = (
+    index
+  ) => {
+    const content = (
+      codes[index] || ""
+    ).toLowerCase();
+
+    const expected =
+      index === 0
+        ? [
+            "on",
+            "off",
+            "return"
+          ]
+        : index === 1
+        ? [
+            "slow",
+            "medium",
+            "fast"
+          ]
+        : [
+            "5",
+            "0",
+            "high"
+          ];
+
+    const score =
+      expected.filter(
+        (token) =>
+          content.includes(
+            token
+          )
+      ).length;
+
+    setResultAt(index, {
+      message:
+        score >=
+        Math.max(
+          2,
+          expected.length -
+            1
+        )
+          ? "Analysis: Your solution contains the expected LED blink logic."
+          : "Analysis: Your answer is partially correct. Include proper GPIO timing logic and return values.",
+
+      passed: null,
+
+      testResults: []
+    });
+  };
+
+  const correctCode = (
+    index
+  ) => {
+    setCodes((prev) =>
+      prev.map(
+        (item, i) =>
+          i === index
+            ? templates[
+                selectedLanguage
+              ][index]
+            : item
+      )
+    );
+
+    setResultAt(index, {
+      message:
+        "Model answer loaded for this problem.",
+
+      passed: null,
+
+      testResults: []
+    });
+  };
 
   return (
     <section className="coding-shell">
-      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+      <div
+        className="sorting-sim-title-wrap"
+        style={{
+          marginBottom: 18
+        }}
+      >
         <div className="sorting-sim-icon">
-          <FileCode2 size={18} />
+          <FileCode2
+            size={18}
+          />
         </div>
+
         <div>
-          <h2 className="sorting-sim-title">Design Practice</h2>
+          <h2 className="sorting-sim-title">
+            Design Practice
+          </h2>
+
           <p className="sorting-sim-subtitle">
-            Practice LED blink logic using Arduino-style statements.
+            Practice LED blink
+            logic and run real
+            test-case validations.
           </p>
         </div>
       </div>
 
-      <div className="coding-empty-state" style={{ marginBottom: 18 }}>
-        <strong>Live Hint:</strong> {currentInsight}
-      </div>
-
-      <div className="coding-actions-upgraded" style={{ marginBottom: 18 }}>
-        <button className="sim-btn sim-btn-muted" onClick={clearAll}>
-          <RefreshCcw size={16} />
-          Reset Practice
-        </button>
-      </div>
-
-      {problemBank.map((problem, index) => (
-        <div key={problem.id} className="coding-card-upgraded">
-          <div className="coding-card-header">
-            <div>
-              <h3>Task {index + 1}: {problem.title}</h3>
-              <p>{problem.description}</p>
-            </div>
+      <div
+        className="overview-grid"
+        style={{
+          marginBottom: 18
+        }}
+      >
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>
+              Focus Area
+            </h4>
           </div>
 
-          <textarea
-            className="coding-textarea-upgraded"
-            rows={6}
-            value={responses[problem.id]}
-            onChange={(e) => handleChange(problem.id, e.target.value)}
-            placeholder={problem.placeholder}
-          />
-
-          <div className="coding-actions-upgraded">
-            <button className="sim-btn sim-btn-primary" onClick={() => checkAnswer(problem)}>
-              <CheckCircle2 size={16} />
-              Check Answer
-            </button>
-
-            <button className="sim-btn sim-btn-muted" onClick={() => showModelAnswer(problem)}>
-              <Lightbulb size={16} />
-              Show Model Answer
-            </button>
-          </div>
-
-          {feedback[problem.id] && <div className="coding-result-box">{feedback[problem.id]}</div>}
+          <p>
+            GPIO digital output
+            and LED timing logic.
+          </p>
         </div>
-      ))}
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Zap size={18} />
+            <h4>
+              Topics Covered
+            </h4>
+          </div>
+
+          <p>
+            LED toggling,
+            delays, timing,
+            voltage logic.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Gauge
+              size={18}
+            />
+            <h4>
+              Difficulty
+            </h4>
+          </div>
+
+          <p>
+            Easy to medium GPIO
+            coding problems.
+          </p>
+        </div>
+      </div>
+
+      <div
+        className="coding-empty-state"
+        style={{
+          marginBottom: 18
+        }}
+      >
+        <strong>
+          Live Hint:
+        </strong>{" "}
+        {currentInsight}
+      </div>
+
+      <div
+        className="coding-card-upgraded"
+        style={{
+          marginBottom: 18
+        }}
+      >
+        <div className="coding-card-header">
+          <div>
+            <h3>
+              LED Blink Coding
+              Workspace
+            </h3>
+
+            <p>
+              Run JavaScript
+              solutions against
+              live test cases.
+              Other languages are
+              currently stored as
+              attempted
+              submissions.
+            </p>
+          </div>
+
+          <div className="coding-language-wrap">
+            <label className="sorting-label">
+              Language
+            </label>
+
+            <select
+              value={
+                selectedLanguage
+              }
+              onChange={(e) =>
+                setSelectedLanguage(
+                  e.target.value
+                )
+              }
+              className="sorting-select"
+            >
+              {LANGUAGES.map(
+                (lang) => (
+                  <option
+                    key={
+                      lang.value
+                    }
+                    value={
+                      lang.value
+                    }
+                  >
+                    {
+                      lang.label
+                    }
+                  </option>
+                )
+              )}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {problems.map(
+        (
+          problem,
+          index
+        ) => (
+          <div
+            key={problem.id}
+            className="coding-card-upgraded"
+          >
+            <div className="coding-card-header">
+              <div>
+                <div
+                  style={{
+                    display:
+                      "inline-flex",
+
+                    alignItems:
+                      "center",
+
+                    gap: 8,
+
+                    marginBottom: 10,
+
+                    padding:
+                      "6px 12px",
+
+                    borderRadius: 999,
+
+                    background:
+                      "rgba(56,189,248,0.10)",
+
+                    border:
+                      "1px solid rgba(56,189,248,0.18)",
+
+                    color:
+                      "#38bdf8",
+
+                    fontWeight: 700,
+
+                    fontSize:
+                      "0.82rem"
+                  }}
+                >
+                  <Sparkles
+                    size={14}
+                  />
+
+                  <span>
+                    LED Problem
+                  </span>
+                </div>
+
+                <h3>
+                  {
+                    problem.title
+                  }
+                </h3>
+
+                <p>
+                  {
+                    problem.description
+                  }
+                </p>
+              </div>
+            </div>
+
+            <textarea
+              value={
+                codes[index] ||
+                ""
+              }
+              onChange={(e) =>
+                handleCodeChange(
+                  index,
+                  e.target
+                    .value
+                )
+              }
+              rows={12}
+              className="coding-textarea-upgraded"
+              placeholder="Write your code here..."
+            />
+
+            <div className="coding-actions-upgraded">
+              <button
+                className="sim-btn sim-btn-primary"
+                onClick={() =>
+                  runCode(
+                    index
+                  )
+                }
+              >
+                <Play
+                  size={16}
+                />
+                Run Tests
+              </button>
+
+              <button
+                className="sim-btn sim-btn-muted"
+                onClick={() =>
+                  analyzeCode(
+                    index
+                  )
+                }
+              >
+                <Wrench
+                  size={16}
+                />
+                Analyze
+              </button>
+
+              <button
+                className="sim-btn sim-btn-success"
+                onClick={() =>
+                  correctCode(
+                    index
+                  )
+                }
+              >
+                Load Correct
+              </button>
+            </div>
+
+            {selectedLanguage !==
+              "javascript" && (
+              <div
+                className="coding-result-box"
+                style={{
+                  marginTop: 14
+                }}
+              >
+                Execution for{" "}
+                {selectedLanguage.toUpperCase()}{" "}
+                will be enabled
+                later. For now,
+                direct execution
+                works in
+                JavaScript.
+              </div>
+            )}
+
+            {results[index] && (
+              <div className="coding-result-box">
+                <strong
+                  style={{
+                    color:
+                      results[
+                        index
+                      ]
+                        .passed ===
+                      true
+                        ? "#22c55e"
+                        : results[
+                            index
+                          ]
+                            .passed ===
+                          false
+                        ? "#ef4444"
+                        : "#e2e8f0"
+                  }}
+                >
+                  {
+                    results[
+                      index
+                    ].message
+                  }
+                </strong>
+
+                <TestCaseTable
+                  testResults={
+                    results[
+                      index
+                    ]
+                      .testResults
+                  }
+                />
+              </div>
+            )}
+
+            {codingSaveStatus[
+              index
+            ] && (
+              <div className="coding-result-box">
+                {
+                  codingSaveStatus[
+                    index
+                  ]
+                }
+              </div>
+            )}
+          </div>
+        )
+      )}
     </section>
   );
 }

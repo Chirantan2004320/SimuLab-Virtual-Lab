@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import api from "../API/api";
 import { BarChart3, Code2, FlaskConical, Trophy } from "lucide-react";
 
-const ProgressTracker = () => {
+const ProgressTracker = forwardRef((props, ref) => {
   const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchProgress();
-  }, []);
 
   const fetchProgress = async () => {
     try {
@@ -21,6 +22,24 @@ const ProgressTracker = () => {
     }
   };
 
+  useImperativeHandle(ref, () => ({
+    refreshProgress: fetchProgress,
+  }));
+
+  useEffect(() => {
+    fetchProgress();
+  }, []);
+
+  useEffect(() => {
+  const refresh = () => fetchProgress();
+
+  window.addEventListener("progress-updated", refresh);
+
+  return () => {
+    window.removeEventListener("progress-updated", refresh);
+  };
+}, []);
+
   if (loading) {
     return (
       <div className="glass rounded-2xl p-6">
@@ -28,6 +47,8 @@ const ProgressTracker = () => {
       </div>
     );
   }
+
+  
 
   const summary = progress?.summary || {};
 
@@ -74,6 +95,6 @@ const ProgressTracker = () => {
       </div>
     </div>
   );
-};
+});
 
 export default ProgressTracker;

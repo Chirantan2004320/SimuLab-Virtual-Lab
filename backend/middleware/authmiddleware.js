@@ -38,13 +38,22 @@ export const authenticateJWT = async (req, res, next) => {
   }
 };
 
-export const requireAdmin = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    return next();
-  }
+export const authorizeRoles =
+  (...roles) =>
+  (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+    }
 
-  return res.status(403).json({
-    success: false,
-    message: "Access denied: Admin only",
-  });
-};
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    next();
+  };

@@ -1,57 +1,150 @@
 import React from "react";
+import {
+  Target,
+  BookOpen,
+  Activity,
+  Zap,
+  ShieldCheck,
+  Cpu
+} from "lucide-react";
 
-export default function DVLSICMOSNANDOverview() {
+export default function DVLSICMOSNANDGateOverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To study the transistor-level implementation and logic behavior of a 2-input
-          CMOS NAND gate for different input combinations.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div
+        className="sorting-sim-title-wrap"
+        style={{ marginBottom: 20 }}
+      >
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          A CMOS NAND gate is implemented using a pull-up network made of pMOS transistors
-          in parallel and a pull-down network made of nMOS transistors in series.
-        </p>
-        <p>
-          The NAND gate outputs LOW only when both inputs are HIGH. If either input is LOW,
-          the output is pulled HIGH through the pull-up network.
-        </p>
-        <p>
-          This makes the NAND gate one of the most important universal gates in digital design.
-        </p>
-      </section>
+        <div>
+          <h2 className="sorting-sim-title">
+            Overview
+          </h2>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Select input values A and B.</li>
-          <li>Observe the output logic state.</li>
-          <li>Check which pMOS and nMOS transistors are ON or OFF.</li>
-          <li>Study the current path in the circuit diagram.</li>
-          <li>Verify the behavior with the truth table.</li>
+          <p className="sorting-sim-subtitle">
+            Understand CMOS NAND logic,
+            transistor switching, pull-up and
+            pull-down networks.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>CMOS NAND Gate</h3>
+
+          <span className="overview-badge">
+            DVLSI Experiment
+          </span>
+        </div>
+
+        <p className="overview-hero-text">
+          A CMOS NAND gate uses parallel pMOS
+          transistors and series nMOS
+          transistors to implement NAND logic.
+          The output becomes LOW only when
+          both inputs are HIGH.
+        </p>
+      </div>
+
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+
+          <p>
+            To study CMOS NAND gate
+            operation, transistor conduction,
+            current paths, and logic
+            realization.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Activity size={18} />
+            <h4>Logic Action</h4>
+          </div>
+
+          <p>
+            Output becomes LOW only when
+            both nMOS transistors conduct
+            together in series.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>Pull-Up Network</h4>
+          </div>
+
+          <p>
+            Parallel pMOS transistors ensure
+            output remains HIGH if any input
+            becomes LOW.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Zap size={18} />
+            <h4>Universal Gate</h4>
+          </div>
+
+          <p>
+            NAND gates can implement any
+            Boolean function and are widely
+            used in digital IC design.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {[
+            "Set input A and B values.",
+            "Observe NAND output logic.",
+            "Study pMOS and nMOS states.",
+            "Analyze current conduction path.",
+            "Visualize pull-up and pull-down networks.",
+            "Verify operation using truth table."
+          ].map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">
+                {index + 1}
+              </span>
+
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Key Observation</h2>
-        <p>
-          In a CMOS NAND gate, the output becomes LOW only when both nMOS transistors conduct
-          together in series and both pMOS transistors are OFF.
-        </p>
-      </section>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <ShieldCheck size={18} />
+          <h4>Practical Insight</h4>
+        </div>
 
-      <section className="card">
-        <h2>Practical Insight</h2>
         <p>
-          NAND gates are widely used in digital integrated circuits because any Boolean function
-          can be implemented using only NAND gates.
+          CMOS NAND gates are among the most
+          important digital building blocks
+          because they provide low power
+          operation and complete logic
+          flexibility.
         </p>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

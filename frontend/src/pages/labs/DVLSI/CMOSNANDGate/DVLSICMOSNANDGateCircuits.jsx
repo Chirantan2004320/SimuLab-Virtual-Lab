@@ -1,242 +1,642 @@
 import React from "react";
+import {
+  CircuitBoard,
+  Cpu,
+  Activity,
+  Zap,
+  Lightbulb
+} from "lucide-react";
 
-function transistorStyle(state) {
-  const active = state === "ON";
+export default function DVLSICMOSNANDGateCircuits({
+  A,
+  B,
+  analysis
+}) {
+  const isPMOSAOn =
+    analysis.pmosA === "ON";
 
-  return {
-    border: active ? "2px solid #22c55e" : "2px solid #ef4444",
-    background: active ? "rgba(34,197,94,0.16)" : "rgba(239,68,68,0.12)",
-    color: "#e5e7eb",
-    borderRadius: "12px",
-    padding: "12px 14px",
-    minWidth: "120px",
-    textAlign: "center",
-    boxShadow: active
-      ? "0 0 14px rgba(34,197,94,0.25)"
-      : "0 0 10px rgba(239,68,68,0.12)"
-  };
-}
+  const isPMOSBOn =
+    analysis.pmosB === "ON";
 
-export default function DVLSICMOSNANDCircuits({ A, B, analysis }) {
+  const isNMOSAOn =
+    analysis.nmosA === "ON";
+
+  const isNMOSBOn =
+    analysis.nmosB === "ON";
+
   return (
-    <section className="card experiment">
-      <h2>Circuits</h2>
+    <section className="comparison-shell">
+      <div
+        className="sorting-sim-title-wrap"
+        style={{ marginBottom: 18 }}
+      >
+        <div className="sorting-sim-icon">
+          <CircuitBoard size={18} />
+        </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        In a CMOS NAND gate, the pMOS transistors form a <strong>parallel pull-up network</strong>
-        and the nMOS transistors form a <strong>series pull-down network</strong>.
+        <div>
+          <h2 className="sorting-sim-title">
+            CMOS NAND Circuit View
+          </h2>
+
+          <p className="sorting-sim-subtitle">
+            Visualize pull-up and
+            pull-down operation in CMOS
+            NAND gate.
+          </p>
+        </div>
+      </div>
+
+      <div
+        className="sorting-info-box"
+        style={{ marginBottom: 16 }}
+      >
+        {analysis.conductingPath}
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px",
-          marginBottom: "1rem"
+          gridTemplateColumns:
+            "minmax(0, 2.2fr) minmax(300px, 0.85fr)",
+          gap: 20
         }}
       >
-        <div className="stat-card">
-          <strong>A</strong>
-          <div>{A}</div>
-        </div>
-        <div className="stat-card">
-          <strong>B</strong>
-          <div>{B}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Output Y</strong>
-          <div>{analysis.output}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Current Path</strong>
-          <div>{analysis.currentPath}</div>
-        </div>
-      </div>
+        <div
+          className="overview-card"
+          style={{
+            padding: 0,
+            overflow: "hidden",
+            minHeight: 650
+          }}
+        >
+          <div
+            style={{
+              position: "relative",
+              minHeight: 650,
+              background:
+                "radial-gradient(circle at 25% 18%, rgba(56,189,248,0.10), transparent 35%), radial-gradient(circle at 82% 78%, rgba(139,92,246,0.12), transparent 38%), linear-gradient(135deg, #020617, #08111f)"
+            }}
+          >
+            <svg
+              width="100%"
+              height="650"
+              viewBox="0 0 900 650"
+            >
+              {/* VDD */}
+              <text
+                x="450"
+                y="45"
+                textAnchor="middle"
+                fill="#60a5fa"
+                fontSize="22"
+                fontWeight="900"
+              >
+                VDD
+              </text>
 
-      <div className="card" style={{ marginTop: "1rem", background: "#0f172a", padding: "20px" }}>
-        <h3 style={{ marginBottom: "1rem" }}>CMOS NAND Visual</h3>
+              <line
+                x1="450"
+                y1="60"
+                x2="450"
+                y2="120"
+                stroke="#60a5fa"
+                strokeWidth="5"
+              />
+
+              {/* PMOS A */}
+              <rect
+                x="280"
+                y="120"
+                width="120"
+                height="80"
+                rx="12"
+                fill={
+                  isPMOSAOn
+                    ? "rgba(34,197,94,0.18)"
+                    : "rgba(239,68,68,0.12)"
+                }
+                stroke={
+                  isPMOSAOn
+                    ? "#22c55e"
+                    : "#ef4444"
+                }
+                strokeWidth="3"
+              />
+
+              <text
+                x="340"
+                y="155"
+                textAnchor="middle"
+                fill="#fff"
+                fontSize="18"
+                fontWeight="900"
+              >
+                pMOS A
+              </text>
+
+              <text
+                x="340"
+                y="182"
+                textAnchor="middle"
+                fill="#cbd5e1"
+                fontSize="14"
+              >
+                {analysis.pmosA}
+              </text>
+
+              {/* PMOS B */}
+              <rect
+                x="500"
+                y="120"
+                width="120"
+                height="80"
+                rx="12"
+                fill={
+                  isPMOSBOn
+                    ? "rgba(34,197,94,0.18)"
+                    : "rgba(239,68,68,0.12)"
+                }
+                stroke={
+                  isPMOSBOn
+                    ? "#22c55e"
+                    : "#ef4444"
+                }
+                strokeWidth="3"
+              />
+
+              <text
+                x="560"
+                y="155"
+                textAnchor="middle"
+                fill="#fff"
+                fontSize="18"
+                fontWeight="900"
+              >
+                pMOS B
+              </text>
+
+              <text
+                x="560"
+                y="182"
+                textAnchor="middle"
+                fill="#cbd5e1"
+                fontSize="14"
+              >
+                {analysis.pmosB}
+              </text>
+
+              {/* Output */}
+              <line
+                x1="340"
+                y1="200"
+                x2="560"
+                y2="200"
+                stroke="#fbbf24"
+                strokeWidth="5"
+              />
+
+              <line
+                x1="450"
+                y1="200"
+                x2="450"
+                y2="280"
+                stroke="#fbbf24"
+                strokeWidth="5"
+              />
+
+              <circle
+                cx="450"
+                cy="200"
+                r="10"
+                fill="#fbbf24"
+              />
+
+              <text
+                x="610"
+                y="205"
+                fill="#fbbf24"
+                fontSize="20"
+                fontWeight="900"
+              >
+                Y = {analysis.output}
+              </text>
+
+              {/* NMOS A */}
+              <rect
+                x="390"
+                y="280"
+                width="120"
+                height="80"
+                rx="12"
+                fill={
+                  isNMOSAOn
+                    ? "rgba(34,197,94,0.18)"
+                    : "rgba(239,68,68,0.12)"
+                }
+                stroke={
+                  isNMOSAOn
+                    ? "#22c55e"
+                    : "#ef4444"
+                }
+                strokeWidth="3"
+              />
+
+              <text
+                x="450"
+                y="315"
+                textAnchor="middle"
+                fill="#fff"
+                fontSize="18"
+                fontWeight="900"
+              >
+                nMOS A
+              </text>
+
+              <text
+                x="450"
+                y="342"
+                textAnchor="middle"
+                fill="#cbd5e1"
+                fontSize="14"
+              >
+                {analysis.nmosA}
+              </text>
+
+              {/* NMOS B */}
+              <rect
+                x="390"
+                y="390"
+                width="120"
+                height="80"
+                rx="12"
+                fill={
+                  isNMOSBOn
+                    ? "rgba(34,197,94,0.18)"
+                    : "rgba(239,68,68,0.12)"
+                }
+                stroke={
+                  isNMOSBOn
+                    ? "#22c55e"
+                    : "#ef4444"
+                }
+                strokeWidth="3"
+              />
+
+              <text
+                x="450"
+                y="425"
+                textAnchor="middle"
+                fill="#fff"
+                fontSize="18"
+                fontWeight="900"
+              >
+                nMOS B
+              </text>
+
+              <text
+                x="450"
+                y="452"
+                textAnchor="middle"
+                fill="#cbd5e1"
+                fontSize="14"
+              >
+                {analysis.nmosB}
+              </text>
+
+              {/* Series line */}
+              <line
+                x1="450"
+                y1="360"
+                x2="450"
+                y2="390"
+                stroke="#fbbf24"
+                strokeWidth="5"
+              />
+
+              <line
+                x1="450"
+                y1="470"
+                x2="450"
+                y2="560"
+                stroke="#ef4444"
+                strokeWidth="5"
+              />
+
+              <text
+                x="450"
+                y="600"
+                textAnchor="middle"
+                fill="#ef4444"
+                fontSize="22"
+                fontWeight="900"
+              >
+                GND
+              </text>
+
+              {/* Inputs */}
+              <text
+                x="120"
+                y="160"
+                fill="#c084fc"
+                fontSize="20"
+                fontWeight="900"
+              >
+                A = {A}
+              </text>
+
+              <line
+                x1="150"
+                y1="160"
+                x2="280"
+                y2="160"
+                stroke="#c084fc"
+                strokeWidth="4"
+              />
+
+              <line
+                x1="150"
+                y1="320"
+                x2="390"
+                y2="320"
+                stroke="#c084fc"
+                strokeWidth="4"
+              />
+
+              <text
+                x="720"
+                y="160"
+                fill="#f9a8d4"
+                fontSize="20"
+                fontWeight="900"
+              >
+                B = {B}
+              </text>
+
+              <line
+                x1="690"
+                y1="160"
+                x2="620"
+                y2="160"
+                stroke="#f9a8d4"
+                strokeWidth="4"
+              />
+
+              <line
+                x1="690"
+                y1="430"
+                x2="510"
+                y2="430"
+                stroke="#f9a8d4"
+                strokeWidth="4"
+              />
+            </svg>
+          </div>
+        </div>
 
         <div
           style={{
-            position: "relative",
-            height: "520px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.2)",
-            background: "linear-gradient(180deg, #111827, #0b1220)",
-            overflow: "hidden"
+            display: "flex",
+            flexDirection: "column",
+            gap: 16
           }}
         >
-          <svg width="100%" height="100%" viewBox="0 0 760 520" preserveAspectRatio="xMidYMid meet">
-            {/* Rails */}
-            <line x1="280" y1="30" x2="480" y2="30" stroke="#60a5fa" strokeWidth="4" />
-            <line x1="280" y1="490" x2="480" y2="490" stroke="#f87171" strokeWidth="4" />
-
-            {/* Output node */}
-            <line x1="380" y1="220" x2="560" y2="220" stroke="#fbbf24" strokeWidth="4" />
-            <circle cx="380" cy="220" r="6" fill="#fbbf24" />
-
-            {/* Pull-up parallel PMOS */}
-            <rect
-              x="250"
-              y="80"
-              width="80"
-              height="70"
-              rx="10"
-              fill={analysis.pmosA === "ON" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.12)"}
-              stroke={analysis.pmosA === "ON" ? "#22c55e" : "#ef4444"}
-              strokeWidth="3"
+          <Panel
+            title="Operating Conditions"
+            icon={<Cpu size={18} />}
+          >
+            <InfoLine
+              label="Input A"
+              value={A}
             />
-            <text x="290" y="110" textAnchor="middle" fill="#e5e7eb" fontSize="18" fontWeight="bold">pMOS A</text>
-            <text x="290" y="132" textAnchor="middle" fill="#cbd5e1" fontSize="13">{analysis.pmosA}</text>
 
-            <rect
-              x="430"
-              y="80"
-              width="80"
-              height="70"
-              rx="10"
-              fill={analysis.pmosB === "ON" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.12)"}
-              stroke={analysis.pmosB === "ON" ? "#22c55e" : "#ef4444"}
-              strokeWidth="3"
+            <InfoLine
+              label="Input B"
+              value={B}
             />
-            <text x="470" y="110" textAnchor="middle" fill="#e5e7eb" fontSize="18" fontWeight="bold">pMOS B</text>
-            <text x="470" y="132" textAnchor="middle" fill="#cbd5e1" fontSize="13">{analysis.pmosB}</text>
 
-            {/* Pull-down series NMOS */}
-            <rect
-              x="340"
-              y="270"
-              width="80"
-              height="70"
-              rx="10"
-              fill={analysis.nmosA === "ON" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.12)"}
-              stroke={analysis.nmosA === "ON" ? "#22c55e" : "#ef4444"}
-              strokeWidth="3"
+            <InfoLine
+              label="Output Y"
+              value={analysis.output}
+              color="#fbbf24"
             />
-            <text x="380" y="300" textAnchor="middle" fill="#e5e7eb" fontSize="18" fontWeight="bold">nMOS A</text>
-            <text x="380" y="322" textAnchor="middle" fill="#cbd5e1" fontSize="13">{analysis.nmosA}</text>
 
-            <rect
-              x="340"
-              y="350"
-              width="80"
-              height="70"
-              rx="10"
-              fill={analysis.nmosB === "ON" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.12)"}
-              stroke={analysis.nmosB === "ON" ? "#22c55e" : "#ef4444"}
-              strokeWidth="3"
+            <InfoLine
+              label="Region"
+              value={analysis.regionLabel}
             />
-            <text x="380" y="380" textAnchor="middle" fill="#e5e7eb" fontSize="18" fontWeight="bold">nMOS B</text>
-            <text x="380" y="402" textAnchor="middle" fill="#cbd5e1" fontSize="13">{analysis.nmosB}</text>
 
-            {/* Wiring */}
-            <line x1="290" y1="30" x2="290" y2="80" stroke="#60a5fa" strokeWidth="4" />
-            <line x1="470" y1="30" x2="470" y2="80" stroke="#60a5fa" strokeWidth="4" />
+            <InfoLine
+              label="Current Path"
+              value={analysis.conductingPath}
+            />
+          </Panel>
 
-            <line x1="290" y1="150" x2="290" y2="220" stroke="#fbbf24" strokeWidth="4" />
-            <line x1="470" y1="150" x2="470" y2="220" stroke="#fbbf24" strokeWidth="4" />
-            <line x1="290" y1="220" x2="470" y2="220" stroke="#fbbf24" strokeWidth="4" />
+          <Panel
+            title="State Indicator"
+            icon={<Activity size={18} />}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "1fr 1fr",
+                gap: 12
+              }}
+            >
+              <StateBox
+                title="pMOS A"
+                state={analysis.pmosA}
+                active={isPMOSAOn}
+              />
 
-            <line x1="380" y1="220" x2="380" y2="270" stroke="#fbbf24" strokeWidth="4" />
-            <line x1="380" y1="340" x2="380" y2="350" stroke="#fbbf24" strokeWidth="4" />
-            <line x1="380" y1="420" x2="380" y2="490" stroke="#f87171" strokeWidth="4" />
+              <StateBox
+                title="pMOS B"
+                state={analysis.pmosB}
+                active={isPMOSBOn}
+              />
 
-            {/* Gate lines */}
-            <line x1="100" y1="115" x2="250" y2="115" stroke="#c084fc" strokeWidth="4" />
-            <line x1="100" y1="305" x2="340" y2="305" stroke="#c084fc" strokeWidth="4" />
+              <StateBox
+                title="nMOS A"
+                state={analysis.nmosA}
+                active={isNMOSAOn}
+              />
 
-            <line x1="660" y1="115" x2="510" y2="115" stroke="#f9a8d4" strokeWidth="4" />
-            <line x1="660" y1="385" x2="420" y2="385" stroke="#f9a8d4" strokeWidth="4" />
+              <StateBox
+                title="nMOS B"
+                state={analysis.nmosB}
+                active={isNMOSBOn}
+              />
+            </div>
+          </Panel>
 
-            {/* Labels */}
-            <text x="500" y="35" fill="#93c5fd" fontSize="18" fontWeight="bold">VDD</text>
-            <text x="570" y="225" fill="#fcd34d" fontSize="18" fontWeight="bold">Y = {analysis.output}</text>
-            <text x="55" y="120" fill="#d8b4fe" fontSize="18" fontWeight="bold">A = {A}</text>
-            <text x="670" y="120" fill="#fbcfe8" fontSize="18" fontWeight="bold">B = {B}</text>
-            <text x="500" y="495" fill="#fca5a5" fontSize="18" fontWeight="bold">GND</text>
-          </svg>
+          <Panel
+            title="Truth Table"
+            icon={<Zap size={18} />}
+          >
+            <table className="dbms-table">
+              <thead>
+                <tr>
+                  <th>A</th>
+                  <th>B</th>
+                  <th>Y</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>1</td>
+                </tr>
+
+                <tr>
+                  <td>0</td>
+                  <td>1</td>
+                  <td>1</td>
+                </tr>
+
+                <tr>
+                  <td>1</td>
+                  <td>0</td>
+                  <td>1</td>
+                </tr>
+
+                <tr>
+                  <td>1</td>
+                  <td>1</td>
+                  <td>0</td>
+                </tr>
+              </tbody>
+            </table>
+          </Panel>
+
+          <Panel
+            title="Circuit Interpretation"
+            icon={<Lightbulb size={18} />}
+          >
+            <p
+              style={{
+                margin: 0,
+                color: "#cbd5e1",
+                lineHeight: 1.7
+              }}
+            >
+              {analysis.note}
+            </p>
+          </Panel>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Panel({
+  title,
+  icon,
+  children
+}) {
+  return (
+    <div
+      className="overview-card"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(15,23,42,0.92), rgba(2,6,23,0.88))"
+      }}
+    >
+      <div className="overview-card-head">
+        {icon}
+        <h4>{title}</h4>
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+function InfoLine({
+  label,
+  value,
+  color = "#e5e7eb"
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns:
+          "1fr auto",
+        gap: 12,
+        padding: "8px 0",
+        borderBottom:
+          "1px solid rgba(148,163,184,0.12)"
+      }}
+    >
+      <span
+        style={{
+          color: "#cbd5e1",
+          fontWeight: 700
+        }}
+      >
+        {label}
+      </span>
+
+      <strong
+        style={{
+          color,
+          textAlign: "right"
+        }}
+      >
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+function StateBox({
+  title,
+  state,
+  active
+}) {
+  return (
+    <div
+      style={{
+        borderRadius: 14,
+        padding: "14px 12px",
+        textAlign: "center",
+        background: active
+          ? "rgba(34,197,94,0.13)"
+          : "rgba(239,68,68,0.12)",
+        border: `1px solid ${
+          active
+            ? "#22c55e"
+            : "#ef4444"
+        }88`
+      }}
+    >
+      <div
+        style={{
+          color: active
+            ? "#22c55e"
+            : "#ef4444",
+          fontWeight: 900,
+          fontSize: 16
+        }}
+      >
+        {title}
       </div>
 
       <div
         style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "14px"
+          color: active
+            ? "#22c55e"
+            : "#ef4444",
+          fontWeight: 900,
+          fontSize: 24,
+          marginTop: 8
         }}
       >
-        <div style={transistorStyle(analysis.pmosA)}>
-          <strong>pMOS A</strong>
-          <div style={{ marginTop: "8px" }}>{analysis.pmosA}</div>
-          <div style={{ marginTop: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-            ON when A = 0
-          </div>
-        </div>
-
-        <div style={transistorStyle(analysis.pmosB)}>
-          <strong>pMOS B</strong>
-          <div style={{ marginTop: "8px" }}>{analysis.pmosB}</div>
-          <div style={{ marginTop: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-            ON when B = 0
-          </div>
-        </div>
-
-        <div style={transistorStyle(analysis.nmosA)}>
-          <strong>nMOS A</strong>
-          <div style={{ marginTop: "8px" }}>{analysis.nmosA}</div>
-          <div style={{ marginTop: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-            ON when A = 1
-          </div>
-        </div>
-
-        <div style={transistorStyle(analysis.nmosB)}>
-          <strong>nMOS B</strong>
-          <div style={{ marginTop: "8px" }}>{analysis.nmosB}</div>
-          <div style={{ marginTop: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-            ON when B = 1
-          </div>
-        </div>
+        {state}
       </div>
-
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Truth Table</h3>
-        <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
-          <thead>
-            <tr>
-              <th>A</th>
-              <th>B</th>
-              <th>Y = NAND(A,B)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className={A === 0 && B === 0 ? "highlight-row" : ""}>
-              <td>0</td>
-              <td>0</td>
-              <td>1</td>
-            </tr>
-            <tr className={A === 0 && B === 1 ? "highlight-row" : ""}>
-              <td>0</td>
-              <td>1</td>
-              <td>1</td>
-            </tr>
-            <tr className={A === 1 && B === 0 ? "highlight-row" : ""}>
-              <td>1</td>
-              <td>0</td>
-              <td>1</td>
-            </tr>
-            <tr className={A === 1 && B === 1 ? "highlight-row" : ""}>
-              <td>1</td>
-              <td>1</td>
-              <td>0</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div className="info-box" style={{ marginTop: "1rem" }}>
-        The CMOS NAND gate outputs LOW only when both inputs are HIGH. Any LOW input turns ON at least one pMOS transistor and breaks the nMOS series path.
-      </div>
-    </section>
+    </div>
   );
 }

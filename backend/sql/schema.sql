@@ -215,3 +215,435 @@ FROM labs WHERE slug = 'dsd';
 INSERT IGNORE INTO experiments (lab_id, slug, title, description)
 SELECT id, 'lambda-rules-microwind', 'Lambda Rules and Microwind', 'Scalable VLSI lambda layout rules and DRC validation'
 FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'cmos-inverter-simulation', 'CMOS Inverter Simulation', 'VTC, transient response, and delay concepts'
+FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'cmos-inverter-layout', 'CMOS Inverter Layout', 'Layout-level inverter design'
+FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'cmos-nor-gate', 'CMOS NOR Gate', '2-input CMOS NOR gate behavior'
+FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'cmos-nand-gate', 'CMOS NAND Gate', '2-input CMOS NAND gate behavior'
+FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'transmission-gate', 'Transmission Gate', 'Transmission gate switching experiment'
+FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'ring-oscillator', 'Ring Oscillator', 'Oscillation through inverter feedback'
+FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'sram-cell', 'SRAM Cell Basics', 'Basic SRAM cell read/write storage'
+FROM labs WHERE slug = 'dvlsi';
+
+INSERT IGNORE INTO experiments (
+  lab_id,
+  slug,
+  title,
+  description
+)
+SELECT
+  id,
+  'gpio-led',
+  'GPIO LED Control',
+  'Control an LED using GPIO digital output logic'
+FROM labs
+WHERE slug = 'microcontroller';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'button-input', 'Button Input',
+'Push button digital input experiment'
+FROM labs
+WHERE slug = 'microcontroller';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'led-blink', 'LED Blink',
+'LED blinking using delay timing'
+FROM labs
+WHERE slug = 'microcontroller';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'traffic-light', 'Traffic Light Controller',
+'Traffic signal control using GPIO'
+FROM labs
+WHERE slug = 'microcontroller';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'seven-segment', '7 Segment Display',
+'7 segment display interfacing experiment'
+FROM labs
+WHERE slug = 'microcontroller';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id, 'pwm-led', 'PWM LED Brightness',
+'PWM based LED brightness control'
+FROM labs
+WHERE slug = 'microcontroller';
+
+ALTER TABLE users
+MODIFY COLUMN role ENUM(
+  'student',
+  'faculty',
+  'admin'
+) DEFAULT 'student';
+
+CREATE TABLE faculty_feedback (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  faculty_id INT NOT NULL,
+
+  student_id INT NOT NULL,
+
+  experiment_id INT NOT NULL,
+
+  feedback TEXT,
+
+  marks INT DEFAULT 0,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (faculty_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+
+  FOREIGN KEY (student_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+
+  FOREIGN KEY (experiment_id)
+    REFERENCES experiments(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE announcements (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  title VARCHAR(200),
+
+  content TEXT,
+
+  created_by INT,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+UPDATE users
+SET role = 'admin'
+WHERE email = 'YOUR_EMAIL_HERE';
+
+UPDATE users
+SET role = 'faculty'
+WHERE email = 'faculty@college.com';
+
+CREATE TABLE feedback (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  faculty_id INT,
+  student_id INT,
+  lab VARCHAR(100),
+  feedback TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE grades (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  faculty_id INT,
+  student_id INT,
+  experiment VARCHAR(255),
+  marks INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE notices (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  faculty_id INT,
+  title VARCHAR(255),
+  message TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE quiz_questions (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+
+  faculty_id INT,
+
+  lab VARCHAR(100),
+
+  experiment VARCHAR(255),
+
+  question TEXT,
+
+  option_a VARCHAR(255),
+  option_b VARCHAR(255),
+  option_c VARCHAR(255),
+  option_d VARCHAR(255),
+
+  correct_answer VARCHAR(255),
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE coding_questions (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+
+  faculty_id INT,
+
+  lab VARCHAR(100),
+
+  experiment VARCHAR(255),
+
+  title VARCHAR(255),
+
+  problem_statement TEXT,
+
+  input_format TEXT,
+
+  output_format TEXT,
+
+  constraints_text TEXT,
+
+  sample_input TEXT,
+
+  sample_output TEXT,
+
+  difficulty ENUM(
+    'easy',
+    'medium',
+    'hard'
+  ) DEFAULT 'easy',
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE coding_test_cases (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+
+  question_id INT,
+
+  input_data TEXT,
+
+  expected_output TEXT,
+
+  is_hidden BOOLEAN DEFAULT TRUE,
+
+  FOREIGN KEY (question_id)
+    REFERENCES coding_questions(id)
+    ON DELETE CASCADE
+);
+
+ALTER TABLE coding_submissions
+CHANGE experiment_id coding_question_id INT(11) NOT NULL;
+
+ALTER TABLE coding_submissions
+ADD COLUMN passed_test_cases INT DEFAULT 0,
+ADD COLUMN total_test_cases INT DEFAULT 0,
+ADD COLUMN execution_time VARCHAR(50),
+ADD COLUMN memory_used VARCHAR(50),
+ADD COLUMN verdict VARCHAR(100);
+
+INSERT INTO coding_test_cases
+(
+  question_id,
+  input_data,
+  expected_output
+)
+VALUES
+(
+  1,
+  '5',
+  '[5]'
+);
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id,
+'cpu-scheduling',
+'CPU Scheduling Lab',
+'FCFS, SJF, Round Robin, and Priority CPU scheduling visualization'
+FROM labs
+WHERE slug = 'os';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id,
+'process-synchronization',
+'Process Synchronization',
+'Critical section, semaphores, mutexes, producer-consumer, and synchronization problems'
+FROM labs
+WHERE slug = 'os';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id,
+'deadlock',
+'Deadlock Lab',
+'Deadlock detection, prevention, avoidance, and Banker’s Algorithm simulation'
+FROM labs
+WHERE slug = 'os';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id,
+'page-replacement',
+'Page Replacement Lab',
+'FIFO, LRU, and Optimal page replacement algorithm visualization'
+FROM labs
+WHERE slug = 'os';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id,
+'disk-scheduling',
+'Disk Scheduling Lab',
+'FCFS, SSTF, SCAN, and C-SCAN disk scheduling algorithms'
+FROM labs
+WHERE slug = 'os';
+
+INSERT IGNORE INTO experiments (lab_id, slug, title, description)
+SELECT id,
+'memory-management',
+'Paging and Memory Management',
+'Paging, segmentation, virtual memory, and address translation'
+FROM labs
+WHERE slug = 'os';
+
+INSERT INTO coding_questions
+(
+  faculty_id,
+  lab,
+  experiment,
+  title,
+  problem_statement,
+  input_format,
+  output_format,
+  constraints_text,
+  sample_input,
+  sample_output,
+  difficulty
+)
+VALUES
+(
+  1,
+  'OS',
+  'CPU Scheduling',
+  'FCFS Waiting Time Calculation',
+
+  'Given processes with arrival time and burst time, calculate waiting time and turnaround time using FCFS scheduling.',
+
+  'Processes with Arrival Time and Burst Time',
+
+  'Waiting Time and Turnaround Time table',
+
+  'Use FCFS scheduling order',
+
+  'P1 AT=0 BT=4\nP2 AT=1 BT=3',
+
+  'WT: P1=0 P2=3\nTAT: P1=4 P2=6',
+
+  'easy'
+),
+
+(
+  1,
+  'OS',
+  'CPU Scheduling',
+  'Round Robin Scheduling',
+
+  'Find execution order and waiting time using Round Robin scheduling.',
+
+  'Processes and Time Quantum',
+
+  'Execution order and waiting time',
+
+  'Use RR scheduling with given quantum',
+
+  'Quantum=2\nP1 BT=5\nP2 BT=3',
+
+  'Execution: P1 P2 P1 P2 P1',
+
+  'medium'
+),
+
+(
+  1,
+  'OS',
+  'CPU Scheduling',
+  'SJF Scheduling Analysis',
+
+  'Determine process execution order using Shortest Job First scheduling.',
+
+  'Processes with Burst Time',
+
+  'Execution sequence',
+
+  'Non-preemptive SJF',
+
+  'P1 BT=6\nP2 BT=2\nP3 BT=4',
+
+  'Execution Order: P2 P3 P1',
+
+  'easy'
+),
+
+(
+  1,
+  'OS',
+  'CPU Scheduling',
+  'Priority Scheduling',
+
+  'Find process scheduling order using Priority Scheduling.',
+
+  'Processes with Priority',
+
+  'Priority execution order',
+
+  'Lower number means higher priority',
+
+  'P1 Priority=2\nP2 Priority=1',
+
+  'Execution Order: P2 P1',
+
+  'medium'
+);
+
+
+
+
+INSERT INTO coding_test_cases
+(
+  question_id,
+  input_data,
+  expected_output,
+  is_hidden
+)
+VALUES
+
+(
+  1,
+  'FCFS Input',
+  'WT: P1=0 P2=3',
+  FALSE
+),
+
+(
+  2,
+  'RR Input',
+  'Execution: P1 P2 P1 P2 P1',
+  FALSE
+),
+
+(
+  3,
+  'SJF Input',
+  'Execution Order: P2 P3 P1',
+  FALSE
+),
+
+(
+  4,
+  'Priority Input',
+  'Execution Order: P2 P1',
+  FALSE
+);

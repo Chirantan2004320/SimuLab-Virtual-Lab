@@ -1,4 +1,16 @@
-import React, { useEffect } from "react";
+import React, {
+  useEffect
+} from "react";
+
+import {
+  Activity,
+  Cpu,
+  Zap,
+  Sparkles,
+  SlidersHorizontal,
+  TimerReset,
+  Waves
+} from "lucide-react";
 
 export default function DVLSIRingOscillatorSimulation({
   stages,
@@ -15,148 +27,328 @@ export default function DVLSIRingOscillatorSimulation({
 }) {
   useEffect(() => {
     setExperimentRun(true);
-  }, [stages, tpd, vdd, enabled, setExperimentRun]);
+  }, [
+    stages,
+    tpd,
+    vdd,
+    enabled,
+    setExperimentRun
+  ]);
 
   const makeOdd = (value) => {
     const v = Number(value);
-    return v % 2 === 0 ? v + 1 : v;
+
+    return v % 2 === 0
+      ? v + 1
+      : v;
   };
 
   return (
-    <section className="card experiment">
-      <h2>Simulation</h2>
+    <section className="sorting-sim-card">
+      <div className="sorting-sim-header">
+        <div className="sorting-sim-title-wrap">
+          <div className="sorting-sim-icon">
+            <Activity size={18} />
+          </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px",
-          marginTop: "1rem"
-        }}
-      >
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Number of Stages: <strong>{stages}</strong>
-          </label>
-          <input
-            type="range"
-            min="3"
-            max="9"
-            step="1"
-            value={stages}
-            onChange={(e) => setStages(makeOdd(e.target.value))}
-            style={{ width: "100%" }}
-          />
-        </div>
+          <div>
+            <h2 className="sorting-sim-title">
+              Simulation
+            </h2>
 
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            Propagation Delay tp: <strong>{formatNumber(tpd)} ns</strong>
-          </label>
-          <input
-            type="range"
-            min="0.2"
-            max="5"
-            step="0.1"
-            value={tpd}
-            onChange={(e) => setTpd(Number(e.target.value))}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>
-            VDD: <strong>{formatNumber(vdd)} V</strong>
-          </label>
-          <input
-            type="range"
-            min="1"
-            max="5"
-            step="0.1"
-            value={vdd}
-            onChange={(e) => setVdd(Number(e.target.value))}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: "block", marginBottom: "8px" }}>Enable</label>
-          <select
-            value={enabled ? "1" : "0"}
-            onChange={(e) => setEnabled(e.target.value === "1")}
-            style={{
-              color: "#000",
-              padding: "10px 12px",
-              borderRadius: "8px",
-              width: "100%"
-            }}
-          >
-            <option value="1">Enabled</option>
-            <option value="0">Disabled</option>
-          </select>
+            <p className="sorting-sim-subtitle">
+              Observe oscillation
+              behavior in a closed
+              inverter feedback loop
+              with propagation delay.
+            </p>
+          </div>
         </div>
       </div>
 
       <div
+        className="overview-grid"
         style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px"
+          marginBottom: 18
         }}
       >
-        <div className="stat-card">
-          <strong>Oscillation</strong>
-          <div>{analysis.oscillates ? "YES" : "NO"}</div>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>
+              Oscillation State
+            </h4>
+          </div>
+
+          <p>
+            <strong>
+              {
+                analysis.logicCase
+              }
+            </strong>
+          </p>
         </div>
 
-        <div className="stat-card">
-          <strong>Period</strong>
-          <div>{analysis.oscillates ? `${formatNumber(analysis.period)} ns` : "—"}</div>
-        </div>
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Zap size={18} />
+            <h4>
+              Feedback Condition
+            </h4>
+          </div>
 
-        <div className="stat-card">
-          <strong>Frequency</strong>
-          <div>{analysis.oscillates ? `${formatNumber(analysis.frequency, 4)} GHz*` : "—"}</div>
-        </div>
-
-        <div className="stat-card">
-          <strong>Status</strong>
-          <div>{analysis.logicCase}</div>
+          <p>
+            {analysis.oddStages
+              ? "Odd inversion loop detected"
+              : "Even inversion loop"}
+          </p>
         </div>
       </div>
 
-      <div className="info-box" style={{ marginTop: "1rem" }}>
+      <div className="sorting-info-box">
+        <Sparkles
+          size={16}
+          style={{
+            marginRight: 10
+          }}
+        />
+
         {analysis.note}
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Interpretation</h3>
-        <table className="dbms-table" style={{ width: "100%", marginTop: "0.75rem" }}>
-          <tbody>
-            <tr>
-              <td>Stage Count</td>
-              <td>{stages}</td>
-            </tr>
-            <tr>
-              <td>Odd Number of Stages</td>
-              <td>{analysis.oddStages ? "Yes" : "No"}</td>
-            </tr>
-            <tr>
-              <td>Enable State</td>
-              <td>{enabled ? "Enabled" : "Disabled"}</td>
-            </tr>
-            <tr>
-              <td>Approximate Formula</td>
-              <td>T ≈ 2 × N × tp</td>
-            </tr>
-          </tbody>
-        </table>
+      <div
+        className="overview-card"
+        style={{
+          marginBottom: 18
+        }}
+      >
+        <div className="overview-card-head">
+          <SlidersHorizontal
+            size={18}
+          />
+
+          <h4>
+            Oscillator Parameters
+          </h4>
+        </div>
+
+        <div className="er-config-grid">
+          <div>
+            <label className="sorting-label">
+              Number of
+              Stages:{" "}
+              <strong>
+                {stages}
+              </strong>
+            </label>
+
+            <input
+              type="range"
+              min="3"
+              max="9"
+              step="1"
+              value={stages}
+              onChange={(e) =>
+                setStages(
+                  makeOdd(
+                    e.target
+                      .value
+                  )
+                )
+              }
+              style={{
+                width: "100%"
+              }}
+            />
+          </div>
+
+          <div>
+            <label className="sorting-label">
+              Propagation Delay
+              tp:{" "}
+              <strong>
+                {formatNumber(
+                  tpd
+                )}{" "}
+                ns
+              </strong>
+            </label>
+
+            <input
+              type="range"
+              min="0.2"
+              max="5"
+              step="0.1"
+              value={tpd}
+              onChange={(e) =>
+                setTpd(
+                  Number(
+                    e.target
+                      .value
+                  )
+                )
+              }
+              style={{
+                width: "100%"
+              }}
+            />
+          </div>
+
+          <div>
+            <label className="sorting-label">
+              VDD:{" "}
+              <strong>
+                {formatNumber(
+                  vdd
+                )}{" "}
+                V
+              </strong>
+            </label>
+
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="0.1"
+              value={vdd}
+              onChange={(e) =>
+                setVdd(
+                  Number(
+                    e.target
+                      .value
+                  )
+                )
+              }
+              style={{
+                width: "100%"
+              }}
+            />
+          </div>
+
+          <div>
+            <label className="sorting-label">
+              Enable Oscillator
+            </label>
+
+            <select
+              value={
+                enabled
+                  ? "1"
+                  : "0"
+              }
+              onChange={(e) =>
+                setEnabled(
+                  e.target
+                    .value ===
+                    "1"
+                )
+              }
+              className="sorting-select"
+            >
+              <option value="1">
+                Enabled
+              </option>
+
+              <option value="0">
+                Disabled
+              </option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      <p style={{ marginTop: "0.75rem", color: "#9ca3af", fontSize: "0.9rem" }}>
-        *Frequency unit here is educational and based on the chosen delay unit in ns.
-      </p>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">
+            Oscillation
+          </span>
+
+          <span className="sorting-stat-value">
+            {analysis.oscillates
+              ? "YES"
+              : "NO"}
+          </span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">
+            Period
+          </span>
+
+          <span className="sorting-stat-value">
+            {analysis.oscillates
+              ? `${formatNumber(
+                  analysis.period
+                )} ns`
+              : "—"}
+          </span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">
+            Frequency
+          </span>
+
+          <span className="sorting-stat-value">
+            {analysis.oscillates
+              ? `${formatNumber(
+                  analysis.frequency,
+                  4
+                )} GHz`
+              : "—"}
+          </span>
+        </div>
+
+        <div className="sorting-stat-box">
+          <span className="sorting-stat-label">
+            Enabled
+          </span>
+
+          <span className="sorting-stat-value">
+            {enabled
+              ? "YES"
+              : "NO"}
+          </span>
+        </div>
+      </div>
+
+      <div
+        className="overview-grid"
+        style={{
+          marginTop: 18
+        }}
+      >
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <TimerReset
+              size={18}
+            />
+
+            <h4>
+              Timing Formula
+            </h4>
+          </div>
+
+          <p>
+            T ≈ 2 × N × tp
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Waves size={18} />
+
+            <h4>
+              Frequency Formula
+            </h4>
+          </div>
+
+          <p>
+            f ≈ 1 / (2 × N
+            × tp)
+          </p>
+        </div>
+      </div>
     </section>
   );
 }

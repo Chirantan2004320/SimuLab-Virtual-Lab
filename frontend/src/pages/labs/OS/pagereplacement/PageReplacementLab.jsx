@@ -1,501 +1,1001 @@
-import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
+/* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  HardDrive,
+} from "lucide-react";
+
 import "../../../SortingLab.css";
+
 import PageReplacementOverview from "./PageReplacementOverview.jsx";
 import PageReplacementQuiz from "./PageReplacementQuiz.jsx";
 import PageReplacementCoding from "./PageReplacementCoding.jsx";
 import PageReplacementSimulation from "./PageReplacementSimulation.jsx";
 
-const pageReplacementQuizQuestionsByMode = {
-  fifo: [
-    {
-      question: "FIFO replaces the page that:",
-      options: [
-        "Was used most recently",
-        "Entered memory first",
-        "Will be used last",
-        "Has highest number"
-      ],
-      correct: 1
-    },
-    {
-      question: "FIFO stands for:",
-      options: [
-        "First In First Out",
-        "Fast In Fast Out",
-        "Frame Input Frame Output",
-        "First Idle First Occupied"
-      ],
-      correct: 0
-    },
-    {
-      question: "A common weakness of FIFO is:",
-      options: [
-        "Needs future knowledge",
-        "May replace heavily used old pages",
-        "Cannot count faults",
-        "Works only with one frame"
-      ],
-      correct: 1
-    }
-  ],
-  lru: [
-    {
-      question: "LRU replaces the page that:",
-      options: [
-        "Entered first",
-        "Will be used farthest in future",
-        "Was least recently used",
-        "Has the smallest value"
-      ],
-      correct: 2
-    },
-    {
-      question: "LRU tries to use information from:",
-      options: [
-        "Future references",
-        "Past usage",
-        "Disk schedule",
-        "CPU burst time"
-      ],
-      correct: 1
-    },
-    {
-      question: "LRU generally performs better than FIFO because it:",
-      options: [
-        "Ignores access history",
-        "Uses recency of use",
-        "Never causes page faults",
-        "Needs no frames"
-      ],
-      correct: 1
-    }
-  ],
-  optimal: [
-    {
-      question: "Optimal page replacement replaces the page that:",
-      options: [
-        "Was loaded first",
-        "Was least recently used",
-        "Will not be used for the longest future time",
-        "Has highest frequency"
-      ],
-      correct: 2
-    },
-    {
-      question: "Optimal algorithm is mainly useful as:",
-      options: [
-        "A theoretical benchmark",
-        "A disk formatter",
-        "A synchronization tool",
-        "A CPU scheduler"
-      ],
-      correct: 0
-    },
-    {
-      question: "Why is Optimal hard to implement in real systems?",
-      options: [
-        "It needs future reference knowledge",
-        "It uses too few frames",
-        "It cannot detect hits",
-        "It works only for integers"
-      ],
-      correct: 0
-    }
-  ]
-};
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
 
-const codingProblemByMode = {
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
+
+const sidebarItems = [
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
+
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
+];
+
+const modeMeta = {
   fifo: {
-    title: "Implement FIFO Page Replacement",
-    description:
-      "Write logic to simulate FIFO page replacement and count total page faults."
+    best: "O(n)",
+    average: "O(n)",
+    worst: "O(n)",
+    space: "O(frame size)",
+    type: "Queue Based",
   },
+
   lru: {
-    title: "Implement LRU Page Replacement",
-    description:
-      "Write logic to replace the least recently used page and count page hits and faults."
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(frame size)",
+    type: "Recency Based",
   },
+
   optimal: {
-    title: "Implement Optimal Page Replacement",
-    description:
-      "Write logic to replace the page whose next use is farthest in the future."
-  }
+    best: "O(n²)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(frame size)",
+    type: "Future Knowledge",
+  },
 };
 
-const pageReplacementCodeTemplates = {
-  fifo: {
-    javascript: `function fifoPageReplacement(referenceString, frameCount) {
-  const frames = [];
-  let pointer = 0;
-  let faults = 0;
+const modeNames = {
+  fifo:
+    "FIFO Page Replacement",
 
-  for (const page of referenceString) {
-    if (!frames.includes(page)) {
-      faults++;
-      if (frames.length < frameCount) {
-        frames.push(page);
-      } else {
-        frames[pointer] = page;
-        pointer = (pointer + 1) % frameCount;
-      }
-    }
-  }
+  lru:
+    "LRU Page Replacement",
 
-  return faults;
-}`,
-    python: `def fifo_page_replacement(reference_string, frame_count):
-    frames = []
-    pointer = 0
-    faults = 0
-
-    for page in reference_string:
-        if page not in frames:
-            faults += 1
-            if len(frames) < frame_count:
-                frames.append(page)
-            else:
-                frames[pointer] = page
-                pointer = (pointer + 1) % frame_count
-
-    return faults`,
-    cpp: `// Implement FIFO page replacement and count faults.`,
-    c: `/* Implement FIFO page replacement and count faults. */`,
-    java: `// Implement FIFO page replacement and count faults.`
-  },
-  lru: {
-    javascript: `function lruPageReplacement(referenceString, frameCount) {
-  const frames = [];
-  const recent = new Map();
-  let faults = 0;
-
-  for (let i = 0; i < referenceString.length; i++) {
-    const page = referenceString[i];
-
-    if (frames.includes(page)) {
-      recent.set(page, i);
-      continue;
-    }
-
-    faults++;
-
-    if (frames.length < frameCount) {
-      frames.push(page);
-    } else {
-      let lruPage = frames[0];
-      for (const framePage of frames) {
-        if ((recent.get(framePage) ?? -1) < (recent.get(lruPage) ?? -1)) {
-          lruPage = framePage;
-        }
-      }
-
-      const index = frames.indexOf(lruPage);
-      frames[index] = page;
-      recent.delete(lruPage);
-    }
-
-    recent.set(page, i);
-  }
-
-  return faults;
-}`,
-    python: `def lru_page_replacement(reference_string, frame_count):
-    frames = []
-    recent = {}
-    faults = 0
-
-    for i, page in enumerate(reference_string):
-        if page in frames:
-            recent[page] = i
-            continue
-
-        faults += 1
-
-        if len(frames) < frame_count:
-            frames.append(page)
-        else:
-            lru_page = min(frames, key=lambda p: recent.get(p, -1))
-            index = frames.index(lru_page)
-            frames[index] = page
-            del recent[lru_page]
-
-        recent[page] = i
-
-    return faults`,
-    cpp: `// Implement LRU page replacement and count faults.`,
-    c: `/* Implement LRU page replacement and count faults. */`,
-    java: `// Implement LRU page replacement and count faults.`
-  },
-  optimal: {
-    javascript: `function optimalPageReplacement(referenceString, frameCount) {
-  const frames = [];
-  let faults = 0;
-
-  for (let i = 0; i < referenceString.length; i++) {
-    const page = referenceString[i];
-
-    if (frames.includes(page)) continue;
-
-    faults++;
-
-    if (frames.length < frameCount) {
-      frames.push(page);
-    } else {
-      let replaceIndex = -1;
-      let farthest = -1;
-
-      for (let j = 0; j < frames.length; j++) {
-        const nextUse = referenceString.slice(i + 1).indexOf(frames[j]);
-
-        if (nextUse === -1) {
-          replaceIndex = j;
-          break;
-        }
-
-        if (nextUse > farthest) {
-          farthest = nextUse;
-          replaceIndex = j;
-        }
-      }
-
-      frames[replaceIndex] = page;
-    }
-  }
-
-  return faults;
-}`,
-    python: `def optimal_page_replacement(reference_string, frame_count):
-    frames = []
-    faults = 0
-
-    for i, page in enumerate(reference_string):
-        if page in frames:
-            continue
-
-        faults += 1
-
-        if len(frames) < frame_count:
-            frames.append(page)
-        else:
-            replace_index = -1
-            farthest = -1
-
-            for j, frame_page in enumerate(frames):
-                try:
-                    next_use = reference_string[i + 1:].index(frame_page)
-                except ValueError:
-                    replace_index = j
-                    break
-
-                if next_use > farthest:
-                    farthest = next_use
-                    replace_index = j
-
-            frames[replace_index] = page
-
-    return faults`,
-    cpp: `// Implement Optimal page replacement and count faults.`,
-    c: `/* Implement Optimal page replacement and count faults. */`,
-    java: `// Implement Optimal page replacement and count faults.`
-  }
+  optimal:
+    "Optimal Page Replacement",
 };
+
+const problemBank = [
+  {
+    id: 1,
+
+    mode: "fifo",
+
+    title:
+      "Implement FIFO Page Replacement",
+
+    problem_statement:
+      "Write logic to simulate FIFO page replacement and count page faults.",
+
+    sample_input:
+      "Reference String: 7 0 1 2 0 3 0 4\nFrames = 3",
+
+    sample_output:
+      "Total Page Faults = 7",
+  },
+
+  {
+    id: 2,
+
+    mode: "lru",
+
+    title:
+      "Implement LRU Page Replacement",
+
+    problem_statement:
+      "Write logic to replace the least recently used page.",
+
+    sample_input:
+      "Reference String: 7 0 1 2 0 3 0 4\nFrames = 3",
+
+    sample_output:
+      "Total Page Faults = 6",
+  },
+
+  {
+    id: 3,
+
+    mode: "optimal",
+
+    title:
+      "Implement Optimal Page Replacement",
+
+    problem_statement:
+      "Write logic to replace the page used farthest in future.",
+
+    sample_input:
+      "Reference String: 7 0 1 2 0 3 0 4\nFrames = 3",
+
+    sample_output:
+      "Total Page Faults = 5",
+  },
+];
 
 export default function PageReplacementLab() {
-  const [mode, setMode] = useState("fifo");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [message] = useState("Page Replacement lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
 
-  const quizQuestions = useMemo(
-    () => pageReplacementQuizQuestionsByMode[mode],
-    [mode]
-  );
+  const [mode, setMode] =
+    useState("fifo");
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("overview");
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(pageReplacementCodeTemplates.fifo.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  // =========================
+  // CODING STATES
+  // =========================
+
+  const [
+    currentProblems,
+    setCurrentProblems,
+  ] = useState([]);
+
+  const [
+    selectedLanguages,
+    setSelectedLanguages,
+  ] = useState({});
+
+  const [codes, setCodes] =
+    useState({});
+
+  const [results, setResults] =
+    useState({});
+
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus,
+  ] = useState({});
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "OS" &&
+              q.experiment ===
+                "Page Replacement"
+          );
+
+        const modeQuestions =
+          filtered.filter(
+            (q) =>
+              (
+                q.topic ||
+                "fifo"
+              ).toLowerCase() ===
+              mode
+          );
+
+        setQuizQuestions(
+          modeQuestions
+        );
+
+        setQuizAnswers(
+          Array(
+            modeQuestions.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, [mode]);
 
   useEffect(() => {
-    setQuizAnswers(Array(pageReplacementQuizQuestionsByMode[mode].length).fill(null));
-    setQuizSubmitted(false);
-    setQuizScore(0);
-    setCodeResult("");
-    setExperimentRun(false);
-  }, [mode]);
 
-  useEffect(() => {
-    setCode(pageReplacementCodeTemplates[mode][selectedLanguage]);
-    setCodeResult("");
-  }, [mode, selectedLanguage]);
+    fetchQuizQuestions();
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
+  }, [fetchQuizQuestions]);
+
+  // =========================
+  // QUIZ FUNCTIONS
+  // =========================
+
+  const handleQuizAnswer = (
+    index,
+    value
+  ) => {
+
+    const updated = [
+      ...quizAnswers,
+    ];
+
+    updated[index] = value;
+
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
-    });
+  const submitQuiz =
+    async () => {
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
+      let score = 0;
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "OS",
-      experiment: `page-replacement-${mode}`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+      quizQuestions.forEach(
+        (q, i) => {
+
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(true);
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "page-replacement",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
+        );
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
+        );
+      }
+    };
+
+  const redoQuiz = () => {
+
+    setQuizSubmitted(false);
+
+    setQuizScore(0);
+
+    setQuizAnswers(
+      Array(
+        quizQuestions.length
+      ).fill(null)
+    );
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+  // =========================
+  // CODING FUNCTIONS
+  // =========================
+
+  const generateProblems =
+    () => {
+
+      const filtered =
+        problemBank.filter(
+          (p) =>
+            p.mode ===
+            mode
+        );
+
+      setCurrentProblems(
+        filtered
       );
-      return;
-    }
+    };
 
-    try {
-      let result;
+  const handleLanguageChange =
+    (
+      problemId,
+      language
+    ) => {
 
-      if (mode === "fifo") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "referenceString",
-          "frameCount",
-          `${code}; return fifoPageReplacement(referenceString, frameCount);`
-        );
-        result = fn([7, 0, 1, 2, 0, 3, 0, 4], 3);
-      } else if (mode === "lru") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "referenceString",
-          "frameCount",
-          `${code}; return lruPageReplacement(referenceString, frameCount);`
-        );
-        result = fn([7, 0, 1, 2, 0, 3, 0, 4], 3);
-      } else {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "referenceString",
-          "frameCount",
-          `${code}; return optimalPageReplacement(referenceString, frameCount);`
-        );
-        result = fn([7, 0, 1, 2, 0, 3, 0, 4], 3);
+      setSelectedLanguages(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            language,
+        })
+      );
+    };
+
+  const handleCodeChange =
+    (
+      problemId,
+      language,
+      value
+    ) => {
+
+      const key =
+        `${problemId}_${language}`;
+
+      setCodes((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    };
+
+  const runCode =
+    (
+      problemId,
+      language
+    ) => {
+
+      const key =
+        `${problemId}_${language}`;
+
+      const answer =
+        codes[key] || "";
+
+      if (!answer.trim()) {
+
+        setResults((prev) => ({
+          ...prev,
+
+          [problemId]: {
+            verdict:
+              "failed",
+
+            passedTests:
+              0,
+
+            totalTests:
+              1,
+
+            points:
+              0,
+          },
+        }));
+
+        return;
       }
 
-      setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
-  };
+      const normalized =
+        answer
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
 
-  const codingProblem = codingProblemByMode[mode];
+      let passed = false;
+
+      if (
+        problemId === 1
+      ) {
+
+        passed =
+          normalized.includes(
+            "7"
+          ) ||
+          normalized.includes(
+            "page faults"
+          );
+      }
+
+      else if (
+        problemId === 2
+      ) {
+
+        passed =
+          normalized.includes(
+            "6"
+          ) ||
+          normalized.includes(
+            "least recently used"
+          );
+      }
+
+      else if (
+        problemId === 3
+      ) {
+
+        passed =
+          normalized.includes(
+            "5"
+          ) ||
+          normalized.includes(
+            "future"
+          );
+      }
+
+      setResults((prev) => ({
+        ...prev,
+
+        [problemId]: {
+          verdict:
+            passed
+              ? "passed"
+              : "failed",
+
+          passedTests:
+            passed
+              ? 1
+              : 0,
+
+          totalTests: 1,
+
+          points:
+            passed
+              ? 10
+              : 0,
+        },
+      }));
+
+      setCodingSaveStatus(
+        (prev) => ({
+          ...prev,
+
+          [problemId]:
+            passed
+              ? "Coding progress saved successfully."
+              : "Incorrect answer. Try again.",
+        })
+      );
+    };
+
+  const analyzeCode =
+    () => {
+
+      alert(
+        "AI Code Analysis Coming Soon"
+      );
+    };
+
+  const correctCode =
+    () => {
+
+      alert(
+        "AI Code Correction Coming Soon"
+      );
+    };
+
+  const progressPercent =
+    activeSection ===
+    "overview"
+      ? 20
+      : activeSection ===
+        "simulation"
+      ? 50
+      : activeSection ===
+        "quiz"
+      ? 75
+      : 95;
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Page Replacement</h1>
+    <div className="er-shell">
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Page Replacement Mode</h2>
+      <aside
+        className={`er-left-rail ${
+          sidebarCollapsed
+            ? "collapsed"
+            : ""
+        }`}
+      >
 
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
+        <div className="er-brand">
+
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+            <SimuLabLogo
+              size={58}
+              showText={false}
+              variant="default"
+            />
+
+          </div>
+
+          {!sidebarCollapsed && (
+
+            <div>
+
+              <div className="er-brand-title">
+                SimuLab
+              </div>
+
+              <div className="er-brand-subtitle">
+                OS Lab
+              </div>
+
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+
+          <button
+            type="button"
+            className={`er-collapse-btn ${
+              sidebarCollapsed
+                ? "collapsed"
+                : ""
+            }`}
+            onClick={() =>
+              setSidebarCollapsed(
+                (
+                  prev
+                ) => !prev
+              )
+            }
+          >
+
+            <ChevronsLeft
+              size={18}
+            />
+
+          </button>
+        </div>
+
+        <div className="er-nav">
+
+          {sidebarItems.map(
+            (item) => {
+
+              const Icon =
+                item.icon;
+
+              return (
+                <button
+                  key={
+                    item.key
+                  }
+                  className={`er-nav-item ${
+                    activeSection ===
+                    item.key
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setActiveSection(
+                      item.key
+                    )
+                  }
+                >
+
+                  <Icon
+                    size={18}
+                  />
+
+                  {!sidebarCollapsed && (
+                    <span>
+                      {
+                        item.label
+                      }
+                    </span>
+                  )}
+                </button>
+              );
+            }
+          )}
+        </div>
+
+        {!sidebarCollapsed && (
+
+          <div className="er-progress-card">
+
+            <div className="er-progress-title">
+              Your Progress
+            </div>
+
+            <div className="er-progress-ring">
+
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(
+                    #4da8ff ${progressPercent}%,
+                    rgba(255,255,255,0.08) ${progressPercent}% 100%
+                  )`,
+                }}
+              >
+
+                <div className="er-progress-inner">
+
+                  <div className="er-progress-value">
+                    {progressPercent}%
+                  </div>
+
+                  <div className="er-progress-text">
+                    Complete
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+
+        <div className="er-page-header">
+
           <div>
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-            >
-              <option value="fifo">FIFO</option>
-              <option value="lru">LRU</option>
-              <option value="optimal">Optimal</option>
-            </select>
+
+            <h1 className="er-page-title">
+              {
+                modeNames[
+                  mode
+                ]
+              }
+            </h1>
+
+            <p className="er-page-subtitle">
+              Learn Page Replacement
+              algorithms visually
+              using interactive
+              simulations,
+              quizzes and coding
+              practice.
+            </p>
+
           </div>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="er-config-card">
+
+          <div className="er-config-top">
+
+            <div>
+
+              <h2>
+                Algorithm Configuration
+              </h2>
+
+              <p>
+                Configure and
+                simulate Page
+                Replacement
+                algorithms.
+              </p>
+
+            </div>
+
+            <div className="er-mode-pill">
+
+              <div className="er-mode-pill-icon">
+
+                <HardDrive
+                  size={18}
+                />
+
+              </div>
+
+              <div>
+
+                <strong>
+                  {
+                    modeNames[
+                      mode
+                    ]
+                  }
+                </strong>
+
+                <span>
+                  {
+                    modeMeta[
+                      mode
+                    ].type
+                  }
+                </span>
+
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+            }}
           >
-            Overview
-          </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <select
+              value={mode}
+              onChange={(e) =>
+                setMode(
+                  e.target.value
+                )
+              }
+              className="sorting-select"
+              style={{
+                maxWidth: 320,
+              }}
+            >
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+              <option value="fifo">
+                FIFO
+              </option>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+              <option value="lru">
+                LRU
+              </option>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <PageReplacementOverview mode={mode} message={message} />
+              <option value="optimal">
+                Optimal
+              </option>
+
+            </select>
+          </div>
+
+          <div className="er-chip-row">
+
+            <button className="er-chip active">
+              Best:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].best
+              }
+            </button>
+
+            <button className="er-chip active">
+              Avg:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].average
+              }
+            </button>
+
+            <button className="er-chip active">
+              Worst:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].worst
+              }
+            </button>
+
+            <button className="er-chip active">
+              Space:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].space
+              }
+            </button>
+
+            <button
+              className={`er-chip ${
+                experimentRun
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {experimentRun
+                ? "Experiment Run"
+                : "Not Started"}
+            </button>
+
+          </div>
+
+          {experimentRun && (
+
+            <div
+              style={{
+                marginTop: 18,
+              }}
+            >
+
+              <MarkCompleteButton
+                labSlug="os"
+                experimentSlug="page-replacement"
+                points={10}
+              />
+
+            </div>
           )}
+        </section>
 
-          {activeSection === "simulation" && (
-  <PageReplacementSimulation
-    mode={mode}
-    setExperimentRun={setExperimentRun}
-  />
-)}
+        <div className="er-content-layout">
 
-          {activeSection === "quiz" && (
-            <PageReplacementQuiz
-              mode={mode}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+          <section className="er-content-card">
 
-          {activeSection === "coding" && (
-            <PageReplacementCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              mode={mode}
-            />
-          )}
-        </main>
-      </div>
+            {activeSection ===
+              "overview" && (
+
+              <PageReplacementOverview
+                mode={mode}
+              />
+            )}
+
+            {activeSection ===
+              "simulation" && (
+
+              <PageReplacementSimulation
+                mode={mode}
+                setExperimentRun={
+                  setExperimentRun
+                }
+              />
+            )}
+
+            {activeSection ===
+              "quiz" && (
+
+              <PageReplacementQuiz
+                mode={mode}
+                quizQuestions={
+                  quizQuestions
+                }
+                quizAnswers={
+                  quizAnswers
+                }
+                quizSubmitted={
+                  quizSubmitted
+                }
+                quizScore={
+                  quizScore
+                }
+                quizSaveStatus={
+                  quizSaveStatus
+                }
+                experimentRun={
+                  experimentRun
+                }
+                handleQuizAnswer={
+                  handleQuizAnswer
+                }
+                submitQuiz={
+                  submitQuiz
+                }
+                redoQuiz={
+                  redoQuiz
+                }
+              />
+            )}
+
+            {activeSection ===
+              "coding" && (
+
+              <PageReplacementCoding
+                currentProblems={
+                  currentProblems
+                }
+                selectedLanguages={
+                  selectedLanguages
+                }
+                codes={codes}
+                results={results}
+                codingSaveStatus={
+                  codingSaveStatus
+                }
+                generateProblems={
+                  generateProblems
+                }
+                handleLanguageChange={
+                  handleLanguageChange
+                }
+                handleCodeChange={
+                  handleCodeChange
+                }
+                runCode={
+                  runCode
+                }
+                analyzeCode={
+                  analyzeCode
+                }
+                correctCode={
+                  correctCode
+                }
+              />
+            )}
+
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

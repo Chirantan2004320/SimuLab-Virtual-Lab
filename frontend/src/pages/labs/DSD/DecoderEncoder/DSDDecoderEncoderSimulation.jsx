@@ -8,6 +8,7 @@ import {
   Binary
 } from "lucide-react";
 
+//eslint-disable-next-line no-unused-vars
 function signalColor(value, active = false) {
   if (active) return "#38bdf8";
   return value === 1 ? "#22c55e" : "#ef4444";

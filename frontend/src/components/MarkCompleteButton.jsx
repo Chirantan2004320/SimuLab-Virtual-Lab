@@ -24,6 +24,8 @@ const MarkCompleteButton = ({
         points,
       });
 
+      window.dispatchEvent(new Event("progress-updated"));
+
       setCompleted(true);
       setMessage("Progress saved successfully.");
 

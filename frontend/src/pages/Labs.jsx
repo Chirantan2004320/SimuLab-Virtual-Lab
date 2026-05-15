@@ -158,6 +158,54 @@ const labs = [
       },
     ],
   },
+  {
+  id: "microcontroller",
+  title: "Microcontroller Lab",
+  subtitle: "6 experiments available",
+  description:
+    "Explore embedded systems using GPIO control, PWM, LED interfacing, timing logic, and real-time microcontroller simulations.",
+  icon: "🧠",
+  color: "210 90% 58%",
+  route: "/labs/microcontroller",
+
+  experiments: [
+    {
+      name: "LED Blink",
+      description:
+        "Understand GPIO HIGH/LOW toggling and delay-based LED blinking.",
+    },
+
+    {
+      name: "7-Segment Display",
+      description:
+        "Control numeric displays using segment decoding and GPIO patterns.",
+    },
+
+    {
+      name: "PWM LED Brightness",
+      description:
+        "Adjust LED brightness using PWM duty cycle and analogWrite concepts.",
+    },
+
+    {
+      name: "Push Button Interface",
+      description:
+        "Read digital input signals and detect button press events.",
+    },
+
+    {
+      name: "Traffic Light Controller",
+      description:
+        "Simulate timed GPIO sequencing for real-world traffic systems.",
+    },
+
+    {
+      name: "Buzzer Interface",
+      description:
+        "Generate tones and alerts using digital output control.",
+    },
+  ],
+},
 ];
 
 const Labs = () => {

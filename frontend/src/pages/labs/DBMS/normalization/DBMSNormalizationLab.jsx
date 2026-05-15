@@ -1,4 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+/* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
 import {
   BookOpen,
   PlayCircle,
@@ -6,11 +15,17 @@ import {
   Brain,
   FileCode2,
   ChevronsLeft,
-  Layers3
+  Layers3,
 } from "lucide-react";
+
 import "../../../SortingLab.css";
+
+import SimuLabLogo from "../../../../components/SimuLabLogo";
 import MarkCompleteButton from "../../../../components/MarkCompleteButton";
-import { saveQuizResult, saveCodingSubmission } from "../../../../API/progressApi";
+
+import {
+  saveCodingSubmission,
+} from "../../../../API/progressApi";
 
 import DBMSNormalizationOverview from "./DBMSNormalizationOverview";
 import DBMSNormalizationSimulation from "./DBMSNormalizationSimulation";
@@ -18,99 +33,41 @@ import DBMSNormalizationComparison from "./DBMSNormalizationComparison";
 import DBMSNormalizationQuiz from "./DBMSNormalizationQuiz";
 import DBMSNormalizationCoding from "./DBMSNormalizationCoding";
 
-const simulabLogo = "/assets/logo.png";
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
 
 const sidebarItems = [
-  { key: "overview", label: "Overview", icon: BookOpen },
-  { key: "simulation", label: "Simulation", icon: PlayCircle },
-  { key: "comparison", label: "Comparison", icon: GitCompare },
-  { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Coding Practice", icon: FileCode2 }
-];
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
 
-const normalizationQuizQuestionsByStage = {
-  "1nf": [
-    {
-      question: "What is the main rule of First Normal Form (1NF)?",
-      options: [
-        "Remove transitive dependency",
-        "Remove partial dependency",
-        "Each field must contain atomic values",
-        "Every table must have 3 columns"
-      ],
-      correct: 2
-    },
-    {
-      question: "Which of the following violates 1NF?",
-      options: [
-        "One phone number per cell",
-        "One subject per row",
-        "Multiple values in one cell",
-        "Using a primary key"
-      ],
-      correct: 2
-    },
-    {
-      question: "1NF mainly removes:",
-      options: ["Repeating groups", "Foreign keys", "Indexes", "Sorting"],
-      correct: 0
-    }
-  ],
-  "2nf": [
-    {
-      question: "Second Normal Form removes:",
-      options: [
-        "Repeating groups",
-        "Partial dependency",
-        "Transitive dependency",
-        "NULL values"
-      ],
-      correct: 1
-    },
-    {
-      question: "2NF applies after satisfying:",
-      options: ["UNF", "1NF", "3NF", "BCNF"],
-      correct: 1
-    },
-    {
-      question: "Partial dependency happens when:",
-      options: [
-        "A non-key attribute depends on part of a composite key",
-        "A key depends on a non-key",
-        "A table has one row",
-        "A column contains NULL"
-      ],
-      correct: 0
-    }
-  ],
-  "3nf": [
-    {
-      question: "Third Normal Form removes:",
-      options: [
-        "Repeating groups",
-        "Primary keys",
-        "Transitive dependency",
-        "Composite keys"
-      ],
-      correct: 2
-    },
-    {
-      question: "A transitive dependency means:",
-      options: [
-        "A non-key depends on another non-key",
-        "A key depends on another key",
-        "A table depends on another table",
-        "Two primary keys exist"
-      ],
-      correct: 0
-    },
-    {
-      question: "3NF is achieved after satisfying:",
-      options: ["Only 1NF", "Only 2NF", "1NF and 2NF", "UNF only"],
-      correct: 2
-    }
-  ]
-};
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "comparison",
+    label: "Comparison",
+    icon: GitCompare,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
+];
 
 const unfTable = [
   {
@@ -118,19 +75,24 @@ const unfTable = [
     student_name: "Aarav",
     course_ids: "C101, C102",
     course_names: "DBMS, OS",
-    instructor_names: "Dr. Sharma, Dr. Mehta",
+    instructor_names:
+      "Dr. Sharma, Dr. Mehta",
     department_name: "CSE",
-    department_office: "Block A"
+    department_office:
+      "Block A",
   },
+
   {
     student_id: "S2",
     student_name: "Diya",
     course_ids: "C103",
     course_names: "CN",
-    instructor_names: "Dr. Iyer",
+    instructor_names:
+      "Dr. Iyer",
     department_name: "ECE",
-    department_office: "Block B"
-  }
+    department_office:
+      "Block B",
+  },
 ];
 
 const firstNFTable = [
@@ -139,40 +101,77 @@ const firstNFTable = [
     student_name: "Aarav",
     course_id: "C101",
     course_name: "DBMS",
-    instructor_name: "Dr. Sharma",
+    instructor_name:
+      "Dr. Sharma",
     department_name: "CSE",
-    department_office: "Block A"
+    department_office:
+      "Block A",
   },
+
   {
     student_id: "S1",
     student_name: "Aarav",
     course_id: "C102",
     course_name: "OS",
-    instructor_name: "Dr. Mehta",
+    instructor_name:
+      "Dr. Mehta",
     department_name: "CSE",
-    department_office: "Block A"
+    department_office:
+      "Block A",
   },
+
   {
     student_id: "S2",
     student_name: "Diya",
     course_id: "C103",
     course_name: "CN",
-    instructor_name: "Dr. Iyer",
+    instructor_name:
+      "Dr. Iyer",
     department_name: "ECE",
-    department_office: "Block B"
-  }
+    department_office:
+      "Block B",
+  },
 ];
 
-const secondNFStudentCourse = [
-  { student_id: "S1", course_id: "C101" },
-  { student_id: "S1", course_id: "C102" },
-  { student_id: "S2", course_id: "C103" }
-];
+const secondNFStudentCourse =
+  [
+    {
+      student_id: "S1",
+      course_id: "C101",
+    },
+
+    {
+      student_id: "S1",
+      course_id: "C102",
+    },
+
+    {
+      student_id: "S2",
+      course_id: "C103",
+    },
+  ];
 
 const secondNFCourse = [
-  { course_id: "C101", course_name: "DBMS", instructor_name: "Dr. Sharma" },
-  { course_id: "C102", course_name: "OS", instructor_name: "Dr. Mehta" },
-  { course_id: "C103", course_name: "CN", instructor_name: "Dr. Iyer" }
+  {
+    course_id: "C101",
+    course_name: "DBMS",
+    instructor_name:
+      "Dr. Sharma",
+  },
+
+  {
+    course_id: "C102",
+    course_name: "OS",
+    instructor_name:
+      "Dr. Mehta",
+  },
+
+  {
+    course_id: "C103",
+    course_name: "CN",
+    instructor_name:
+      "Dr. Iyer",
+  },
 ];
 
 const secondNFStudent = [
@@ -180,275 +179,771 @@ const secondNFStudent = [
     student_id: "S1",
     student_name: "Aarav",
     department_name: "CSE",
-    department_office: "Block A"
+    department_office:
+      "Block A",
   },
+
   {
     student_id: "S2",
     student_name: "Diya",
     department_name: "ECE",
-    department_office: "Block B"
-  }
+    department_office:
+      "Block B",
+  },
 ];
 
 const thirdNFStudent = [
-  { student_id: "S1", student_name: "Aarav", department_name: "CSE" },
-  { student_id: "S2", student_name: "Diya", department_name: "ECE" }
+  {
+    student_id: "S1",
+    student_name: "Aarav",
+    department_name: "CSE",
+  },
+
+  {
+    student_id: "S2",
+    student_name: "Diya",
+    department_name: "ECE",
+  },
 ];
 
-const thirdNFDepartment = [
-  { department_name: "CSE", department_office: "Block A" },
-  { department_name: "ECE", department_office: "Block B" }
-];
+const thirdNFDepartment =
+  [
+    {
+      department_name:
+        "CSE",
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      department_office:
+        "Block A",
+    },
 
-export default function DBMSNormalizationLab() {
-  const [normalForm, setNormalForm] = useState("1nf");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    {
+      department_name:
+        "ECE",
 
-  const [message, setMessage] = useState("Normalization lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useState(700);
-  const [stepHistory, setStepHistory] = useState([]);
-  const [currentStage, setCurrentStage] = useState("");
-  const [displayTables, setDisplayTables] = useState([]);
-  const [highlightedColumns, setHighlightedColumns] = useState([]);
-  const [dependencyText, setDependencyText] = useState("");
+      department_office:
+        "Block B",
+    },
+  ];
 
-  const quizQuestions = useMemo(
-    () => normalizationQuizQuestionsByStage[normalForm],
-    [normalForm]
+const sleep = (ms) =>
+  new Promise((resolve) =>
+    setTimeout(resolve, ms)
   );
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(quizQuestions.length).fill(null));
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizSaveStatus, setQuizSaveStatus] = useState("");
-  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+export default function DBMSNormalizationLab() {
+
+  const [normalForm, setNormalForm] =
+    useState("1nf");
+
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("overview");
+
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    message,
+    setMessage,
+  ] = useState(
+    "Normalization lab initialized."
+  );
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  const [
+    isRunning,
+    setIsRunning,
+  ] = useState(false);
+
+  const [
+    animationSpeed,
+    setAnimationSpeed,
+  ] = useState(700);
+
+  const [
+    stepHistory,
+    setStepHistory,
+  ] = useState([]);
+
+  const [
+    currentStage,
+    setCurrentStage,
+  ] = useState("");
+
+  const [
+    displayTables,
+    setDisplayTables,
+  ] = useState([]);
+
+  const [
+    highlightedColumns,
+    setHighlightedColumns,
+  ] = useState([]);
+
+  const [
+    dependencyText,
+    setDependencyText,
+  ] = useState("");
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus,
+  ] = useState({});
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "DBMS" &&
+              q.experiment ===
+                "Normalization"
+          );
+
+        const modeQuestions =
+          filtered.filter(
+            (q) =>
+              (
+                q.topic ||
+                "1nf"
+              ).toLowerCase() ===
+              normalForm
+          );
+
+        setQuizQuestions(
+          modeQuestions
+        );
+
+        setQuizAnswers(
+          Array(
+            modeQuestions.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, [normalForm]);
+
+  useEffect(() => {
+
+    fetchQuizQuestions();
+
+  }, [fetchQuizQuestions]);
 
   const normalFormNames = {
-    "1nf": "First Normal Form",
-    "2nf": "Second Normal Form",
-    "3nf": "Third Normal Form"
+    "1nf":
+      "First Normal Form",
+
+    "2nf":
+      "Second Normal Form",
+
+    "3nf":
+      "Third Normal Form",
   };
 
   const normalFormMeta = {
     "1nf": {
-      focus: "Atomic Values",
-      removes: "Repeating Groups",
-      input: "UNF Table",
-      output: "1NF Table"
+      focus:
+        "Atomic Values",
+
+      removes:
+        "Repeating Groups",
+
+      input:
+        "UNF Table",
+
+      output:
+        "1NF Table",
     },
+
     "2nf": {
-      focus: "Full Key Dependency",
-      removes: "Partial Dependency",
-      input: "1NF Table",
-      output: "2NF Tables"
+      focus:
+        "Full Key Dependency",
+
+      removes:
+        "Partial Dependency",
+
+      input:
+        "1NF Table",
+
+      output:
+        "2NF Tables",
     },
+
     "3nf": {
-      focus: "Direct Key Dependency",
-      removes: "Transitive Dependency",
-      input: "2NF Design",
-      output: "3NF Tables"
-    }
+      focus:
+        "Direct Key Dependency",
+
+      removes:
+        "Transitive Dependency",
+
+      input:
+        "2NF Design",
+
+      output:
+        "3NF Tables",
+    },
   };
 
   useEffect(() => {
+
     setStepHistory([]);
+
     setCurrentStage("");
+
     setDisplayTables([]);
+
     setHighlightedColumns([]);
+
     setDependencyText("");
-    setMessage("Normalization lab initialized.");
+
+    setMessage(
+      "Normalization lab initialized."
+    );
+
     setExperimentRun(false);
+
     setIsRunning(false);
-    setQuizAnswers(Array(normalizationQuizQuestionsByStage[normalForm].length).fill(null));
+
     setQuizSubmitted(false);
+
     setQuizScore(0);
+
   }, [normalForm]);
 
-  const addStep = (text) => {
-    setStepHistory((prev) => [...prev, text]);
-  };
+  const addStep =
+    useCallback((text) => {
 
-  const runSimulation = async () => {
-    if (isRunning) return;
-
-    setIsRunning(true);
-    setExperimentRun(true);
-    setStepHistory([]);
-    setDisplayTables([]);
-    setHighlightedColumns([]);
-    setDependencyText("");
-    setCurrentStage("Starting");
-
-    try {
-      setMessage("Loaded unnormalized table.");
-      addStep("Started normalization from the unnormalized table.");
-      setDisplayTables([{ title: "Unnormalized Table", rows: unfTable }]);
-      await sleep(animationSpeed);
-
-      if (normalForm === "1nf") {
-        setCurrentStage("Analyzing Repeating Groups");
-        setHighlightedColumns(["course_ids", "course_names", "instructor_names"]);
-        setDependencyText("Problem: Multiple values are stored inside single cells.");
-        setMessage("Identified repeating groups and non-atomic values.");
-        addStep("Detected repeating groups in course_ids, course_names, and instructor_names.");
-        await sleep(animationSpeed);
-
-        setCurrentStage("Converting to 1NF");
-        setDisplayTables([{ title: "1NF Table", rows: firstNFTable }]);
-        setHighlightedColumns([]);
-        setDependencyText("Fix: Create separate rows so each field contains only one atomic value.");
-        setMessage("Converted the table to 1NF.");
-        addStep("Converted the table to 1NF by making all values atomic.");
-        await sleep(animationSpeed);
-      }
-
-      if (normalForm === "2nf") {
-        setCurrentStage("Converting to 1NF");
-        setDisplayTables([{ title: "1NF Table", rows: firstNFTable }]);
-        setDependencyText("Composite key: (student_id, course_id)");
-        setMessage("First, the table is placed into 1NF.");
-        addStep("Prepared the 1NF table before checking for partial dependencies.");
-        await sleep(animationSpeed);
-
-        setCurrentStage("Finding Partial Dependencies");
-        setHighlightedColumns(["course_name", "instructor_name"]);
-        setDependencyText(
-          "Problem: course_name and instructor_name depend only on course_id, which is part of the composite key."
-        );
-        setMessage("Detected partial dependency.");
-        addStep("Detected partial dependency: course_name and instructor_name depend only on course_id.");
-        await sleep(animationSpeed);
-
-        setCurrentStage("Splitting into 2NF");
-        setDisplayTables([
-          { title: "StudentCourse Table", rows: secondNFStudentCourse },
-          { title: "Course Table", rows: secondNFCourse },
-          { title: "Student Table", rows: secondNFStudent }
-        ]);
-        setHighlightedColumns([]);
-        setDependencyText("Fix: Move attributes that depend on only part of the composite key into separate tables.");
-        setMessage("Converted the design to 2NF.");
-        addStep("Split the design into StudentCourse, Course, and Student tables to achieve 2NF.");
-        await sleep(animationSpeed);
-      }
-
-      if (normalForm === "3nf") {
-        setCurrentStage("Preparing 2NF Design");
-        setDisplayTables([
-          { title: "Student Table (2NF)", rows: secondNFStudent },
-          { title: "Course Table", rows: secondNFCourse },
-          { title: "StudentCourse Table", rows: secondNFStudentCourse }
-        ]);
-        setDependencyText("Current design is in 2NF.");
-        setMessage("Loaded the 2NF design.");
-        addStep("Started with the 2NF design before checking for transitive dependency.");
-        await sleep(animationSpeed);
-
-        setCurrentStage("Finding Transitive Dependency");
-        setHighlightedColumns(["department_office"]);
-        setDependencyText(
-          "Problem: department_office depends on department_name, not directly on student_id."
-        );
-        setMessage("Detected transitive dependency.");
-        addStep("Detected transitive dependency: department_office depends on department_name.");
-        await sleep(animationSpeed);
-
-        setCurrentStage("Splitting into 3NF");
-        setDisplayTables([
-          { title: "Student Table", rows: thirdNFStudent },
-          { title: "Department Table", rows: thirdNFDepartment },
-          { title: "Course Table", rows: secondNFCourse },
-          { title: "StudentCourse Table", rows: secondNFStudentCourse }
-        ]);
-        setHighlightedColumns([]);
-        setDependencyText("Fix: Move department details into a separate Department table.");
-        setMessage("Converted the design to 3NF.");
-        addStep("Separated department details into a Department table to achieve 3NF.");
-        await sleep(animationSpeed);
-      }
-
-      setCurrentStage("Complete");
-      setMessage(`${normalForm.toUpperCase()} normalization simulation completed.`);
-      addStep(`${normalForm.toUpperCase()} simulation completed successfully.`);
-
-      localStorage.setItem(
-        "vlab_last_experiment",
-        JSON.stringify({ name: `dbms-${normalForm}-normalization`, time: Date.now() })
+      setStepHistory(
+        (prev) => [
+          ...prev,
+          text,
+        ]
       );
-    } finally {
-      setIsRunning(false);
-    }
-  };
 
-  const loadSample = () => {
-    if (isRunning) return;
+    }, []);
 
-    setStepHistory([`Sample prepared for ${normalForm.toUpperCase()} normalization.`]);
-    setDisplayTables([{ title: "Unnormalized Table", rows: unfTable }]);
-    setHighlightedColumns([]);
-    setDependencyText("Sample data loaded. Run the simulation to see decomposition.");
-    setCurrentStage("Sample Ready");
-    setMessage(`Sample loaded for ${normalForm.toUpperCase()} normalization.`);
-  };
+  const runSimulation =
+    async () => {
+
+      if (isRunning) {
+        return;
+      }
+
+      setIsRunning(true);
+
+      setExperimentRun(true);
+
+      setStepHistory([]);
+
+      setDisplayTables([]);
+
+      setHighlightedColumns([]);
+
+      setDependencyText("");
+
+      setCurrentStage(
+        "Starting"
+      );
+
+      try {
+
+        setMessage(
+          "Loaded unnormalized table."
+        );
+
+        addStep(
+          "Started normalization from the unnormalized table."
+        );
+
+        setDisplayTables([
+          {
+            title:
+              "Unnormalized Table",
+
+            rows:
+              unfTable,
+          },
+        ]);
+
+        await sleep(
+          animationSpeed
+        );
+
+        if (
+          normalForm ===
+          "1nf"
+        ) {
+
+          setCurrentStage(
+            "Analyzing Repeating Groups"
+          );
+
+          setHighlightedColumns([
+            "course_ids",
+            "course_names",
+            "instructor_names",
+          ]);
+
+          setDependencyText(
+            "Problem: Multiple values are stored inside single cells."
+          );
+
+          addStep(
+            "Detected repeating groups in course_ids, course_names, and instructor_names."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setCurrentStage(
+            "Converting to 1NF"
+          );
+
+          setDisplayTables([
+            {
+              title:
+                "1NF Table",
+
+              rows:
+                firstNFTable,
+            },
+          ]);
+
+          setHighlightedColumns(
+            []
+          );
+
+          setDependencyText(
+            "Fix: Create separate rows so each field contains only one atomic value."
+          );
+
+          addStep(
+            "Converted the table to 1NF."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        if (
+          normalForm ===
+          "2nf"
+        ) {
+
+          setDisplayTables([
+            {
+              title:
+                "1NF Table",
+
+              rows:
+                firstNFTable,
+            },
+          ]);
+
+          addStep(
+            "Prepared 1NF table before checking partial dependencies."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setHighlightedColumns([
+            "course_name",
+            "instructor_name",
+          ]);
+
+          setDependencyText(
+            "Problem: course_name and instructor_name depend only on course_id."
+          );
+
+          addStep(
+            "Detected partial dependency."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setDisplayTables([
+            {
+              title:
+                "StudentCourse Table",
+
+              rows:
+                secondNFStudentCourse,
+            },
+
+            {
+              title:
+                "Course Table",
+
+              rows:
+                secondNFCourse,
+            },
+
+            {
+              title:
+                "Student Table",
+
+              rows:
+                secondNFStudent,
+            },
+          ]);
+
+          setHighlightedColumns(
+            []
+          );
+
+          addStep(
+            "Split tables into 2NF design."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        if (
+          normalForm ===
+          "3nf"
+        ) {
+
+          setDisplayTables([
+            {
+              title:
+                "Student Table (2NF)",
+
+              rows:
+                secondNFStudent,
+            },
+
+            {
+              title:
+                "Course Table",
+
+              rows:
+                secondNFCourse,
+            },
+
+            {
+              title:
+                "StudentCourse Table",
+
+              rows:
+                secondNFStudentCourse,
+            },
+          ]);
+
+          addStep(
+            "Prepared 2NF design."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setHighlightedColumns([
+            "department_office",
+          ]);
+
+          setDependencyText(
+            "Problem: department_office depends on department_name."
+          );
+
+          addStep(
+            "Detected transitive dependency."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setDisplayTables([
+            {
+              title:
+                "Student Table",
+
+              rows:
+                thirdNFStudent,
+            },
+
+            {
+              title:
+                "Department Table",
+
+              rows:
+                thirdNFDepartment,
+            },
+
+            {
+              title:
+                "Course Table",
+
+              rows:
+                secondNFCourse,
+            },
+
+            {
+              title:
+                "StudentCourse Table",
+
+              rows:
+                secondNFStudentCourse,
+            },
+          ]);
+
+          setHighlightedColumns(
+            []
+          );
+
+          addStep(
+            "Separated department details into Department table."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        setCurrentStage(
+          "Complete"
+        );
+
+        setMessage(
+          `${normalForm.toUpperCase()} normalization simulation completed.`
+        );
+
+        addStep(
+          `${normalForm.toUpperCase()} simulation completed successfully.`
+        );
+
+      } finally {
+
+        setIsRunning(false);
+      }
+    };
+
+  const loadSample =
+    () => {
+
+      if (isRunning) {
+        return;
+      }
+
+      setStepHistory([
+        `Sample prepared for ${normalForm.toUpperCase()} normalization.`,
+      ]);
+
+      setDisplayTables([
+        {
+          title:
+            "Unnormalized Table",
+
+          rows:
+            unfTable,
+        },
+      ]);
+
+      setHighlightedColumns(
+        []
+      );
+
+      setDependencyText(
+        "Sample data loaded."
+      );
+
+      setCurrentStage(
+        "Sample Ready"
+      );
+
+      setMessage(
+        `Sample loaded for ${normalForm.toUpperCase()} normalization.`
+      );
+    };
 
   const reset = () => {
-    if (isRunning) return;
+
+    if (isRunning) {
+      return;
+    }
 
     setStepHistory([]);
+
     setCurrentStage("");
+
     setDisplayTables([]);
+
     setHighlightedColumns([]);
+
     setDependencyText("");
-    setMessage("Normalization lab reset.");
+
+    setMessage(
+      "Normalization lab reset."
+    );
+
     setExperimentRun(false);
   };
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
-    setQuizAnswers(updated);
+  const handleQuizAnswer =
+    (i, v) => {
+
+      const updated = [
+        ...quizAnswers,
+      ];
+
+      updated[i] = v;
+
+      setQuizAnswers(
+        updated
+      );
+    };
+
+  const submitQuiz =
+    async () => {
+
+      let score = 0;
+
+      quizQuestions.forEach(
+        (q, i) => {
+
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(true);
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "normalization",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
+        );
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
+        );
+      }
+    };
+
+    //eslint-disable-next-line
+  const redoQuiz = () => {
+
+    setQuizSubmitted(false);
+
+    setQuizScore(0);
+
+    setQuizAnswers(
+      Array(
+        quizQuestions.length
+      ).fill(null)
+    );
   };
 
-  const submitQuiz = async () => {
-  let score = 0;
-
-  quizQuestions.forEach((q, i) => {
-    if (quizAnswers[i] === q.correct) score++;
-  });
-
-  setQuizScore(score);
-  setQuizSubmitted(true);
-  setQuizSaveStatus("Saving quiz result...");
-
-  try {
-    await saveQuizResult({
-      labSlug: "dbms",
-      experimentSlug: "normalization",
-      correctAnswers: score,
-      totalQuestions: quizQuestions.length
-    });
-
-    setQuizSaveStatus("Quiz result saved to dashboard.");
-  } catch (error) {
-    console.error("Quiz save failed:", error);
-    setQuizSaveStatus("Quiz submitted, but backend save failed.");
-  }
-};
-
-
   const progressPercent =
-    activeSection === "overview"
+    activeSection ===
+    "overview"
       ? 20
-      : activeSection === "simulation"
+      : activeSection ===
+        "simulation"
       ? 50
-      : activeSection === "comparison"
+      : activeSection ===
+        "comparison"
       ? 68
-      : activeSection === "quiz"
+      : activeSection ===
+        "quiz"
       ? 84
       : 95;
 
@@ -456,15 +951,15 @@ export default function DBMSNormalizationLab() {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          </div>
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+  <SimuLabLogo
+    size={58}
+    showText={false}
+    variant="default"
+  />
+
+</div>
 
           {!sidebarCollapsed && (
             <div>

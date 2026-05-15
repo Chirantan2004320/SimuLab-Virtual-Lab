@@ -1,7 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+/* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
 import "../../../SortingLab.css";
+
 import { useNavigate } from "react-router-dom";
-import {useAuth} from "../../../../context/AuthContext.js";
+
+import { useAuth } from "../../../../context/AuthContext.js";
+
 import {
   BookOpen,
   PlayCircle,
@@ -11,11 +23,12 @@ import {
   ChevronsLeft,
   ShieldCheck,
   LockKeyhole,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+
 import MarkCompleteButton from "../../../../components/MarkCompleteButton";
-//import {saveQuizResult, saveCodingSubmission} from "../../../../API/progressApi";
 
 import DBMSConcurrencyOverview from "./DBMSConcurrencyOverview";
 import DBMSConcurrencySimulation from "./DBMSConcurrencySimulation";
@@ -23,754 +36,1096 @@ import DBMSConcurrencyComparison from "./DBMSConcurrencyComparison";
 import DBMSConcurrencyQuiz from "./DBMSConcurrencyQuiz";
 import DBMSConcurrencyCoding from "./DBMSConcurrencyCoding";
 
-const simulabLogo = "/assets/logo.png";
+import {
+  saveCodingSubmission,
+} from "../../../../API/progressApi";
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
 
 const sidebarItems = [
-  { key: "overview", label: "Overview", icon: BookOpen },
-  { key: "simulation", label: "Simulation", icon: PlayCircle },
-  { key: "comparison", label: "Comparison", icon: GitCompare },
-  { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Coding Practice", icon: FileCode2 }
-];
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
 
-const concurrencyQuizQuestionsByType = {
-  "lost-update": [
-    {
-      question: "What is a Lost Update problem?",
-      options: [
-        "A transaction is deleted permanently",
-        "One transaction overwrites another transaction's update",
-        "A table loses its primary key",
-        "The DBMS deletes a row automatically"
-      ],
-      correct: 1
-    },
-    {
-      question: "Lost Update usually happens when:",
-      options: [
-        "Only one transaction runs",
-        "Concurrent transactions update the same data without proper control",
-        "An index is created",
-        "The table is normalized"
-      ],
-      correct: 1
-    },
-    {
-      question: "A common way to prevent Lost Update is:",
-      options: [
-        "Use locking or concurrency control",
-        "Remove primary keys",
-        "Disable COMMIT",
-        "Use more NULL values"
-      ],
-      correct: 0
-    }
-  ],
-  "dirty-read": [
-    {
-      question: "Dirty Read means:",
-      options: [
-        "Reading uncommitted data from another transaction",
-        "Reading data from a dirty table",
-        "Reading duplicate rows",
-        "Reading indexed rows only"
-      ],
-      correct: 0
-    },
-    {
-      question: "Why is Dirty Read dangerous?",
-      options: [
-        "Because uncommitted data may later be rolled back",
-        "Because it always improves performance",
-        "Because it removes indexes",
-        "Because it changes primary keys"
-      ],
-      correct: 0
-    },
-    {
-      question: "Dirty Read is avoided using:",
-      options: [
-        "Proper isolation levels / locking",
-        "ORDER BY",
-        "Normalization",
-        "Hashing"
-      ],
-      correct: 0
-    }
-  ],
-  locking: [
-    {
-      question: "What is the purpose of a lock in concurrency control?",
-      options: [
-        "To block all users permanently",
-        "To control safe access to shared data",
-        "To delete a transaction",
-        "To sort records"
-      ],
-      correct: 1
-    },
-    {
-      question: "In a locking demo, if T1 holds the lock, T2 usually:",
-      options: ["Must wait", "Deletes the row", "Commits automatically", "Skips the data forever"],
-      correct: 0
-    },
-    {
-      question: "Locking helps prevent:",
-      options: [
-        "Data anomalies from simultaneous access",
-        "Only syntax errors",
-        "Only indexing issues",
-        "Only NULL values"
-      ],
-      correct: 0
-    }
-  ]
-};
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "comparison",
+    label: "Comparison",
+    icon: GitCompare,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
+];
 
 const codingProblemByType = {
   "lost-update": {
-    title: "Write a Lost Update example",
+    title:
+      "Lost Update Concurrency Scenario",
+
     description:
-      "Write SQL-style steps showing how two concurrent transactions can overwrite each other's update on the same balance."
+      "Write advanced SQL transaction logic showing how stale reads cause overwritten updates in concurrent banking systems.",
   },
+
   "dirty-read": {
-    title: "Write a Dirty Read example",
+    title:
+      "Dirty Read Isolation Problem",
+
     description:
-      "Write SQL-style steps showing how one transaction reads uncommitted data from another transaction."
+      "Write a transaction isolation scenario where one transaction reads temporary uncommitted data and explain the consequences.",
   },
+
   locking: {
-    title: "Write a Locking example",
+    title:
+      "Row-Level Locking Strategy",
+
     description:
-      "Write SQL-style steps showing how one transaction acquires a lock and another transaction waits until the lock is released."
-  }
+      "Write a locking strategy using SELECT FOR UPDATE and explain how blocking prevents unsafe concurrent modifications.",
+  },
 };
 
-const concurrencyCodeTemplates = {
-  "lost-update": {
-    javascript: `const example = \`
+const concurrencyCodeTemplates =
+  {
+    "lost-update": {
+      javascript: `const example = \`
 -- T1
 BEGIN TRANSACTION;
-SELECT balance FROM account WHERE id = 1; -- reads 1000
+SELECT balance FROM account WHERE id = 1;
 
 -- T2
 BEGIN TRANSACTION;
-SELECT balance FROM account WHERE id = 1; -- also reads 1000
+SELECT balance FROM account WHERE id = 1;
 
 -- T1 updates
 UPDATE account SET balance = 900 WHERE id = 1;
 COMMIT;
 
--- T2 updates using old value
+-- T2 overwrites old value
 UPDATE account SET balance = 950 WHERE id = 1;
 COMMIT;
 \`;`,
-    python: `example = """
--- T1
-BEGIN TRANSACTION;
-SELECT balance FROM account WHERE id = 1; -- reads 1000
+    },
 
--- T2
-BEGIN TRANSACTION;
-SELECT balance FROM account WHERE id = 1; -- also reads 1000
-
--- T1 updates
-UPDATE account SET balance = 900 WHERE id = 1;
-COMMIT;
-
--- T2 updates using old value
-UPDATE account SET balance = 950 WHERE id = 1;
-COMMIT;
-"""`,
-    cpp: `string example =
-"-- T1\\n"
-"BEGIN TRANSACTION;\\n"
-"SELECT balance FROM account WHERE id = 1;\\n\\n"
-"-- T2\\n"
-"BEGIN TRANSACTION;\\n"
-"SELECT balance FROM account WHERE id = 1;\\n\\n"
-"-- T1 updates\\n"
-"UPDATE account SET balance = 900 WHERE id = 1;\\n"
-"COMMIT;\\n\\n"
-"-- T2 updates using old value\\n"
-"UPDATE account SET balance = 950 WHERE id = 1;\\n"
-"COMMIT;";`,
-    c: `char example[] =
-"-- T1\\nBEGIN TRANSACTION;\\nSELECT balance FROM account WHERE id = 1;\\n\\n"
-"-- T2\\nBEGIN TRANSACTION;\\nSELECT balance FROM account WHERE id = 1;\\n\\n"
-"-- T1 updates\\nUPDATE account SET balance = 900 WHERE id = 1;\\nCOMMIT;\\n\\n"
-"-- T2 updates using old value\\nUPDATE account SET balance = 950 WHERE id = 1;\\nCOMMIT;";`,
-    java: `String example =
-"-- T1\\n" +
-"BEGIN TRANSACTION;\\n" +
-"SELECT balance FROM account WHERE id = 1;\\n\\n" +
-"-- T2\\n" +
-"BEGIN TRANSACTION;\\n" +
-"SELECT balance FROM account WHERE id = 1;\\n\\n" +
-"-- T1 updates\\n" +
-"UPDATE account SET balance = 900 WHERE id = 1;\\n" +
-"COMMIT;\\n\\n" +
-"-- T2 updates using old value\\n" +
-"UPDATE account SET balance = 950 WHERE id = 1;\\n" +
-"COMMIT;";`
-  },
-  "dirty-read": {
-    javascript: `const example = \`
+    "dirty-read": {
+      javascript: `const example = \`
 -- T1
 BEGIN TRANSACTION;
 UPDATE account SET balance = 700 WHERE id = 1;
 
--- T2 reads uncommitted value
-SELECT balance FROM account WHERE id = 1; -- reads 700
+-- T2 reads temporary value
+SELECT balance FROM account WHERE id = 1;
 
--- T1 fails
 ROLLBACK;
 \`;`,
-    python: `example = """
+    },
+
+    locking: {
+      javascript: `const example = \`
 -- T1
 BEGIN TRANSACTION;
-UPDATE account SET balance = 700 WHERE id = 1;
+SELECT * FROM account
+WHERE id = 1 FOR UPDATE;
 
--- T2 reads uncommitted value
-SELECT balance FROM account WHERE id = 1; -- reads 700
+-- T2 waits
 
--- T1 fails
-ROLLBACK;
-"""`,
-    cpp: `string example =
-"-- T1\\n"
-"BEGIN TRANSACTION;\\n"
-"UPDATE account SET balance = 700 WHERE id = 1;\\n\\n"
-"-- T2 reads uncommitted value\\n"
-"SELECT balance FROM account WHERE id = 1;\\n\\n"
-"-- T1 fails\\n"
-"ROLLBACK;";`,
-    c: `char example[] =
-"-- T1\\nBEGIN TRANSACTION;\\nUPDATE account SET balance = 700 WHERE id = 1;\\n\\n"
-"-- T2 reads uncommitted value\\nSELECT balance FROM account WHERE id = 1;\\n\\n"
-"-- T1 fails\\nROLLBACK;";`,
-    java: `String example =
-"-- T1\\n" +
-"BEGIN TRANSACTION;\\n" +
-"UPDATE account SET balance = 700 WHERE id = 1;\\n\\n" +
-"-- T2 reads uncommitted value\\n" +
-"SELECT balance FROM account WHERE id = 1;\\n\\n" +
-"-- T1 fails\\n" +
-"ROLLBACK;";`
-  },
-  locking: {
-    javascript: `const example = \`
--- T1
-BEGIN TRANSACTION;
-SELECT * FROM account WHERE id = 1 FOR UPDATE;
+UPDATE account
+SET balance = 900
+WHERE id = 1;
 
--- T2
-BEGIN TRANSACTION;
--- waits because T1 holds the lock
-
--- T1 updates and commits
-UPDATE account SET balance = 900 WHERE id = 1;
-COMMIT;
-
--- T2 can continue now
-UPDATE account SET balance = 850 WHERE id = 1;
 COMMIT;
 \`;`,
-    python: `example = """
--- T1
-BEGIN TRANSACTION;
-SELECT * FROM account WHERE id = 1 FOR UPDATE;
-
--- T2
-BEGIN TRANSACTION;
--- waits because T1 holds the lock
-
--- T1 updates and commits
-UPDATE account SET balance = 900 WHERE id = 1;
-COMMIT;
-
--- T2 can continue now
-UPDATE account SET balance = 850 WHERE id = 1;
-COMMIT;
-"""`,
-    cpp: `string example =
-"-- T1\\n"
-"BEGIN TRANSACTION;\\n"
-"SELECT * FROM account WHERE id = 1 FOR UPDATE;\\n\\n"
-"-- T2\\n"
-"BEGIN TRANSACTION;\\n"
-"-- waits because T1 holds the lock\\n\\n"
-"-- T1 updates and commits\\n"
-"UPDATE account SET balance = 900 WHERE id = 1;\\n"
-"COMMIT;\\n\\n"
-"-- T2 can continue now\\n"
-"UPDATE account SET balance = 850 WHERE id = 1;\\n"
-"COMMIT;";`,
-    c: `char example[] =
-"-- T1\\nBEGIN TRANSACTION;\\nSELECT * FROM account WHERE id = 1 FOR UPDATE;\\n\\n"
-"-- T2\\nBEGIN TRANSACTION;\\n-- waits because T1 holds the lock\\n\\n"
-"-- T1 updates and commits\\nUPDATE account SET balance = 900 WHERE id = 1;\\nCOMMIT;\\n\\n"
-"-- T2 can continue now\\nUPDATE account SET balance = 850 WHERE id = 1;\\nCOMMIT;";`,
-    java: `String example =
-"-- T1\\n" +
-"BEGIN TRANSACTION;\\n" +
-"SELECT * FROM account WHERE id = 1 FOR UPDATE;\\n\\n" +
-"-- T2\\n" +
-"BEGIN TRANSACTION;\\n" +
-"-- waits because T1 holds the lock\\n\\n" +
-"-- T1 updates and commits\\n" +
-"UPDATE account SET balance = 900 WHERE id = 1;\\n" +
-"COMMIT;\\n\\n" +
-"-- T2 can continue now\\n" +
-"UPDATE account SET balance = 850 WHERE id = 1;\\n" +
-"COMMIT;";`
-  }
-};
+    },
+  };
 
 const initialRow = {
   item_id: "ACC-101",
-  item_name: "Shared Balance",
-  value: 1000
+  item_name:
+    "Shared Balance",
+  value: 1000,
 };
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms) =>
+  new Promise((resolve) =>
+    setTimeout(resolve, ms)
+  );
 
 export default function DBMSConcurrencyLab() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
 
-  const [demoType, setDemoType] = useState("lost-update");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const {
+    user,
+    loading,
+  } = useAuth();
 
-  const [message, setMessage] = useState("Concurrency Control lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useState(700);
-  const [stepHistory, setStepHistory] = useState([]);
+  const navigate =
+    useNavigate();
 
-  const [sharedRow, setSharedRow] = useState(initialRow);
-  const [transaction1State, setTransaction1State] = useState("Idle");
-  const [transaction2State, setTransaction2State] = useState("Idle");
-  const [transaction1Read, setTransaction1Read] = useState(null);
-  const [transaction2Read, setTransaction2Read] = useState(null);
-  const [lockHolder, setLockHolder] = useState("None");
-  const [currentStage, setCurrentStage] = useState("");
-  const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [anomalyText, setAnomalyText] = useState("");
+  const [
+    demoType,
+    setDemoType,
+  ] = useState(
+    "lost-update"
+  );
 
-  const quizQuestions = useMemo(() => concurrencyQuizQuestionsByType[demoType], [demoType]);
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizSaveStatus, setQuizSaveStatus] = useState("");
-  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState(
+    "overview"
+  );
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(concurrencyCodeTemplates["lost-update"].javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    message,
+    setMessage,
+  ] = useState(
+    "Concurrency Control lab initialized."
+  );
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  const [
+    isRunning,
+    setIsRunning,
+  ] = useState(false);
+
+  const [
+    animationSpeed,
+    setAnimationSpeed,
+  ] = useState(700);
+
+  const [
+    stepHistory,
+    setStepHistory,
+  ] = useState([]);
+
+  const [
+    sharedRow,
+    setSharedRow,
+  ] = useState(
+    initialRow
+  );
+
+  const [
+    transaction1State,
+    setTransaction1State,
+  ] = useState(
+    "Idle"
+  );
+
+  const [
+    transaction2State,
+    setTransaction2State,
+  ] = useState(
+    "Idle"
+  );
+
+  const [
+    transaction1Read,
+    setTransaction1Read,
+  ] = useState(null);
+
+  const [
+    transaction2Read,
+    setTransaction2Read,
+  ] = useState(null);
+
+  const [
+    lockHolder,
+    setLockHolder,
+  ] = useState("None");
+
+  const [
+    currentStage,
+    setCurrentStage,
+  ] = useState("");
+
+  const [
+    selectedTransaction,
+    setSelectedTransaction,
+  ] = useState(null);
+
+  const [
+    anomalyText,
+    setAnomalyText,
+  ] = useState("");
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus,
+  ] = useState({});
+
+  const [
+    selectedLanguage,
+    setSelectedLanguage,
+  ] = useState(
+    "javascript"
+  );
+
+  const [
+    code,
+    setCode,
+  ] = useState(
+    concurrencyCodeTemplates[
+      "lost-update"
+    ].javascript
+  );
+
+  const [
+    codeResult,
+    setCodeResult,
+  ] = useState("");
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "DBMS" &&
+              q.experiment ===
+                "Concurrency"
+          );
+
+        const modeQuestions =
+          filtered.filter(
+            (q) =>
+              (
+                q.topic ||
+                "lost-update"
+              ).toLowerCase() ===
+              demoType
+          );
+
+        setQuizQuestions(
+          modeQuestions
+        );
+
+        setQuizAnswers(
+          Array(
+            modeQuestions.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, [demoType]);
 
   useEffect(() => {
-    if (!loading && !user) navigate("/login");
-  }, [user, loading, navigate]);
+
+    fetchQuizQuestions();
+
+  }, [fetchQuizQuestions]);
 
   useEffect(() => {
+
+    if (
+      !loading &&
+      !user
+    ) {
+
+      navigate(
+        "/login"
+      );
+    }
+
+  }, [
+    user,
+    loading,
+    navigate,
+  ]);
+
+  useEffect(() => {
+
     setStepHistory([]);
-    setSharedRow(initialRow);
-    setTransaction1State("Idle");
-    setTransaction2State("Idle");
-    setTransaction1Read(null);
-    setTransaction2Read(null);
-    setLockHolder("None");
+
+    setSharedRow(
+      initialRow
+    );
+
+    setTransaction1State(
+      "Idle"
+    );
+
+    setTransaction2State(
+      "Idle"
+    );
+
+    setTransaction1Read(
+      null
+    );
+
+    setTransaction2Read(
+      null
+    );
+
+    setLockHolder(
+      "None"
+    );
+
     setCurrentStage("");
-    setSelectedTransaction(null);
+
+    setSelectedTransaction(
+      null
+    );
+
     setAnomalyText("");
-    setMessage("Concurrency Control lab initialized.");
-    setExperimentRun(false);
+
+    setMessage(
+      "Concurrency Control lab initialized."
+    );
+
+    setExperimentRun(
+      false
+    );
+
     setIsRunning(false);
-    setQuizAnswers(Array(concurrencyQuizQuestionsByType[demoType].length).fill(null));
-    setQuizSubmitted(false);
+
+    setQuizSubmitted(
+      false
+    );
+
     setQuizScore(0);
+
     setCodeResult("");
+
   }, [demoType]);
 
   useEffect(() => {
-    setCode(concurrencyCodeTemplates[demoType][selectedLanguage]);
+
+    setCode(
+      concurrencyCodeTemplates[
+        demoType
+      ][
+        selectedLanguage
+      ]
+    );
+
     setCodeResult("");
-  }, [demoType, selectedLanguage]);
 
-  const addStep = (text) => setStepHistory((prev) => [...prev, text]);
+  }, [
+    demoType,
+    selectedLanguage,
+  ]);
 
-  const runSimulation = async () => {
-    if (isRunning) return;
+  const addStep =
+    useCallback(
+      (text) => {
 
-    setIsRunning(true);
-    setExperimentRun(true);
-    setStepHistory([]);
-    setSharedRow(initialRow);
-    setTransaction1State("Started");
-    setTransaction2State("Started");
-    setTransaction1Read(null);
-    setTransaction2Read(null);
-    setLockHolder("None");
-    setCurrentStage("Simulation Start");
-    setSelectedTransaction(null);
-    setAnomalyText("");
+        setStepHistory(
+          (prev) => [
+            ...prev,
+            text,
+          ]
+        );
+      },
+      []
+    );
 
-    try {
-      if (demoType === "lost-update") {
-        setMessage("Starting Lost Update demo...");
-        addStep("Started Lost Update demo with two concurrent transactions.");
-        await sleep(animationSpeed);
+  const runSimulation =
+    async () => {
 
-        setSelectedTransaction("T1");
-        setCurrentStage("T1 Reads Value");
-        setTransaction1Read(initialRow.value);
-        setTransaction1State("Read");
-        setMessage("T1 reads the shared value 1000.");
-        addStep("T1 read value = 1000.");
-        await sleep(animationSpeed);
-
-        setSelectedTransaction("T2");
-        setCurrentStage("T2 Reads Same Value");
-        setTransaction2Read(initialRow.value);
-        setTransaction2State("Read");
-        setMessage("T2 also reads the same old value 1000.");
-        addStep("T2 also read value = 1000 before T1 committed its update.");
-        await sleep(animationSpeed);
-
-        setSelectedTransaction("T1");
-        setCurrentStage("T1 Updates");
-        setSharedRow((prev) => ({ ...prev, value: 900 }));
-        setTransaction1State("Committed");
-        setMessage("T1 updates value to 900 and commits.");
-        addStep("T1 wrote 900 and committed.");
-        await sleep(animationSpeed);
-
-        setSelectedTransaction("T2");
-        setCurrentStage("T2 Overwrites");
-        setSharedRow((prev) => ({ ...prev, value: 950 }));
-        setTransaction2State("Committed");
-        setAnomalyText("Lost Update: T2 overwrote T1's committed update using an old read value.");
-        setMessage("T2 writes 950 using stale data and overwrites T1's update.");
-        addStep("T2 wrote 950 using old value 1000. T1's update was lost.");
-        await sleep(animationSpeed);
+      if (isRunning) {
+        return;
       }
 
-      if (demoType === "dirty-read") {
-        setMessage("Starting Dirty Read demo...");
-        addStep("Started Dirty Read demo.");
-        await sleep(animationSpeed);
+      setIsRunning(true);
 
-        setSelectedTransaction("T1");
-        setCurrentStage("T1 Updates But Does Not Commit");
-        setSharedRow((prev) => ({ ...prev, value: 700 }));
-        setTransaction1State("Uncommitted Update");
-        setMessage("T1 updates the value to 700 but has not committed yet.");
-        addStep("T1 changed the value from 1000 to 700 but did not commit.");
-        await sleep(animationSpeed);
+      setExperimentRun(
+        true
+      );
 
-        setSelectedTransaction("T2");
-        setCurrentStage("T2 Reads Uncommitted Value");
-        setTransaction2Read(700);
-        setTransaction2State("Read Uncommitted");
-        setMessage("T2 reads 700 before T1 commits.");
-        addStep("T2 performed a dirty read and saw uncommitted value 700.");
-        await sleep(animationSpeed);
+      setStepHistory([]);
 
-        setSelectedTransaction("T1");
-        setCurrentStage("T1 Rolls Back");
-        setSharedRow(initialRow);
-        setTransaction1State("Rolled Back");
-        setAnomalyText("Dirty Read: T2 read a value that was never committed and was later rolled back.");
-        setMessage("T1 rolls back. Actual value returns to 1000.");
-        addStep("T1 rolled back. Value returned to 1000, so T2 had read invalid temporary data.");
-        await sleep(animationSpeed);
+      setSharedRow(
+        initialRow
+      );
 
-        setSelectedTransaction("T2");
-        setTransaction2State("Incorrect Read");
+      setTransaction1State(
+        "Started"
+      );
+
+      setTransaction2State(
+        "Started"
+      );
+
+      setCurrentStage(
+        "Simulation Start"
+      );
+
+      setSelectedTransaction(
+        null
+      );
+
+      setAnomalyText("");
+
+      try {
+
+        if (
+          demoType ===
+          "lost-update"
+        ) {
+
+          setMessage(
+            "Starting Lost Update demo..."
+          );
+
+          addStep(
+            "Started Lost Update demo."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T1"
+          );
+
+          setTransaction1Read(
+            1000
+          );
+
+          setTransaction1State(
+            "Read"
+          );
+
+          addStep(
+            "T1 reads balance 1000."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T2"
+          );
+
+          setTransaction2Read(
+            1000
+          );
+
+          setTransaction2State(
+            "Read"
+          );
+
+          addStep(
+            "T2 also reads old balance 1000."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T1"
+          );
+
+          setSharedRow(
+            (prev) => ({
+              ...prev,
+              value: 900,
+            })
+          );
+
+          setTransaction1State(
+            "Committed"
+          );
+
+          addStep(
+            "T1 updates value to 900."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T2"
+          );
+
+          setSharedRow(
+            (prev) => ({
+              ...prev,
+              value: 950,
+            })
+          );
+
+          setTransaction2State(
+            "Committed"
+          );
+
+          setAnomalyText(
+            "Lost Update detected because T2 overwrote T1."
+          );
+
+          addStep(
+            "T2 overwrote T1 using stale data."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        if (
+          demoType ===
+          "dirty-read"
+        ) {
+
+          setSelectedTransaction(
+            "T1"
+          );
+
+          setSharedRow(
+            (prev) => ({
+              ...prev,
+              value: 700,
+            })
+          );
+
+          setTransaction1State(
+            "Uncommitted"
+          );
+
+          addStep(
+            "T1 updated value to 700 without commit."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T2"
+          );
+
+          setTransaction2Read(
+            700
+          );
+
+          setTransaction2State(
+            "Dirty Read"
+          );
+
+          addStep(
+            "T2 read temporary uncommitted value."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T1"
+          );
+
+          setSharedRow(
+            initialRow
+          );
+
+          setTransaction1State(
+            "Rolled Back"
+          );
+
+          setAnomalyText(
+            "Dirty Read occurred because T2 used uncommitted data."
+          );
+
+          addStep(
+            "T1 rolled back. T2 had invalid data."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        if (
+          demoType ===
+          "locking"
+        ) {
+
+          setSelectedTransaction(
+            "T1"
+          );
+
+          setLockHolder(
+            "T1"
+          );
+
+          setTransaction1State(
+            "Holding Lock"
+          );
+
+          addStep(
+            "T1 acquired exclusive lock."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T2"
+          );
+
+          setTransaction2State(
+            "Waiting"
+          );
+
+          addStep(
+            "T2 waiting for lock."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T1"
+          );
+
+          setSharedRow(
+            (prev) => ({
+              ...prev,
+              value: 900,
+            })
+          );
+
+          setTransaction1State(
+            "Committed"
+          );
+
+          addStep(
+            "T1 committed changes."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setLockHolder(
+            "None"
+          );
+
+          addStep(
+            "Lock released."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSelectedTransaction(
+            "T2"
+          );
+
+          setLockHolder(
+            "T2"
+          );
+
+          setTransaction2State(
+            "Holding Lock"
+          );
+
+          setTransaction2Read(
+            900
+          );
+
+          addStep(
+            "T2 acquired lock safely."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setSharedRow(
+            (prev) => ({
+              ...prev,
+              value: 850,
+            })
+          );
+
+          setTransaction2State(
+            "Committed"
+          );
+
+          setLockHolder(
+            "None"
+          );
+
+          setAnomalyText(
+            "Locking prevented concurrency anomaly."
+          );
+
+          addStep(
+            "T2 updated safely."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        setCurrentStage(
+          "Complete"
+        );
+
+        addStep(
+          `${demoType.toUpperCase()} simulation completed.`
+        );
+
+      } finally {
+
+        setIsRunning(
+          false
+        );
+
+        setSelectedTransaction(
+          null
+        );
+      }
+    };
+
+  const loadSample =
+    () => {
+
+      if (isRunning) {
+        return;
       }
 
-      if (demoType === "locking") {
-        setMessage("Starting Locking demo...");
-        addStep("Started locking demo.");
-        await sleep(animationSpeed);
+      setSharedRow(
+        initialRow
+      );
 
-        setSelectedTransaction("T1");
-        setCurrentStage("T1 Acquires Lock");
-        setLockHolder("T1");
-        setTransaction1State("Holding Lock");
-        setMessage("T1 acquires the lock on the shared row.");
-        addStep("T1 acquired an exclusive lock on the shared row.");
-        await sleep(animationSpeed);
+      setTransaction1State(
+        "Ready"
+      );
 
-        setSelectedTransaction("T2");
-        setCurrentStage("T2 Waits");
-        setTransaction2State("Waiting");
-        setMessage("T2 tries to access the row but must wait because T1 holds the lock.");
-        addStep("T2 was blocked and waited for the lock to be released.");
-        await sleep(animationSpeed);
+      setTransaction2State(
+        "Ready"
+      );
 
-        setSelectedTransaction("T1");
-        setCurrentStage("T1 Updates And Commits");
-        setSharedRow((prev) => ({ ...prev, value: 900 }));
-        setTransaction1State("Committed");
-        setMessage("T1 updates the value to 900 and commits.");
-        addStep("T1 updated the row safely and committed.");
-        await sleep(animationSpeed);
+      setLockHolder(
+        "None"
+      );
 
-        setCurrentStage("Lock Released");
-        setLockHolder("None");
-        setMessage("T1 releases the lock.");
-        addStep("Lock released after T1 commit.");
-        await sleep(animationSpeed);
+      setCurrentStage(
+        "Sample Ready"
+      );
 
-        setSelectedTransaction("T2");
-        setCurrentStage("T2 Continues Safely");
-        setLockHolder("T2");
-        setTransaction2State("Holding Lock");
-        setTransaction2Read(900);
-        setMessage("T2 now acquires the lock and reads the latest value 900.");
-        addStep("T2 acquired the lock after T1 and read the latest committed value 900.");
-        await sleep(animationSpeed);
+      setSelectedTransaction(
+        null
+      );
 
-        setSharedRow((prev) => ({ ...prev, value: 850 }));
-        setTransaction2State("Committed");
-        setLockHolder("None");
-        setAnomalyText("Locking prevented unsafe concurrent access by forcing T2 to wait.");
-        setMessage("T2 updates safely to 850 and commits.");
-        addStep("T2 updated safely after waiting. Locking prevented concurrency anomaly.");
-        await sleep(animationSpeed);
-      }
+      setAnomalyText("");
 
-      setCurrentStage("Complete");
-      setMessage(`${demoType.toUpperCase()} simulation completed.`);
-      addStep(`${demoType.toUpperCase()} simulation completed successfully.`);
-    } finally {
-      setIsRunning(false);
-      setSelectedTransaction(null);
-    }
-  };
+      setStepHistory([
+        `Sample loaded for ${demoType.toUpperCase()} demo.`,
+      ]);
 
-  const loadSample = () => {
-    if (isRunning) return;
-
-    setSharedRow(initialRow);
-    setTransaction1State("Ready");
-    setTransaction2State("Ready");
-    setTransaction1Read(null);
-    setTransaction2Read(null);
-    setLockHolder("None");
-    setCurrentStage("Sample Ready");
-    setSelectedTransaction(null);
-    setAnomalyText("");
-    setStepHistory([`Sample loaded for ${demoType.toUpperCase()} demo.`]);
-    setMessage(`Sample loaded for ${demoType.toUpperCase()} demo.`);
-  };
+      setMessage(
+        `Sample loaded for ${demoType.toUpperCase()} demo.`
+      );
+    };
 
   const reset = () => {
-    if (isRunning) return;
 
-    setSharedRow(initialRow);
-    setTransaction1State("Idle");
-    setTransaction2State("Idle");
-    setTransaction1Read(null);
-    setTransaction2Read(null);
-    setLockHolder("None");
+    if (isRunning) {
+      return;
+    }
+
+    setSharedRow(
+      initialRow
+    );
+
+    setTransaction1State(
+      "Idle"
+    );
+
+    setTransaction2State(
+      "Idle"
+    );
+
+    setLockHolder(
+      "None"
+    );
+
     setCurrentStage("");
-    setSelectedTransaction(null);
+
+    setSelectedTransaction(
+      null
+    );
+
     setAnomalyText("");
+
     setStepHistory([]);
-    setMessage("Concurrency Control lab reset.");
-    setExperimentRun(false);
-  };
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
-    setQuizAnswers(updated);
-  };
+    setMessage(
+      "Concurrency Control lab reset."
+    );
 
-  const getExperimentSlug = () => "concurrency";
-
-const saveQuizResult = async (score, total) => {
-  try {
-    setQuizSaveStatus("Saving quiz result...");
-
-    const response = await fetch("http://localhost:5000/api/quiz-results", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        labSlug: "dbms",
-        experimentSlug: getExperimentSlug(),
-        correctAnswers: score,
-        totalQuestions: total,
-        scorePercentage: ((score / total) * 100).toFixed(2)
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to save quiz result");
-    }
-
-    setQuizSaveStatus("Quiz result saved to dashboard.");
-  } catch (error) {
-    console.error(error);
-    setQuizSaveStatus("Quiz submitted, but dashboard save failed.");
-  }
-};
-
-  const submitQuiz = async () => {
-  let score = 0;
-
-  quizQuestions.forEach((q, i) => {
-    if (quizAnswers[i] === q.correct) score++;
-  });
-
-  setQuizScore(score);
-  setQuizSubmitted(true);
-
-  const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-  scores.push({
-    subject: "DBMS",
-    experiment: "concurrency",
-    demoType,
-    correct: score,
-    total: quizQuestions.length,
-    time: Date.now()
-  });
-  localStorage.setItem("vlab_scores", JSON.stringify(scores));
-
-  await saveQuizResult(score, quizQuestions.length);
-};
-
-const redoQuiz = () => {
-  setQuizAnswers(Array(quizQuestions.length).fill(null));
-  setQuizSubmitted(false);
-  setQuizScore(0);
-  setQuizSaveStatus("");
-};
-
-
-const saveCodingSubmission = async ({
-  labSlug,
-  experimentSlug,
-  problemTitle,
-  language,
-  code,
-  result,
-  points
-}) => {
-  const response = await fetch("http://localhost:5000/api/coding-submissions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      labSlug,
-      experimentSlug,
-      problemTitle,
-      language,
-      code,
-      result,
-      points
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to save coding submission");
-  }
-
-  return response.json();
-};
-
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      );
-      return;
-    }
-
-    try {
-      // eslint-disable-next-line no-new-func
-      const fn = new Function(`${code}; return example;`);
-      const result = fn();
-      setCodeResult(`Output:\n${result}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
-  };
-
-  const analyzeCode = () => {
-    if (!code.trim()) {
-      setCodeResult("Analysis: Please write or load a concurrency example first.");
-      return;
-    }
-
-    if (demoType === "lost-update") {
-      setCodeResult(
-        "Analysis:\nThis example shows two transactions reading the same old value before either safely prevents overlap. That can cause one committed update to be overwritten by another stale write."
-      );
-      return;
-    }
-
-    if (demoType === "dirty-read") {
-      setCodeResult(
-        "Analysis:\nThis example shows T2 reading data that T1 has not committed yet. If T1 rolls back, T2 has used an invalid temporary value."
-      );
-      return;
-    }
-
-    setCodeResult(
-      "Analysis:\nThis example shows locking-based concurrency control. One transaction holds the lock while the other waits, preventing unsafe simultaneous access."
+    setExperimentRun(
+      false
     );
   };
 
-  const optimizeCode = () => {
-    if (demoType === "lost-update") {
-      setCodeResult(
-        "Optimization Suggestion:\nUse row-level locking, SELECT ... FOR UPDATE, or a stricter isolation level so concurrent transactions cannot overwrite each other's committed update."
-      );
-      return;
-    }
+  const handleQuizAnswer =
+    (i, v) => {
 
-    if (demoType === "dirty-read") {
-      setCodeResult(
-        "Optimization Suggestion:\nUse READ COMMITTED or stronger isolation so one transaction cannot read another transaction's uncommitted data."
-      );
-      return;
-    }
+      const updated = [
+        ...quizAnswers,
+      ];
 
-    setCodeResult(
-      "Optimization Suggestion:\nKeep lock duration short, commit quickly, and ensure waiting transactions proceed only after the lock holder releases the row."
-    );
-  };
+      updated[i] = v;
+
+      setQuizAnswers(
+        updated
+      );
+    };
+
+  const submitQuiz =
+    async () => {
+
+      let score = 0;
+
+      quizQuestions.forEach(
+        (q, i) => {
+
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(
+        true
+      );
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "concurrency",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
+        );
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
+        );
+      }
+    };
+
+  const redoQuiz =
+    () => {
+
+      setQuizAnswers(
+        Array(
+          quizQuestions.length
+        ).fill(null)
+      );
+
+      setQuizSubmitted(
+        false
+      );
+
+      setQuizScore(0);
+
+      setQuizSaveStatus(
+        ""
+      );
+    };
+
+  const runCode =
+    () => {
+
+      if (
+        selectedLanguage !==
+        "javascript"
+      ) {
+
+        setCodeResult(
+          `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet.`
+        );
+
+        return;
+      }
+
+      try {
+
+        const fn =
+          new Function(
+            `${code}; return example;`
+          );
+
+        const result =
+          fn();
+
+        setCodeResult(
+          `Output:\n${result}`
+        );
+
+      } catch (error) {
+
+        setCodeResult(
+          `Error: ${error.message}`
+        );
+      }
+    };
+
+  const analyzeCode =
+    () => {
+
+      setCodeResult(
+        "Analysis:\nThis transaction flow demonstrates concurrency anomalies and transaction isolation concepts."
+      );
+    };
+
+  const optimizeCode =
+    () => {
+
+      setCodeResult(
+        "Optimization Suggestion:\nUse row-level locking, proper isolation levels, and short transaction duration."
+      );
+    };
 
   const demoLabel =
-    demoType === "lost-update"
+    demoType ===
+    "lost-update"
       ? "Lost Update"
-      : demoType === "dirty-read"
+      : demoType ===
+        "dirty-read"
       ? "Dirty Read"
       : "Locking Demo";
 
-  const codingProblem = codingProblemByType[demoType];
+  const codingProblem =
+    codingProblemByType[
+      demoType
+    ];
 
   const progressPercent =
-    activeSection === "overview"
+    activeSection ===
+    "overview"
       ? 20
-      : activeSection === "simulation"
+      : activeSection ===
+        "simulation"
       ? 50
-      : activeSection === "comparison"
+      : activeSection ===
+        "comparison"
       ? 68
-      : activeSection === "quiz"
+      : activeSection ===
+        "quiz"
       ? 84
       : 95;
 
   if (loading) {
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
         Loading...
@@ -779,6 +1134,7 @@ const saveCodingSubmission = async ({
   }
 
   if (!user) {
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
         Please log in to access the lab.
@@ -790,15 +1146,15 @@ const saveCodingSubmission = async ({
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          </div>
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+  <SimuLabLogo
+    size={58}
+    showText={false}
+    variant="default"
+  />
+
+</div>
 
           {!sidebarCollapsed && (
             <div>

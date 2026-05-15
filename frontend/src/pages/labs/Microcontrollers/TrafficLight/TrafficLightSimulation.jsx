@@ -3,10 +3,8 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Activity,
   Timer,
-  TrafficCone,
-  Zap
+  TrafficCone
 } from "lucide-react";
 
 const STATE_ORDER = ["RED", "GREEN", "YELLOW"];
@@ -121,92 +119,72 @@ export default function TrafficLightSimulation({
   };
 
   return (
-    <section className="sorting-sim-card">
-      <div className="sorting-sim-header">
-        <div className="sorting-sim-title-wrap">
-          <div className="sorting-sim-icon">
-            <TrafficCone size={18} />
+    <div className="gpio-premium-shell font-sans w-full mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 w-full mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20">
+            <TrafficCone size={24} />
           </div>
           <div>
-            <h2 className="sorting-sim-title">Simulation</h2>
-            <p className="sorting-sim-subtitle">
+            <h2 className="text-xl font-bold text-white mb-1">Simulation</h2>
+            <p className="text-sm text-slate-400">
               Run the traffic signal controller and observe the finite-state sequence.
             </p>
           </div>
         </div>
-
-        <div className="hardware-board-badge">
-          <Zap size={16} />
-          {isRunning ? "Live Signal Flow" : "Controller Paused"}
-        </div>
       </div>
 
-      <div className="sorting-btn-group" style={{ marginBottom: 18 }}>
+      <div className="gpio-premium-controls mb-6">
         <button
           onClick={startSimulation}
-          className={`sim-btn ${isRunning ? "sim-btn-muted" : "sim-btn-primary"}`}
+          className={`gpio-premium-btn ${isRunning ? "bg-slate-800/50 border border-slate-700 text-slate-400" : "bg-emerald-500/20 text-emerald-400 border-emerald-500/50"}`}
         >
-          <Play size={16} />
+          <Play size={18} />
           Start
         </button>
 
-        <button onClick={pauseSimulation} className="sim-btn sim-btn-muted">
-          <Pause size={16} />
+        <button onClick={pauseSimulation} className="gpio-premium-btn bg-slate-800/50 border border-slate-700 text-slate-400">
+          <Pause size={18} />
           Pause
         </button>
 
-        <button onClick={reset} className="sim-btn sim-btn-muted">
-          <RotateCcw size={16} />
+        <button onClick={reset} className="gpio-premium-btn bg-slate-800/50 border border-slate-700 text-slate-400">
+          <RotateCcw size={18} />
           Reset
         </button>
       </div>
 
-      <div className="sorting-stats-grid">
-        <div className="sorting-stat-box">
-          <span className="sorting-stat-label">Current State</span>
-          <span
-            className="sorting-stat-value"
-            style={{ color: currentMeta.color, fontSize: "1rem" }}
-          >
+      <div className="gpio-premium-stat-grid mb-6">
+        <div className="gpio-premium-card">
+          <span className="card-title">CURRENT STATE</span>
+          <span className="card-value" style={{ color: currentMeta.color }}>
             {state}
           </span>
+          <span className="card-sub">Active Phase</span>
         </div>
 
-        <div className="sorting-stat-box">
-          <span className="sorting-stat-label">Time Left</span>
-          <span className="sorting-stat-value">{timer}s</span>
+        <div className="gpio-premium-card">
+          <span className="card-title">TIME LEFT</span>
+          <span className="card-value text-blue-400">{timer}s</span>
+          <span className="card-sub">Phase Duration</span>
         </div>
 
-        <div className="sorting-stat-box">
-          <span className="sorting-stat-label">Next State</span>
-          <span className="sorting-stat-value" style={{ fontSize: "1rem" }}>
+        <div className="gpio-premium-card">
+          <span className="card-title">NEXT STATE</span>
+          <span className="card-value text-slate-300">
             {currentMeta.next}
           </span>
+          <span className="card-sub">Upcoming Phase</span>
         </div>
 
-        <div className="sorting-stat-box">
-          <span className="sorting-stat-label">Completed Cycles</span>
-          <span className="sorting-stat-value">{cycle}</span>
+        <div className="gpio-premium-card">
+          <span className="card-title">COMPLETED CYCLES</span>
+          <span className="card-value text-amber-400">{cycle}</span>
+          <span className="card-sub">Total Rotations</span>
         </div>
       </div>
 
-      <div
-        className="hardware-board-shell"
-        style={{
-          background:
-            "radial-gradient(circle at 18% 24%, rgba(56,189,248,0.14), transparent 32%), linear-gradient(180deg, rgba(15,23,42,0.96), rgba(2,6,23,0.98))"
-        }}
-      >
-        <div className="hardware-board-header">
-          <h3 style={{ margin: 0, color: "#f8fafc" }}>
-            Traffic Signal Hardware View
-          </h3>
-
-          <div className="hardware-board-badge">
-            <Activity size={16} />
-            {isRunning ? "Running FSM" : "Paused FSM"}
-          </div>
-        </div>
+      <div>
 
         <div
           style={{
@@ -537,6 +515,6 @@ export default function TrafficLightSimulation({
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

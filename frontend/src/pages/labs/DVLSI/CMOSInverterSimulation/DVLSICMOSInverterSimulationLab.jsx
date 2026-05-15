@@ -12,6 +12,9 @@ import {
 
 import "../../../Lab.css";
 import "../../../SortingLab.css";
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import { saveQuizResult } from "../../../../API/progressApi";
 
 import DVLSICMOSInverterSimulationOverview from "./DVLSICMOSInverterSimulationOverview.jsx";
 import DVLSICMOSInverterSimulationSimulation from "./DVLSICMOSInverterSimulationSimulation.jsx";
@@ -20,7 +23,7 @@ import DVLSICMOSInverterSimulationGraphs from "./DVLSICMOSInverterSimulationGrap
 import DVLSICMOSInverterSimulationQuiz from "./DVLSICMOSInverterSimulationQuiz.jsx";
 import DVLSICMOSInverterSimulationCoding from "./DVLSICMOSInverterSimulationCoding.jsx";
 
-const simulabLogo = "/assets/logo.png";
+
 
 const sidebarItems = [
   { key: "overview", label: "Overview", icon: BookOpen },
@@ -51,6 +54,51 @@ export default function DVLSICMOSInverterSimulationLab() {
   const [tpd, setTpd] = useState(2);
   const [loadCap, setLoadCap] = useState(10);
   const [experimentRun, setExperimentRun] = useState(false);
+
+  const quizQuestions = [
+  {
+    q: "When Vin is LOW, the CMOS inverter output is usually:",
+    options: ["LOW", "HIGH", "Floating", "Undefined"],
+    correct: 1
+  },
+  {
+    q: "When Vin is HIGH, which transistor mainly conducts?",
+    options: ["pMOS", "nMOS", "Both always OFF", "Both always ON"],
+    correct: 1
+  },
+  {
+    q: "The switching region is important because:",
+    options: [
+      "Nothing changes there",
+      "Both devices may conduct and output transitions rapidly",
+      "Only pMOS exists there",
+      "Only layout is affected"
+    ],
+    correct: 1
+  },
+  {
+    q: "A CMOS inverter ideally produces:",
+    options: ["Same logic as input", "Complement of input", "Analog sine wave", "Always zero"],
+    correct: 1
+  },
+  {
+    q: "Propagation delay is mainly associated with:",
+    options: [
+      "Output response time after input switching",
+      "Only DC current",
+      "Gate color",
+      "Substrate connection only"
+    ],
+    correct: 0
+  }
+];
+
+const [quizAnswers, setQuizAnswers] = useState(
+  Array(quizQuestions.length).fill(null)
+);
+const [quizSubmitted, setQuizSubmitted] = useState(false);
+const [quizScore, setQuizScore] = useState(0);
+const [quizSaveStatus, setQuizSaveStatus] = useState("");
 
   const analysis = useMemo(() => {
     const VDD = Math.max(0.1, Number(vdd));
@@ -168,6 +216,45 @@ export default function DVLSICMOSInverterSimulationLab() {
   const inputLogic = vin < vdd / 2 ? "0" : "1";
   const outputLogic = analysis.vout > vdd / 2 ? "1" : "0";
 
+  const handleQuizAnswer = (index, value) => {
+  const updated = [...quizAnswers];
+  updated[index] = value;
+  setQuizAnswers(updated);
+};
+
+const submitQuiz = async () => {
+  let total = 0;
+
+  quizQuestions.forEach((question, index) => {
+    if (quizAnswers[index] === question.correct) total++;
+  });
+
+  setQuizScore(total);
+  setQuizSubmitted(true);
+  setQuizSaveStatus("Saving quiz result...");
+
+  try {
+    await saveQuizResult({
+      labSlug: "dvlsi",
+      experimentSlug: "cmos-inverter-simulation",
+      correctAnswers: total,
+      totalQuestions: quizQuestions.length
+    });
+
+    setQuizSaveStatus("Quiz result saved to dashboard.");
+  } catch (error) {
+    console.error("CMOS quiz save failed:", error);
+    setQuizSaveStatus("Quiz submitted, but backend save failed.");
+  }
+};
+
+const redoQuiz = () => {
+  setQuizAnswers(Array(quizQuestions.length).fill(null));
+  setQuizSubmitted(false);
+  setQuizScore(0);
+  setQuizSaveStatus("");
+};
+
   const progressPercent =
     activeSection === "overview"
       ? 18
@@ -185,15 +272,9 @@ export default function DVLSICMOSInverterSimulationLab() {
     <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          </div>
+          <div className="er-brand-logo simulab-sidebar-logo">
+  <SimuLabLogo size={58} showText={false} variant="default" />
+</div>
 
           {!sidebarCollapsed && (
             <div>
@@ -304,6 +385,16 @@ export default function DVLSICMOSInverterSimulationLab() {
               {experimentRun ? "Simulation Run" : "Not Started"}
             </button>
           </div>
+          <div style={{ marginTop: 18 }}>
+  <MarkCompleteButton
+    labSlug="dvlsi"
+    experimentSlug="cmos-inverter-simulation"
+    points={10}
+    onComplete={() => {
+      window.dispatchEvent(new Event("progress-updated"));
+    }}
+  />
+</div>
         </section>
 
         <div className="er-content-layout">
@@ -312,20 +403,20 @@ export default function DVLSICMOSInverterSimulationLab() {
 
             {activeSection === "simulation" && (
               <DVLSICMOSInverterSimulationSimulation
-                vin={vin}
-                setVin={setVin}
-                vdd={vdd}
-                setVdd={setVdd}
-                switchPoint={switchPoint}
-                setSwitchPoint={setSwitchPoint}
-                tpd={tpd}
-                setTpd={setTpd}
-                loadCap={loadCap}
-                setLoadCap={setLoadCap}
-                analysis={analysis}
-                formatNumber={formatNumber}
-                setExperimentRun={setExperimentRun}
-              />
+  vin={vin}
+  setVin={setVin}
+  vdd={vdd}
+  setVdd={setVdd}
+  switchPoint={switchPoint}
+  setSwitchPoint={setSwitchPoint}
+  tpd={tpd}
+  setTpd={setTpd}
+  loadCap={loadCap}
+  setLoadCap={setLoadCap}
+  analysis={analysis}
+  formatNumber={formatNumber}
+  setExperimentRun={setExperimentRun}
+/>
             )}
 
             {activeSection === "circuits" && (
@@ -348,10 +439,29 @@ export default function DVLSICMOSInverterSimulationLab() {
             )}
 
             {activeSection === "quiz" && (
-              <DVLSICMOSInverterSimulationQuiz experimentRun={experimentRun} />
-            )}
+  <DVLSICMOSInverterSimulationQuiz
+    experimentRun={experimentRun}
+    questions={quizQuestions}
+    answers={quizAnswers}
+    submitted={quizSubmitted}
+    score={quizScore}
+    quizSaveStatus={quizSaveStatus}
+    handleAnswer={handleQuizAnswer}
+    submitQuiz={submitQuiz}
+    redoQuiz={redoQuiz}
+  />
+)}
 
-            {activeSection === "coding" && <DVLSICMOSInverterSimulationCoding />}
+            {activeSection === "coding" && (
+  <DVLSICMOSInverterSimulationCoding
+    analysis={analysis}
+    vin={vin}
+    vdd={vdd}
+    switchPoint={switchPoint}
+    tpd={tpd}
+    loadCap={loadCap}
+  />
+)}
           </section>
         </div>
       </main>

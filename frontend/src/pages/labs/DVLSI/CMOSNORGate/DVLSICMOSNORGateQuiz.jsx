@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Brain, Lock, Trophy, RotateCcw } from "lucide-react";
 
 const questions = [
   {
@@ -46,9 +47,11 @@ export default function DVLSICMOSNORQuiz({ experimentRun }) {
 
   const submitQuiz = () => {
     let total = 0;
+
     questions.forEach((q, i) => {
       if (answers[i] === q.correct) total++;
     });
+
     setScore(total);
     setSubmitted(true);
   };
@@ -59,67 +62,130 @@ export default function DVLSICMOSNORQuiz({ experimentRun }) {
     setScore(0);
   };
 
+  const total = questions.length;
+  const percentage = total ? Math.round((score / total) * 100) : 0;
+
   return (
-    <section className="card">
-      <h2>Quiz</h2>
+    <section className="quiz-shell">
+      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div className="sorting-sim-icon">
+          <Brain size={18} />
+        </div>
+
+        <div>
+          <h2 className="sorting-sim-title">Quiz</h2>
+
+          <p className="sorting-sim-subtitle">
+            Test your understanding of CMOS NOR logic behavior, transistor
+            conduction paths, pull-up and pull-down networks, and output states.
+          </p>
+        </div>
+      </div>
 
       {!experimentRun ? (
-        <p>Please interact with the CMOS NOR simulation before attempting the quiz.</p>
-      ) : (
-        <div>
-          {questions.map((q, i) => (
-            <div key={i} className="quiz-question">
-              <p>
-                <strong>
-                  {i + 1}. {q.q}
-                </strong>
-              </p>
+        <div className="quiz-locked-box">
+          <Lock size={18} />
 
-              {q.options.map((opt, j) => (
-                <label
-                  key={j}
-                  className={`quiz-option ${
-                    submitted
-                      ? j === q.correct
-                        ? "correct"
-                        : answers[i] === j
-                        ? "wrong"
-                        : ""
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q${i}`}
-                    value={j}
-                    checked={answers[i] === j}
-                    onChange={() => handleAnswer(i, j)}
-                    disabled={submitted}
-                  />
-                  {opt}
-                </label>
-              ))}
+          <span>
+            Please interact with the CMOS NOR simulation before attempting the
+            quiz.
+          </span>
+        </div>
+      ) : !submitted ? (
+        <div className="quiz-list">
+          {questions.map((q, i) => (
+            <div key={i} className="quiz-card-upgraded">
+              <div className="quiz-question-title">
+                {i + 1}. {q.q}
+              </div>
+
+              <div className="quiz-options-grid">
+                {q.options.map((opt, j) => (
+                  <label
+                    key={j}
+                    className={`quiz-option-card ${
+                      answers[i] === j ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q${i}`}
+                      checked={answers[i] === j}
+                      onChange={() => handleAnswer(i, j)}
+                    />
+
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
 
-          {!submitted ? (
+          <div className="quiz-actions-row">
             <button
-              className="btn primary"
+              className="sim-btn sim-btn-primary"
               onClick={submitQuiz}
               disabled={answers.includes(null)}
             >
               Submit Quiz
             </button>
-          ) : (
+          </div>
+        </div>
+      ) : (
+        <div className="quiz-result-shell">
+          <div className="quiz-score-box">
+            <Trophy size={22} />
+
             <div>
+              <h3>Quiz Completed</h3>
+
               <p>
-                Score: {score} / {questions.length}
+                Score: <strong>{score} / {total}</strong> ({percentage}%)
               </p>
-              <button className="btn secondary" onClick={redoQuiz}>
-                Redo Quiz
-              </button>
             </div>
-          )}
+          </div>
+
+          <div className="quiz-list">
+            {questions.map((q, i) => (
+              <div key={i} className="quiz-card-upgraded">
+                <div className="quiz-question-title">
+                  {i + 1}. {q.q}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect = j === q.correct;
+                    const isWrong = answers[i] === j && j !== q.correct;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect
+                            ? "correct"
+                            : isWrong
+                            ? "wrong"
+                            : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="quiz-actions-row">
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={redoQuiz}
+            >
+              <RotateCcw size={16} />
+              Retry Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>

@@ -1,57 +1,250 @@
 import React from "react";
 
+import {
+  Database,
+  Cpu,
+  Workflow,
+  MemoryStick,
+  ShieldCheck,
+  Layers3
+} from "lucide-react";
+
 export default function DVLSISRAMCellOverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To understand the basic operation of an SRAM cell and study how it stores,
-          holds, reads, and writes binary data using cross-coupled inverters and access transistors.
-        </p>
+    <div className="overview-shell">
+      <section className="hero-overview-card">
+        <div className="hero-overview-content">
+          <div className="hero-badge">
+            SRAM MEMORY
+          </div>
+
+          <h1>
+            SRAM Cell Basics
+          </h1>
+
+          <p>
+            Explore how a
+            6-transistor SRAM
+            cell stores,
+            preserves, reads,
+            and writes binary
+            information using
+            cross-coupled
+            inverter feedback.
+          </p>
+        </div>
       </section>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          A basic SRAM cell is typically formed using two cross-coupled inverters, which create
-          a bistable circuit capable of storing one bit of data.
-        </p>
-        <p>
-          Two access transistors connect the internal storage nodes to the bitline pair when the
-          wordline is activated. This allows the cell to be read from or written into.
-        </p>
-        <p>
-          Because the cross-coupled inverter pair has two stable states, the cell can store either
-          logic 0 or logic 1 as long as power is present.
-        </p>
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Database size={18} />
+
+            <h4>Aim</h4>
+          </div>
+
+          <p>
+            Study the working
+            principle of an
+            SRAM cell and
+            understand hold,
+            read, and write
+            operations.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+
+            <h4>
+              Core Structure
+            </h4>
+          </div>
+
+          <p>
+            Two
+            cross-coupled
+            CMOS inverters
+            form a bistable
+            memory element
+            capable of storing
+            one bit.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Workflow size={18} />
+
+            <h4>
+              Access Control
+            </h4>
+          </div>
+
+          <p>
+            Access
+            transistors
+            controlled by the
+            wordline connect
+            the internal nodes
+            to the bitline
+            pair.
+          </p>
+        </div>
+      </div>
+
+      <section className="theory-card">
+        <div className="theory-header">
+          <Layers3 size={20} />
+          <h2>
+            SRAM Cell Theory
+          </h2>
+        </div>
+
+        <div className="theory-content">
+          <p>
+            A standard 6T SRAM
+            cell contains two
+            CMOS inverters
+            connected back to
+            back. This creates
+            a regenerative
+            feedback loop with
+            two stable logic
+            states.
+          </p>
+
+          <p>
+            The stored value
+            appears at node Q,
+            while the opposite
+            value appears at
+            Q̅. As long as
+            power is applied,
+            the feedback loop
+            preserves the
+            stored bit.
+          </p>
+
+          <p>
+            During write
+            operations, the
+            bitline pair forces
+            a new logic state
+            into the cell.
+            During read
+            operations, the
+            stored value is
+            sensed through the
+            access transistors.
+          </p>
+        </div>
       </section>
 
-      <section className="card">
-        <h2>Key Concepts</h2>
-        <p><strong>Q and Q̅:</strong> complementary internal storage nodes.</p>
-        <p><strong>Wordline:</strong> enables access to the cell.</p>
-        <p><strong>Bitline and Bitline̅:</strong> used for reading and writing data.</p>
-        <p><strong>Hold State:</strong> cell preserves data when isolated.</p>
-      </section>
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <MemoryStick
+              size={18}
+            />
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Choose an operation: Hold, Read, or Write.</li>
-          <li>Set the wordline state.</li>
-          <li>Adjust bitline values for write operations.</li>
-          <li>Observe internal nodes Q and Q̅.</li>
-          <li>Study how the cross-coupled structure maintains or changes the stored value.</li>
-        </ol>
-      </section>
+            <h4>
+              Key Signals
+            </h4>
+          </div>
 
-      <section className="card">
-        <h2>Practical Insight</h2>
-        <p>
-          SRAM cells are widely used in cache memories and small high-speed memory arrays because
-          they provide fast access and do not need refresh like DRAM.
-        </p>
+          <ul className="overview-list">
+            <li>
+              Q and Q̅ are
+              complementary
+              storage nodes
+            </li>
+
+            <li>
+              Wordline enables
+              access
+              transistors
+            </li>
+
+            <li>
+              Bitlines carry
+              read/write data
+            </li>
+          </ul>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <ShieldCheck
+              size={18}
+            />
+
+            <h4>
+              Why SRAM?
+            </h4>
+          </div>
+
+          <ul className="overview-list">
+            <li>
+              Very fast memory
+              access
+            </li>
+
+            <li>
+              No refresh
+              operation needed
+            </li>
+
+            <li>
+              Widely used in
+              CPU cache memory
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <section className="theory-card">
+        <div className="theory-header">
+          <Workflow size={20} />
+          <h2>
+            Experiment
+            Procedure
+          </h2>
+        </div>
+
+        <div className="theory-content">
+          <ol className="overview-steps">
+            <li>
+              Select HOLD,
+              READ, or WRITE
+              mode.
+            </li>
+
+            <li>
+              Configure the
+              wordline signal.
+            </li>
+
+            <li>
+              Set bitline
+              values for write
+              operations.
+            </li>
+
+            <li>
+              Observe Q and Q̅
+              node behavior.
+            </li>
+
+            <li>
+              Analyze how the
+              SRAM cell
+              maintains stable
+              data storage.
+            </li>
+          </ol>
+        </div>
       </section>
     </div>
   );

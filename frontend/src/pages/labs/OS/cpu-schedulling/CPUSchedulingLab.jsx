@@ -1,449 +1,1033 @@
-import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
+/* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  Cpu,
+} from "lucide-react";
+
 import "../../../SortingLab.css";
+
 import CPUSchedulingOverview from "./CPUSchedulingOverview.jsx";
 import CPUSchedulingQuiz from "./CPUSchedulingQuiz.jsx";
 import CPUSchedulingCoding from "./CPUSchedulingCoding.jsx";
 import CPUSchedulingSimulation from "./CPUSchedullingSimulation.jsx";
 
-const cpuQuizQuestionsByAlgorithm = {
-  fcfs: [
-    {
-      question: "What does FCFS stand for?",
-      options: [
-        "Fastest Come Fastest Serve",
-        "First Come First Serve",
-        "First CPU First Schedule",
-        "Fixed Cycle Fair Sharing"
-      ],
-      correct: 1
-    },
-    {
-      question: "FCFS selects the next process based on:",
-      options: [
-        "Shortest burst time",
-        "Highest priority",
-        "Arrival order",
-        "Smallest process ID"
-      ],
-      correct: 2
-    },
-    {
-      question: "A common drawback of FCFS is:",
-      options: [
-        "Starvation of long jobs",
-        "Convoy effect",
-        "Needs time quantum",
-        "Cannot use arrival time"
-      ],
-      correct: 1
-    }
-  ],
-  sjf: [
-    {
-      question: "SJF selects the process with:",
-      options: [
-        "Highest priority",
-        "Shortest burst time",
-        "Earliest arrival only",
-        "Largest waiting time"
-      ],
-      correct: 1
-    },
-    {
-      question: "SJF usually minimizes:",
-      options: [
-        "Average waiting time",
-        "Number of processes",
-        "CPU frequency",
-        "Time quantum"
-      ],
-      correct: 0
-    },
-    {
-      question: "A drawback of SJF is:",
-      options: [
-        "Needs locking",
-        "Can cause starvation of long jobs",
-        "Cannot handle burst time",
-        "Always preemptive"
-      ],
-      correct: 1
-    }
-  ],
-  rr: [
-    {
-      question: "Round Robin mainly uses:",
-      options: [
-        "Priority number",
-        "Time quantum",
-        "Shortest burst first",
-        "Arrival order only"
-      ],
-      correct: 1
-    },
-    {
-      question: "Round Robin is best suited for:",
-      options: [
-        "Batch systems only",
-        "Interactive time-sharing systems",
-        "Disk scheduling",
-        "Deadlock handling"
-      ],
-      correct: 1
-    },
-    {
-      question: "If time quantum is too large, Round Robin behaves like:",
-      options: ["SJF", "Priority", "FCFS", "Paging"],
-      correct: 2
-    }
-  ],
-  priority: [
-    {
-      question: "Priority scheduling selects the process with:",
-      options: [
-        "Shortest burst time",
-        "Highest priority",
-        "Earliest completion time",
-        "Largest arrival time"
-      ],
-      correct: 1
-    },
-    {
-      question: "A common drawback of Priority scheduling is:",
-      options: [
-        "Convoy effect only",
-        "Starvation of low-priority processes",
-        "Needs disk arm",
-        "Cannot use CPU"
-      ],
-      correct: 1
-    },
-    {
-      question: "Priority scheduling in this lab is:",
-      options: [
-        "Preemptive",
-        "Non-preemptive",
-        "Random",
-        "Multi-core only"
-      ],
-      correct: 1
-    }
-  ]
-};
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
 
-const codingProblemByAlgorithm = {
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
+
+const sidebarItems = [
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
+
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
+];
+
+const algorithmMeta = {
   fcfs: {
-    title: "Implement FCFS Scheduling",
-    description:
-      "Write logic to schedule processes in the order they arrive and compute waiting time and turnaround time."
+    best: "O(n)",
+    average: "O(n)",
+    worst: "O(n)",
+    space: "O(1)",
+    type: "Non-Preemptive",
   },
+
   sjf: {
-    title: "Implement SJF Scheduling",
-    description:
-      "Write logic to choose the process with the shortest burst time among the available processes."
+    best: "O(n log n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    type: "Non-Preemptive",
   },
+
   rr: {
-    title: "Implement Round Robin Scheduling",
-    description:
-      "Write logic for Round Robin scheduling using a given time quantum."
+    best: "O(n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(n)",
+    type: "Preemptive",
   },
+
   priority: {
-    title: "Implement Priority Scheduling",
-    description:
-      "Write logic to schedule processes based on priority in non-preemptive mode."
-  }
+    best: "O(n log n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(1)",
+    type: "Non-Preemptive",
+  },
 };
 
-const cpuCodeTemplates = {
-  fcfs: {
-    javascript: `function fcfs(processes) {
-  let currentTime = 0;
+const algorithmNames = {
+  fcfs:
+    "First Come First Serve",
 
-  return processes.map((process) => {
-    const startTime = Math.max(currentTime, process.arrivalTime);
-    const waitingTime = startTime - process.arrivalTime;
-    const completionTime = startTime + process.burstTime;
-    const turnaroundTime = completionTime - process.arrivalTime;
+  sjf:
+    "Shortest Job First",
 
-    currentTime = completionTime;
+  rr:
+    "Round Robin",
 
-    return {
-      ...process,
-      startTime,
-      completionTime,
-      waitingTime,
-      turnaroundTime
-    };
-  });
-}`,
-    python: `def fcfs(processes):
-    current_time = 0
-    result = []
-
-    for process in processes:
-        start_time = max(current_time, process["arrivalTime"])
-        waiting_time = start_time - process["arrivalTime"]
-        completion_time = start_time + process["burstTime"]
-        turnaround_time = completion_time - process["arrivalTime"]
-
-        current_time = completion_time
-
-        updated = dict(process)
-        updated["startTime"] = start_time
-        updated["completionTime"] = completion_time
-        updated["waitingTime"] = waiting_time
-        updated["turnaroundTime"] = turnaround_time
-        result.append(updated)
-
-    return result`,
-    cpp: `// Implement FCFS scheduling by processing jobs in arrival order.`,
-    c: `/* Implement FCFS scheduling by processing jobs in arrival order. */`,
-    java: `// Implement FCFS scheduling by processing jobs in arrival order.`
-  },
-  sjf: {
-    javascript: `function sjf(processes) {
-  return "Implement non-preemptive SJF here";
-}`,
-    python: `def sjf(processes):
-    return "Implement non-preemptive SJF here"`,
-    cpp: `// Implement non-preemptive SJF scheduling.`,
-    c: `/* Implement non-preemptive SJF scheduling. */`,
-    java: `// Implement non-preemptive SJF scheduling.`
-  },
-  rr: {
-    javascript: `function roundRobin(processes, quantum) {
-  return "Implement Round Robin here";
-}`,
-    python: `def round_robin(processes, quantum):
-    return "Implement Round Robin here"`,
-    cpp: `// Implement Round Robin scheduling using a time quantum.`,
-    c: `/* Implement Round Robin scheduling using a time quantum. */`,
-    java: `// Implement Round Robin scheduling using a time quantum.`
-  },
-  priority: {
-    javascript: `function priorityScheduling(processes) {
-  return "Implement non-preemptive priority scheduling here";
-}`,
-    python: `def priority_scheduling(processes):
-    return "Implement non-preemptive priority scheduling here"`,
-    cpp: `// Implement non-preemptive priority scheduling.`,
-    c: `/* Implement non-preemptive priority scheduling. */`,
-    java: `// Implement non-preemptive priority scheduling.`
-  }
+  priority:
+    "Priority Scheduling",
 };
+
+const problemBank = [
+  {
+    id: 1,
+
+    algorithm: "fcfs",
+
+    title:
+      "Implement FCFS Scheduling",
+
+    problem_statement:
+      "Write logic to calculate waiting time and turnaround time using FCFS scheduling.",
+
+    sample_input:
+      "P1 AT=0 BT=4\nP2 AT=1 BT=3",
+
+    sample_output:
+      "WT: P1=0 P2=3\nTAT: P1=4 P2=6",
+  },
+
+  {
+    id: 2,
+
+    algorithm: "sjf",
+
+    title:
+      "Implement SJF Scheduling",
+
+    problem_statement:
+      "Write logic to execute processes using non-preemptive SJF scheduling.",
+
+    sample_input:
+      "P1 BT=6\nP2 BT=2\nP3 BT=4",
+
+    sample_output:
+      "Execution Order: P2 P3 P1",
+  },
+
+  {
+    id: 3,
+
+    algorithm: "rr",
+
+    title:
+      "Implement Round Robin Scheduling",
+
+    problem_statement:
+      "Write logic to execute processes using Round Robin scheduling.",
+
+    sample_input:
+      "Quantum=2\nP1 BT=5\nP2 BT=3",
+
+    sample_output:
+      "Execution: P1 P2 P1 P2 P1",
+  },
+
+  {
+    id: 4,
+
+    algorithm: "priority",
+
+    title:
+      "Implement Priority Scheduling",
+
+    problem_statement:
+      "Write logic to execute processes using Priority Scheduling.",
+
+    sample_input:
+      "P1 Priority=2\nP2 Priority=1",
+
+    sample_output:
+      "Execution Order: P2 P1",
+  },
+];
 
 export default function CPUSchedulingLab() {
-  const [algorithm, setAlgorithm] = useState("fcfs");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [message] = useState("CPU Scheduling lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
 
-  const quizQuestions = useMemo(
-    () => cpuQuizQuestionsByAlgorithm[algorithm],
-    [algorithm]
-  );
+  const [algorithm, setAlgorithm] =
+    useState("fcfs");
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("overview");
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(cpuCodeTemplates.fcfs.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  // =========================
+  // CODING STATES
+  // =========================
+
+  const [
+    currentProblems,
+    setCurrentProblems,
+  ] = useState([]);
+
+  const [
+    selectedLanguages,
+    setSelectedLanguages,
+  ] = useState({});
+
+  const [codes, setCodes] =
+    useState({});
+
+  const [results, setResults] =
+    useState({});
+
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus,
+  ] = useState({});
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "OS" &&
+              q.experiment ===
+                "CPU Scheduling"
+          );
+
+        const algorithmQuestions =
+          filtered.filter(
+            (q) =>
+              (
+                q.topic ||
+                "fcfs"
+              ).toLowerCase() ===
+              algorithm
+          );
+
+        setQuizQuestions(
+          algorithmQuestions
+        );
+
+        setQuizAnswers(
+          Array(
+            algorithmQuestions.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, [algorithm]);
 
   useEffect(() => {
-    setQuizAnswers(Array(cpuQuizQuestionsByAlgorithm[algorithm].length).fill(null));
-    setQuizSubmitted(false);
-    setQuizScore(0);
-    setCodeResult("");
-    setExperimentRun(false);
-  }, [algorithm]);
 
-  useEffect(() => {
-    setCode(cpuCodeTemplates[algorithm][selectedLanguage]);
-    setCodeResult("");
-  }, [algorithm, selectedLanguage]);
+    fetchQuizQuestions();
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
+  }, [fetchQuizQuestions]);
+
+  // =========================
+  // QUIZ FUNCTIONS
+  // =========================
+
+  const handleQuizAnswer = (
+    index,
+    value
+  ) => {
+
+    const updated = [
+      ...quizAnswers,
+    ];
+
+    updated[index] = value;
+
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
-    });
+  const submitQuiz =
+    async () => {
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
+      let score = 0;
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "OS",
-      experiment: `cpu-scheduling-${algorithm}`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+      quizQuestions.forEach(
+        (q, i) => {
+
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(true);
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "cpu-scheduling",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
+        );
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
+        );
+      }
+    };
+
+  const redoQuiz = () => {
+
+    setQuizSubmitted(false);
+
+    setQuizScore(0);
+
+    setQuizAnswers(
+      Array(
+        quizQuestions.length
+      ).fill(null)
+    );
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+  // =========================
+  // CODING FUNCTIONS
+  // =========================
+
+  const generateProblems =
+  () => {
+
+    const filtered =
+      problemBank.filter(
+        (p) =>
+          p.algorithm ===
+          algorithm
       );
+
+    setCurrentProblems(
+      filtered
+    );
+};
+
+  const handleLanguageChange =
+    (
+      problemId,
+      language
+    ) => {
+
+      setSelectedLanguages(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            language,
+        })
+      );
+    };
+
+  const handleCodeChange =
+    (
+      problemId,
+      language,
+      value
+    ) => {
+
+      const key = `${problemId}_${language}`;
+
+      setCodes((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    };
+
+  const runCode =
+  (
+    problemId,
+    language
+  ) => {
+
+    const key =
+      `${problemId}_${language}`;
+
+    const answer =
+      codes[key] || "";
+
+    if (!answer.trim()) {
+
+      setResults((prev) => ({
+        ...prev,
+
+        [problemId]: {
+          verdict:
+            "failed",
+
+          passedTests:
+            0,
+
+          totalTests:
+            1,
+
+          points:
+            0,
+        },
+      }));
+
       return;
     }
 
-    try {
-      let result;
+    const normalized =
+      answer
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
 
-      if (algorithm === "fcfs") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function("processes", `${code}; return fcfs(processes);`);
-        result = fn([
-          { pid: "P1", arrivalTime: 0, burstTime: 4 },
-          { pid: "P2", arrivalTime: 1, burstTime: 3 }
-        ]);
-      } else if (algorithm === "sjf") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function("processes", `${code}; return sjf(processes);`);
-        result = fn([
-          { pid: "P1", arrivalTime: 0, burstTime: 6 },
-          { pid: "P2", arrivalTime: 1, burstTime: 2 }
-        ]);
-      } else if (algorithm === "rr") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "processes",
-          "quantum",
-          `${code}; return roundRobin(processes, quantum);`
-        );
-        result = fn(
-          [
-            { pid: "P1", arrivalTime: 0, burstTime: 5 },
-            { pid: "P2", arrivalTime: 1, burstTime: 3 }
-          ],
-          2
-        );
-      } else {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "processes",
-          `${code}; return priorityScheduling(processes);`
-        );
-        result = fn([
-          { pid: "P1", arrivalTime: 0, burstTime: 4, priority: 2 },
-          { pid: "P2", arrivalTime: 1, burstTime: 3, priority: 1 }
-        ]);
-      }
+    let passed = false;
 
-      setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
+    if (
+      problemId === 1
+    ) {
+
+      passed =
+        normalized.includes(
+          "wt: p1=0 p2=3"
+        ) &&
+        normalized.includes(
+          "tat: p1=4 p2=6"
+        );
     }
-  };
 
-  const codingProblem = codingProblemByAlgorithm[algorithm];
+    else if (
+      problemId === 2
+    ) {
+
+      passed =
+        normalized.includes(
+          "p2 p3 p1"
+        );
+    }
+
+    else if (
+      problemId === 3
+    ) {
+
+      passed =
+        normalized.includes(
+          "p1 p2 p1 p2 p1"
+        );
+    }
+
+    setResults((prev) => ({
+      ...prev,
+
+      [problemId]: {
+        verdict:
+          passed
+            ? "passed"
+            : "failed",
+
+        passedTests:
+          passed
+            ? 1
+            : 0,
+
+        totalTests: 1,
+
+        points:
+          passed
+            ? 10
+            : 0,
+      },
+    }));
+
+    setCodingSaveStatus(
+      (prev) => ({
+        ...prev,
+
+        [problemId]:
+          passed
+            ? "Coding progress saved successfully."
+            : "Incorrect answer. Try again.",
+      })
+    );
+};
+  
+  const analyzeCode =
+    () => {
+
+      alert(
+        "AI Code Analysis Coming Soon"
+      );
+    };
+
+  const correctCode =
+    () => {
+
+      alert(
+        "AI Code Correction Coming Soon"
+      );
+    };
+
+  const progressPercent =
+    activeSection ===
+    "overview"
+      ? 20
+      : activeSection ===
+        "simulation"
+      ? 50
+      : activeSection ===
+        "quiz"
+      ? 75
+      : 95;
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – CPU Scheduling</h1>
+    <div className="er-shell">
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Scheduling Algorithm</h2>
+      <aside
+        className={`er-left-rail ${
+          sidebarCollapsed
+            ? "collapsed"
+            : ""
+        }`}
+      >
 
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
+        <div className="er-brand">
+
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+            <SimuLabLogo
+              size={58}
+              showText={false}
+              variant="default"
+            />
+
+          </div>
+
+          {!sidebarCollapsed && (
+
+            <div>
+
+              <div className="er-brand-title">
+                SimuLab
+              </div>
+
+              <div className="er-brand-subtitle">
+                OS Lab
+              </div>
+
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+
+          <button
+            type="button"
+            className={`er-collapse-btn ${
+              sidebarCollapsed
+                ? "collapsed"
+                : ""
+            }`}
+            onClick={() =>
+              setSidebarCollapsed(
+                (
+                  prev
+                ) => !prev
+              )
+            }
+          >
+
+            <ChevronsLeft
+              size={18}
+            />
+
+          </button>
+        </div>
+
+        <div className="er-nav">
+
+          {sidebarItems.map(
+            (item) => {
+
+              const Icon =
+                item.icon;
+
+              return (
+                <button
+                  key={
+                    item.key
+                  }
+                  className={`er-nav-item ${
+                    activeSection ===
+                    item.key
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setActiveSection(
+                      item.key
+                    )
+                  }
+                >
+
+                  <Icon
+                    size={18}
+                  />
+
+                  {!sidebarCollapsed && (
+                    <span>
+                      {
+                        item.label
+                      }
+                    </span>
+                  )}
+                </button>
+              );
+            }
+          )}
+        </div>
+
+        {!sidebarCollapsed && (
+
+          <div className="er-progress-card">
+
+            <div className="er-progress-title">
+              Your Progress
+            </div>
+
+            <div className="er-progress-ring">
+
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(
+                    #4da8ff ${progressPercent}%,
+                    rgba(255,255,255,0.08) ${progressPercent}% 100%
+                  )`,
+                }}
+              >
+
+                <div className="er-progress-inner">
+
+                  <div className="er-progress-value">
+                    {progressPercent}%
+                  </div>
+
+                  <div className="er-progress-text">
+                    Complete
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+
+        <div className="er-page-header">
+
           <div>
-            <select
-              value={algorithm}
-              onChange={(e) => setAlgorithm(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-            >
-              <option value="fcfs">FCFS</option>
-              <option value="sjf">SJF (Non-Preemptive)</option>
-              <option value="rr">Round Robin</option>
-              <option value="priority">Priority (Non-Preemptive)</option>
-            </select>
+
+            <h1 className="er-page-title">
+              {
+                algorithmNames[
+                  algorithm
+                ]
+              }
+            </h1>
+
+            <p className="er-page-subtitle">
+              Learn CPU Scheduling
+              algorithms visually
+              using interactive
+              simulations,
+              quizzes and coding
+              practice.
+            </p>
+
           </div>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="er-config-card">
+
+          <div className="er-config-top">
+
+            <div>
+
+              <h2>
+                Algorithm Configuration
+              </h2>
+
+              <p>
+                Configure and
+                simulate CPU
+                scheduling
+                algorithms.
+              </p>
+
+            </div>
+
+            <div className="er-mode-pill">
+
+              <div className="er-mode-pill-icon">
+
+                <Cpu
+                  size={18}
+                />
+
+              </div>
+
+              <div>
+
+                <strong>
+                  {
+                    algorithmNames[
+                      algorithm
+                    ]
+                  }
+                </strong>
+
+                <span>
+                  {
+                    algorithmMeta[
+                      algorithm
+                    ].type
+                  }
+                </span>
+
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+            }}
           >
-            Overview
-          </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <select
+              value={algorithm}
+              onChange={(e) =>
+                setAlgorithm(
+                  e.target.value
+                )
+              }
+              className="sorting-select"
+              style={{
+                maxWidth: 320,
+              }}
+            >
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+              <option value="fcfs">
+                FCFS
+              </option>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+              <option value="sjf">
+                SJF
+              </option>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <CPUSchedulingOverview algorithm={algorithm} message={message} />
+              <option value="rr">
+                Round Robin
+              </option>
+
+              <option value="priority">
+                Priority
+              </option>
+
+            </select>
+          </div>
+
+          <div className="er-chip-row">
+
+            <button className="er-chip active">
+              Best:
+              {" "}
+              {
+                algorithmMeta[
+                  algorithm
+                ].best
+              }
+            </button>
+
+            <button className="er-chip active">
+              Avg:
+              {" "}
+              {
+                algorithmMeta[
+                  algorithm
+                ].average
+              }
+            </button>
+
+            <button className="er-chip active">
+              Worst:
+              {" "}
+              {
+                algorithmMeta[
+                  algorithm
+                ].worst
+              }
+            </button>
+
+            <button className="er-chip active">
+              Space:
+              {" "}
+              {
+                algorithmMeta[
+                  algorithm
+                ].space
+              }
+            </button>
+
+            <button
+              className={`er-chip ${
+                experimentRun
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {experimentRun
+                ? "Experiment Run"
+                : "Not Started"}
+            </button>
+
+          </div>
+
+          {experimentRun && (
+
+            <div
+              style={{
+                marginTop: 18,
+              }}
+            >
+
+              <MarkCompleteButton
+                labSlug="os"
+                experimentSlug="cpu-scheduling"
+                points={10}
+              />
+
+            </div>
           )}
+        </section>
 
-          {activeSection === "simulation" && (
-            <CPUSchedulingSimulation
-              algorithm={algorithm}
-              setExperimentRun={setExperimentRun}
-            />
-          )}
+        <div className="er-content-layout">
 
-          {activeSection === "quiz" && (
-            <CPUSchedulingQuiz
-              algorithm={algorithm}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+          <section className="er-content-card">
 
-          {activeSection === "coding" && (
-            <CPUSchedulingCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              algorithm={algorithm}
-            />
-          )}
-        </main>
-      </div>
+            {activeSection ===
+              "overview" && (
+
+              <CPUSchedulingOverview
+                algorithm={
+                  algorithm
+                }
+              />
+            )}
+
+            {activeSection ===
+              "simulation" && (
+
+              <CPUSchedulingSimulation
+                algorithm={
+                  algorithm
+                }
+                setExperimentRun={
+                  setExperimentRun
+                }
+              />
+            )}
+
+            {activeSection ===
+              "quiz" && (
+
+              <CPUSchedulingQuiz
+                algorithm={
+                  algorithm
+                }
+                quizQuestions={
+                  quizQuestions
+                }
+                quizAnswers={
+                  quizAnswers
+                }
+                quizSubmitted={
+                  quizSubmitted
+                }
+                quizScore={
+                  quizScore
+                }
+                quizSaveStatus={
+                  quizSaveStatus
+                }
+                experimentRun={
+                  experimentRun
+                }
+                handleQuizAnswer={
+                  handleQuizAnswer
+                }
+                submitQuiz={
+                  submitQuiz
+                }
+                redoQuiz={
+                  redoQuiz
+                }
+              />
+            )}
+
+            {activeSection ===
+              "coding" && (
+
+              <CPUSchedulingCoding
+                currentProblems={
+                  currentProblems
+                }
+                selectedLanguages={
+                  selectedLanguages
+                }
+                codes={codes}
+                results={results}
+                codingSaveStatus={
+                  codingSaveStatus
+                }
+                generateProblems={
+                  generateProblems
+                }
+                handleLanguageChange={
+                  handleLanguageChange
+                }
+                handleCodeChange={
+                  handleCodeChange
+                }
+                runCode={
+                  runCode
+                }
+                analyzeCode={
+                  analyzeCode
+                }
+                correctCode={
+                  correctCode
+                }
+              />
+            )}
+
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import SimulabNavbar from "../components/SimulabNavbar";
+import { CheckCircle2 } from "lucide-react";
+import api from "../API/api";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 22 },
@@ -24,73 +26,136 @@ const fadeUp = {
 
 const categories = ["All", "GPIO", "Input", "Output", "Display", "Control", "Timing"];
 
+const experiments = [
+  {
+    name: "GPIO LED Control",
+    slug: "gpio-led",
+    path: "/labs/microcontroller/gpio-led",
+    desc: "Control an LED using a microcontroller GPIO pin and understand digital output behavior.",
+    icon: "💡",
+    color: "198 93% 60%",
+    category: "GPIO"
+  },
+
+  {
+    name: "Button Input",
+    slug: "button-input",
+    path: "/labs/microcontroller/button-input",
+    desc: "Read push button input and observe how digital HIGH and LOW signals affect output.",
+    icon: "🔘",
+    color: "160 84% 39%",
+    category: "Input"
+  },
+
+  {
+    name: "LED Blink",
+    slug: "led-blink",
+    path: "/labs/microcontroller/led-blink",
+    desc: "Understand delay-based LED blinking using basic microcontroller timing logic.",
+    icon: "✨",
+    color: "38 92% 50%",
+    category: "Timing"
+  },
+
+  {
+    name: "Traffic Light Controller",
+    slug: "traffic-light",
+    path: "/labs/microcontroller/traffic-light",
+    desc: "Simulate a traffic signal system using timed GPIO outputs.",
+    icon: "🚦",
+    color: "351 89% 60%",
+    category: "Control"
+  },
+
+  {
+    name: "7-Segment Display",
+    slug: "seven-segment",
+    path: "/labs/microcontroller/seven-segment",
+    desc: "Drive a 7-segment display using GPIO pins and binary digit patterns.",
+    icon: "🔢",
+    color: "262 83% 58%",
+    category: "Display"
+  },
+
+  {
+    name: "PWM LED Brightness",
+    slug: "pwm-led",
+    path: "/labs/microcontroller/pwm-led",
+    desc: "Control LED brightness using pulse width modulation and duty cycle concepts.",
+    icon: "🌗",
+    color: "270 91% 65%",
+    category: "Output"
+  }
+];
+
+
 export default function MicrocontrollerLabIndex() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
-
-  const experiments = [
-    {
-      name: "GPIO LED Control",
-      path: "/labs/microcontroller/gpio-led",
-      desc: "Control an LED using a microcontroller GPIO pin and understand digital output behavior.",
-      icon: "💡",
-      color: "198 93% 60%",
-      category: "GPIO"
-    },
-    {
-      name: "Button Input",
-      path: "/labs/microcontroller/button-input",
-      desc: "Read push button input and observe how digital HIGH and LOW signals affect output.",
-      icon: "🔘",
-      color: "160 84% 39%",
-      category: "Input"
-    },
-    {
-      name: "LED Blink",
-      path: "/labs/microcontroller/led-blink",
-      desc: "Understand delay-based LED blinking using basic microcontroller timing logic.",
-      icon: "✨",
-      color: "38 92% 50%",
-      category: "Timing"
-    },
-    {
-      name: "Traffic Light Controller",
-      path: "/labs/microcontroller/traffic-light",
-      desc: "Simulate a traffic signal system using timed GPIO outputs.",
-      icon: "🚦",
-      color: "351 89% 60%",
-      category: "Control"
-    },
-    {
-      name: "7-Segment Display",
-      path: "/labs/microcontroller/seven-segment",
-      desc: "Drive a 7-segment display using GPIO pins and binary digit patterns.",
-      icon: "🔢",
-      color: "262 83% 58%",
-      category: "Display"
-    },
-    {
-      name: "PWM LED Brightness",
-      path: "/labs/microcontroller/pwm-led",
-      desc: "Control LED brightness using pulse width modulation and duty cycle concepts.",
-      icon: "🌗",
-      color: "270 91% 65%",
-      category: "Output"
-    }
-  ];
+  const [completedExperiments, setCompletedExperiments] = useState([]);
 
   const filtered = useMemo(() => {
-    return experiments.filter((exp) => {
-      const matchCategory =
-        activeCategory === "All" || exp.category === activeCategory;
+  return experiments.filter((exp) => {
+    const matchCategory =
+      activeCategory === "All" ||
+      exp.category === activeCategory;
 
-      const matchSearch =
-        exp.name.toLowerCase().includes(search.toLowerCase()) ||
-        exp.desc.toLowerCase().includes(search.toLowerCase());
+    const matchSearch =
+      exp.name
+        .toLowerCase()
+        .includes(search.toLowerCase()) ||
+      exp.desc
+        .toLowerCase()
+        .includes(search.toLowerCase());
 
-      return matchCategory && matchSearch;
-    });
-  }, [search, activeCategory]);
+    return (
+      matchCategory &&
+      matchSearch
+    );
+  });
+}, [search, activeCategory]);
+
+
+  const fetchCompletedExperiments = async () => {
+  try {
+    const res = await api.get("/api/progress/me");
+
+    const completed = res.data.experiments
+      .filter((exp) => exp.status === "completed")
+      .map((exp) => exp.experimentSlug);
+
+    setCompletedExperiments(completed);
+  } catch (error) {
+    console.error(
+      "Failed to load experiment progress:",
+      error
+    );
+  }
+};
+
+useEffect(() => {
+  fetchCompletedExperiments();
+}, []);
+
+useEffect(() => {
+  const refresh = () =>
+    fetchCompletedExperiments();
+
+  window.addEventListener(
+    "progress-updated",
+    refresh
+  );
+
+  return () => {
+    window.removeEventListener(
+      "progress-updated",
+      refresh
+    );
+  };
+}, []);
+
+const isCompleted = (slug) =>
+  completedExperiments.includes(slug);
 
   return (
     <div className="min-h-screen bg-[#050b16] text-white relative overflow-hidden">
@@ -180,11 +245,29 @@ export default function MicrocontrollerLabIndex() {
                     {exp.desc}
                   </p>
 
-                  <Link to={exp.path}>
-                    <Button className="bg-gradient-to-r from-cyan-500 to-purple-500">
-                      Start Experiment <ArrowRight size={16} />
-                    </Button>
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-3">
+  <Link to={exp.path}>
+    <Button className="bg-gradient-to-r from-cyan-500 to-purple-500">
+      Start Experiment <ArrowRight size={16} />
+    </Button>
+  </Link>
+
+  <button
+    disabled
+    className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold transition-all duration-300 cursor-default border backdrop-blur-sm
+      ${
+        isCompleted(exp.slug)
+          ? "bg-green-500/15 border-green-400/40 text-green-300 shadow-lg shadow-green-500/10"
+          : "bg-white/5 border-white/10 text-muted-foreground"
+      }`}
+  >
+    <CheckCircle2 className="w-4 h-4" />
+
+    {isCompleted(exp.slug)
+      ? "Completed"
+      : "Not Completed"}
+  </button>
+</div>
                 </div>
               </motion.div>
             ))}

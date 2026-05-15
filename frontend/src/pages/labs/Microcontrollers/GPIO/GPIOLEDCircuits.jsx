@@ -14,7 +14,7 @@ export default function GPIOLEDCircuits({ pinMode, pinState, analysis }) {
           <div>
             <h2 className="sorting-sim-title">GPIO LED Circuit</h2>
             <p className="sorting-sim-subtitle">
-              Symbolic circuit showing how GPIO D13 drives an LED through a 220Ω resistor.
+              Standard schematic diagram showing how GPIO D13 drives an LED through a 220Ω resistor.
             </p>
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function GPIOLEDCircuits({ pinMode, pinState, analysis }) {
       <div className="dsd-circuit-panel">
         <div className="dsd-circuit-panel-head">
           <h3 style={{ margin: 0, color: "#f8fafc" }}>
-            Premium Symbolic GPIO Circuit
+            Standard Electronic Schematic
           </h3>
 
           <div className="dsd-circuit-badge">
@@ -124,6 +124,18 @@ export default function GPIOLEDCircuits({ pinMode, pinState, analysis }) {
               >
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e" />
               </marker>
+
+              <marker
+                id="arrowRed"
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#fca5a5" />
+              </marker>
             </defs>
 
             {/* Background grid */}
@@ -152,201 +164,126 @@ export default function GPIOLEDCircuits({ pinMode, pinState, analysis }) {
               ))}
             </g>
 
-            {/* MCU block */}
+            {/* MCU block (Schematic representation) */}
             <rect
-              x="95"
-              y="145"
-              width="250"
-              height="210"
-              rx="26"
-              fill="url(#mcuBlue)"
-              stroke="#38bdf8"
-              strokeWidth="3"
-              opacity="0.95"
+              x="50"
+              y="100"
+              width="180"
+              height="200"
+              rx="4"
+              fill="rgba(15, 23, 42, 0.5)"
+              stroke="#64748b"
+              strokeWidth="2"
+              strokeDasharray="10 5"
             />
-
-            <rect
-              x="128"
-              y="182"
-              width="52"
-              height="112"
-              rx="8"
-              fill="#020617"
-              stroke="rgba(148,163,184,0.45)"
-            />
-
-            {Array.from({ length: 9 }).map((_, i) => (
-              <line
-                key={i}
-                x1="138"
-                y1={195 + i * 10}
-                x2="170"
-                y2={195 + i * 10}
-                stroke="#1e293b"
-                strokeWidth="2"
-              />
+            <text x="140" y="150" textAnchor="middle" fill="#94a3b8" fontSize="20" fontWeight="bold" letterSpacing="2">ARDUINO UNO</text>
+            <text x="140" y="170" textAnchor="middle" fill="#64748b" fontSize="14">Microcontroller</text>
+            
+            {/* Unused Pins Left */}
+            {[
+              {y: 110, label: "RESET"}, {y: 125, label: "3.3V"}, {y: 140, label: "5V"}, 
+              {y: 155, label: "GND"}, {y: 170, label: "Vin"}, 
+              {y: 215, label: "A0"}, {y: 230, label: "A1"}, {y: 245, label: "A2"}, 
+              {y: 260, label: "A3"}, {y: 275, label: "A4"}, {y: 290, label: "A5"}
+            ].map(pin => (
+              <g key={`l-${pin.label}`}>
+                <line x1="30" y1={pin.y} x2="50" y2={pin.y} stroke="#475569" strokeWidth="2" />
+                <circle cx="30" cy={pin.y} r="2.5" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+                <text x="60" y={pin.y + 4} fill="#64748b" fontSize="10" fontWeight="bold">{pin.label}</text>
+              </g>
             ))}
 
-            <text
-              x="245"
-              y="215"
-              textAnchor="middle"
-              fill="#f8fafc"
-              fontSize="36"
-              fontWeight="900"
-            >
-              MCU
-            </text>
+            {/* Unused Pins Right */}
+            {[
+              {y: 110, label: "AREF"}, {y: 125, label: "GND"}, {y: 140, label: "D12"}, 
+              {y: 155, label: "D11"}, {y: 170, label: "D10"}, {y: 185, label: "D9"}, 
+              {y: 215, label: "D8"}, {y: 230, label: "D7"}, {y: 245, label: "D6"}, 
+              {y: 275, label: "D5"}, {y: 290, label: "D4"}
+            ].map(pin => (
+              <g key={`r-${pin.label}`}>
+                <line x1="230" y1={pin.y} x2="250" y2={pin.y} stroke="#475569" strokeWidth="2" />
+                <circle cx="250" cy={pin.y} r="2.5" fill="#1e293b" stroke="#475569" strokeWidth="1" />
+                <text x="220" y={pin.y + 4} fill="#64748b" fontSize="10" fontWeight="bold" textAnchor="end">{pin.label}</text>
+              </g>
+            ))}
+            
+            {/* D13 Pin */}
+            <line x1="230" y1="200" x2="270" y2="200" stroke="#38bdf8" strokeWidth="3" />
+            <circle cx="270" cy="200" r="4" fill="#38bdf8" />
+            <text x="220" y="204" fill="#38bdf8" fontSize="14" fontWeight="bold" textAnchor="end">D13</text>
+            <text x="260" y="180" fill="#cbd5e1" fontSize="12" fontStyle="italic">OUTPUT</text>
+            
+            {/* Ground Pin from MCU */}
+            <line x1="230" y1="260" x2="270" y2="260" stroke="#64748b" strokeWidth="3" />
+            <circle cx="270" cy="260" r="4" fill="#64748b" />
+            <text x="220" y="264" fill="#64748b" fontSize="14" fontWeight="bold" textAnchor="end">GND</text>
+            <line x1="270" y1="260" x2="270" y2="350" stroke="#64748b" strokeWidth="3" fill="none" />
+            <line x1="270" y1="350" x2="750" y2="350" stroke="#64748b" strokeWidth="3" fill="none" />
 
-            <text
-              x="245"
-              y="250"
-              textAnchor="middle"
-              fill="#7dd3fc"
-              fontSize="18"
-              fontWeight="800"
-            >
-              GPIO Controller
-            </text>
-
-            <circle
-              cx="310"
-              cy="170"
-              r="10"
-              fill={pinState ? "#22c55e" : "#ef4444"}
-              filter={pinState ? "url(#gpioGlowGreen)" : undefined}
-            />
-
-            {/* GPIO pin */}
-            <circle cx="345" cy="250" r="6" fill="#93c5fd" />
-            <text x="360" y="242" fill="#38bdf8" fontSize="18" fontWeight="800">
-              D13
-            </text>
-
-            {/* resistor */}
+            {/* Main Circuit Path */}
             <path
-              d="M 351 250 L 480 250"
+              d="M 270 200 L 370 200 M 470 200 L 600 200 M 640 200 L 750 200 L 750 350"
               stroke={isActive ? "#22c55e" : "#475569"}
-              strokeWidth="7"
-              strokeLinecap="round"
-              filter={isActive ? "url(#gpioGlowGreen)" : undefined}
-            />
-
-            <rect
-              x="480"
-              y="224"
-              width="130"
-              height="52"
-              rx="14"
-              fill="url(#resistorBody)"
-              stroke="#fbbf24"
-              strokeWidth="3"
-            />
-
-            <rect x="500" y="224" width="8" height="52" fill="#ef4444" />
-            <rect x="520" y="224" width="8" height="52" fill="#ef4444" />
-            <rect x="542" y="224" width="8" height="52" fill="#7c2d12" />
-            <rect x="570" y="224" width="8" height="52" fill="#facc15" />
-
-            <text
-              x="545"
-              y="257"
-              textAnchor="middle"
-              fill="#111827"
-              fontSize="18"
-              fontWeight="900"
-            >
-              220Ω
-            </text>
-
-            <path
-              d="M 610 250 L 730 250"
-              stroke={isActive ? "#22c55e" : "#475569"}
-              strokeWidth="7"
-              strokeLinecap="round"
-              filter={isActive ? "url(#gpioGlowGreen)" : undefined}
-            />
-
-            {/* LED */}
-            <circle
-              cx="775"
-              cy="250"
-              r="32"
-              fill={
-                isActive
-                  ? "rgba(239,68,68,0.95)"
-                  : "rgba(127,29,29,0.55)"
-              }
-              stroke={isActive ? "#fca5a5" : "#7f1d1d"}
               strokeWidth="4"
+              fill="none"
+              filter={isActive ? "url(#gpioGlowGreen)" : undefined}
+            />
+
+            {/* Current Animation (only when active) */}
+            {isActive && (
+              <g stroke="#fff" strokeWidth="4" fill="none" strokeDasharray="8 12">
+                <path d="M 270 200 L 370 200">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="0.5s" repeatCount="indefinite" />
+                </path>
+                <path d="M 470 200 L 600 200">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="0.5s" repeatCount="indefinite" />
+                </path>
+                <path d="M 640 200 L 750 200 L 750 350 L 270 350 L 270 260">
+                  <animate attributeName="stroke-dashoffset" from="20" to="0" dur="0.5s" repeatCount="indefinite" />
+                </path>
+              </g>
+            )}
+
+            {/* Resistor Schematic Symbol (ZigZag) */}
+            <path
+              d="M 370 200 L 386 180 L 403 220 L 420 180 L 436 220 L 453 180 L 470 200"
+              stroke={isActive ? "#fbbf24" : "#94a3b8"}
+              strokeWidth="4"
+              strokeLinejoin="miter"
+              fill="none"
               filter={isActive ? "url(#gpioGlowRed)" : undefined}
             />
+            <text x="420" y="245" textAnchor="middle" fill="#cbd5e1" fontSize="18" fontWeight="bold">R1</text>
+            <text x="420" y="265" textAnchor="middle" fill="#94a3b8" fontSize="14">220Ω</text>
 
-            <circle
-              cx="764"
-              cy="238"
-              r="9"
-              fill="rgba(255,255,255,0.38)"
-            />
+            {/* LED Schematic Symbol */}
+            <g transform="translate(600, 200)">
+              {/* Diode Triangle */}
+              <polygon points="0,-20 0,20 40,0" fill={isActive ? "rgba(239,68,68,0.85)" : "transparent"} stroke={isActive ? "#fca5a5" : "#94a3b8"} strokeWidth="3" filter={isActive ? "url(#gpioGlowRed)" : undefined} />
+              {/* Diode Line */}
+              <line x1="40" y1="-25" x2="40" y2="25" stroke={isActive ? "#fca5a5" : "#94a3b8"} strokeWidth="4" filter={isActive ? "url(#gpioGlowRed)" : undefined} />
+              <circle cx="0" cy="0" r="4" fill={isActive ? "#22c55e" : "#475569"} />
+              <circle cx="40" cy="0" r="4" fill={isActive ? "#22c55e" : "#475569"} />
+              
+              {/* Light emission arrows */}
+              {isActive && (
+                <g stroke="#fca5a5" strokeWidth="2.5" fill="none">
+                  <path d="M 15 -35 L 30 -50" markerEnd="url(#arrowRed)" />
+                  <path d="M 30 -30 L 45 -45" markerEnd="url(#arrowRed)" />
+                </g>
+              )}
+            </g>
+            <text x="620" y="245" textAnchor="middle" fill={isActive ? "#fca5a5" : "#cbd5e1"} fontSize="18" fontWeight="bold">LED1</text>
 
-            <text
-              x="775"
-              y="315"
-              textAnchor="middle"
-              fill={isActive ? "#fca5a5" : "#94a3b8"}
-              fontSize="22"
-              fontWeight="900"
-            >
-              LED {isActive ? "ON" : "OFF"}
-            </text>
-
-            {/* ground path */}
-            <path
-              d="M 775 282 L 775 360 L 245 360 L 245 355"
-              stroke={isActive ? "#64748b" : "#334155"}
-              strokeWidth="6"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            <line x1="735" y1="360" x2="815" y2="360" stroke="#94a3b8" strokeWidth="5" />
-            <line x1="745" y1="374" x2="805" y2="374" stroke="#94a3b8" strokeWidth="4" />
-            <line x1="758" y1="386" x2="792" y2="386" stroke="#94a3b8" strokeWidth="3" />
-
-            <text
-              x="835"
-              y="365"
-              fill="#cbd5e1"
-              fontSize="20"
-              fontWeight="800"
-            >
-              GND
-            </text>
-
-            {/* Active current arrows */}
-            {isActive && (
-              <>
-                <path
-                  d="M 372 225 C 420 190, 465 190, 515 220"
-                  stroke="#22c55e"
-                  strokeWidth="4"
-                  fill="none"
-                  strokeDasharray="8 8"
-                  markerEnd="url(#arrowGreen)"
-                  filter="url(#gpioGlowGreen)"
-                />
-                <path
-                  d="M 620 220 C 675 185, 735 190, 760 220"
-                  stroke="#22c55e"
-                  strokeWidth="4"
-                  fill="none"
-                  strokeDasharray="8 8"
-                  markerEnd="url(#arrowGreen)"
-                  filter="url(#gpioGlowGreen)"
-                />
-              </>
-            )}
+            {/* Ground Schematic Symbol */}
+            <g transform="translate(750, 350)">
+              <circle cx="0" cy="0" r="4" fill={isActive ? "#64748b" : "#475569"} />
+              <line x1="0" y1="0" x2="0" y2="20" stroke="#94a3b8" strokeWidth="4" />
+              <line x1="-25" y1="20" x2="25" y2="20" stroke="#94a3b8" strokeWidth="4" />
+              <line x1="-15" y1="30" x2="15" y2="30" stroke="#94a3b8" strokeWidth="4" />
+              <line x1="-5" y1="40" x2="5" y2="40" stroke="#94a3b8" strokeWidth="4" />
+            </g>
+            <text x="800" y="355" fill="#94a3b8" fontSize="16" fontWeight="bold">GND</text>
 
             {/* Status panel */}
             <rect

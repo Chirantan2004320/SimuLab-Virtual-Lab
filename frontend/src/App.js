@@ -25,6 +25,7 @@ import ProcessSynchronizationLab from "./pages/labs/OS/processsyncronization/Pro
 import DeadlockLab from "./pages/labs/OS/deadlock/DeadlockLab.jsx";
 import PageReplacementLab from "./pages/labs/OS/pagereplacement/PageReplacementLab.jsx";
 import DiskSchedulingLab from "./pages/labs/OS/diskscheduling/DiskSchedulingLab.jsx";
+import PagingLab from "./pages/labs/OS/memory-management/PagingLab.jsx";
 import DTSPLabIndex from "./pages/DTSPLabIndex.jsx";
 import DTSPDFTIDFT from "./pages/labs/DTSP/DFTIDFT/DTSPDFTIDFTLab.jsx";
 import DTSPDFTPropertiesLab from "./pages/labs/DTSP/DFTProperties/DTSPDFTPropertiesLab.jsx";
@@ -56,8 +57,8 @@ import DVLSICMOSNANDGateLab from "./pages/labs/DVLSI/CMOSNANDGate/DVLSICMOSNANDG
 import DVLSITransmissionGateLab from "./pages/labs/DVLSI/TransmissionGate/DVLSITransmissionGateLab.jsx";
 import DVLSIRingOscillatorLab from "./pages/labs/DVLSI/RingOscillator/DVLSIRingOscillatorLab.jsx";
 import DVLSISRAMCellLab from "./pages/labs/DVLSI/SRAMCell/DVLSISRAMCellLab.jsx";
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { useAuth } from './context/AuthContext';
+import { BrowserRouter as Router, Routes, Route, useLocation} from "react-router-dom";
+//import { useAuth } from './context/AuthContext';
 import MicrocontrollerLabIndex from "./pages/MicrocontrollerLabIndex.jsx";
 import GPIOLEDLab from "./pages/labs/Microcontrollers/GPIO/GPIOLEDLab.jsx";
 import ButtonInputLab from "./pages/labs/Microcontrollers/ButtonInput/ButtonInputLab.jsx";
@@ -65,6 +66,19 @@ import LEDBlinkLab from "./pages/labs/Microcontrollers/LEDBlink/LEDBlinkLab.jsx"
 import TrafficLightLab from "./pages/labs/Microcontrollers/TrafficLight/TrafficLightLab.jsx";
 import SevenSegmentLab from "./pages/labs/Microcontrollers/SevenSegment/SevenSegmentLab.jsx";
 import PWMLedLab from "./pages/labs/Microcontrollers/PWMLED/PWMLedLab.jsx";
+import AdminDashboard from "./pages/AdminDashboard";
+import FacultyDashboard from "./pages/FacultyDashboard";
+import StudentDashboard from "./pages/StudentDashboard.jsx";
+import FacultyStudents from "./pages/FacultyStudents.jsx";
+import FacultyQuizManager from "./pages/FacultyQuizManager.jsx";
+import FacultyCodingManager from "./pages/FacultyCodingManager.jsx";
+import FacultyNotices from "./pages/FacultyNotices.jsx";
+import FacultyEvaluation from "./pages/FacultyEvaluation.jsx";
+import StudentNotices from "./pages/StudentNotices.jsx";
+import StudentGrades from "./pages/StudentGrades.jsx";
+import StudentFeedback from "./pages/StudentFeedback.jsx";
+import StudentQuiz from "./pages/StudentQuiz.jsx";
+import StudentCoding from "./pages/StudentCoding.jsx";
 
 // Public Pages
 import Home from "./pages/Home.jsx";
@@ -72,21 +86,16 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register";
 import Labs from "./pages/Labs.jsx";
 import Profile from "./pages/Profile";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Protected Pages
-import Dashboard from "./pages/Dashboard.jsx";
+//import Dashboard from "./pages/Dashboard.jsx";
 
 
 // Lab Pages
 // ...existing code...
 
-const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
-
-  return user ? children : <Navigate to="/login" replace />;
-};
 
 function AppContent() {
   const location = useLocation();
@@ -130,8 +139,34 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         {/* 🔒 Protected Routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard instituteMode={instituteMode} /></ProtectedRoute>} />
+        <Route
+  path="/dashboard"
+  element={
+    <ProtectedRoute
+      allowedRoles={["student"]}
+    >
+      <StudentDashboard />
+    </ProtectedRoute>
+  }
+/>
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>}/>
+       <Route
+  path="/admin/dashboard"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <AdminDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/faculty/dashboard"
+  element={
+    <ProtectedRoute allowedRoles={["faculty", "admin"]}>
+      <FacultyDashboard />
+    </ProtectedRoute>
+  }
+/>
 
         {/* Stack Array Lab Route */}
         <Route path="/labs/stack" element={<ProtectedRoute><StackArray /></ProtectedRoute>} />
@@ -166,7 +201,7 @@ function AppContent() {
         <Route path="/labs/os/deadlock" element={<ProtectedRoute><DeadlockLab /></ProtectedRoute>} />
         <Route path="/labs/os/page-replacement" element={<ProtectedRoute><PageReplacementLab /></ProtectedRoute>} />
         <Route path="/labs/os/disk-scheduling" element={<ProtectedRoute><DiskSchedulingLab /></ProtectedRoute>} />
-
+        <Route path="/labs/os/memory-management" element={<ProtectedRoute><PagingLab /></ProtectedRoute>} />
 
         {/* DTSP Lab index and experiments (frontend-only for now) */}
         <Route path="/labs/dtsp" element={<ProtectedRoute><DTSPLabIndex /></ProtectedRoute>} />
@@ -214,6 +249,58 @@ function AppContent() {
           <Route path="/labs/microcontroller/traffic-light" element={<ProtectedRoute><TrafficLightLab /></ProtectedRoute>} />
           <Route path="/labs/microcontroller/seven-segment" element={<ProtectedRoute><SevenSegmentLab /></ProtectedRoute>} />
           <Route path="/labs/microcontroller/pwm-led" element={<ProtectedRoute><PWMLedLab /></ProtectedRoute>} />
+
+
+          <Route path="/faculty/students" element={<FacultyStudents />}/>
+          <Route path="/faculty/quizzes" element={<FacultyQuizManager />}/>
+          <Route path="/faculty/coding" element={<FacultyCodingManager />}/>
+          <Route path="/faculty/notices" element={<FacultyNotices />}/>
+          <Route path="/faculty/evaluation" element={<FacultyEvaluation />}/>
+
+          <Route
+  path="/student/notices"
+  element={
+    <ProtectedRoute allowedRoles={["student"]}>
+      <StudentNotices />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/student/grades"
+  element={
+    <ProtectedRoute allowedRoles={["student"]}>
+      <StudentGrades />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/student/feedback"
+  element={
+    <ProtectedRoute allowedRoles={["student"]}>
+      <StudentFeedback />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/student/quizzes"
+  element={
+    <ProtectedRoute allowedRoles={["student"]}>
+      <StudentQuiz />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/student/coding"
+  element={
+    <ProtectedRoute allowedRoles={["student"]}>
+      <StudentCoding />
+    </ProtectedRoute>
+  }
+/>
 
 
         {/* 🚫 Fallback Route (optional) */}

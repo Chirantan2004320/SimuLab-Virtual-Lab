@@ -1,352 +1,1001 @@
-import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
+/* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  ShieldAlert,
+} from "lucide-react";
+
 import "../../../SortingLab.css";
+
 import DeadlockOverview from "./DeadlockOverview.jsx";
 import DeadlockQuiz from "./DeadlockQuiz.jsx";
 import DeadlockCodingSafe from "./DeadlockCodingSafe.jsx";
 import DeadlockSimulation from "./DeadlockSimulation.jsx";
 
-const deadlockQuizQuestionsByMode = {
-  conditions: [
-    {
-      question: "Deadlock can occur only if:",
-      options: [
-        "At least one Coffman condition is absent",
-        "All necessary deadlock conditions hold",
-        "CPU scheduling fails",
-        "Page replacement is optimal"
-      ],
-      correct: 1
-    },
-    {
-      question: "Which of the following is one of the Coffman conditions?",
-      options: ["Shortest burst first", "Circular wait", "Time quantum", "Demand paging"],
-      correct: 1
-    },
-    {
-      question: "If circular wait is prevented, deadlock is:",
-      options: ["Guaranteed", "Still necessary", "Prevented", "Converted to starvation"],
-      correct: 2
-    }
-  ],
-  rag: [
-    {
-      question: "In a Resource Allocation Graph, processes are commonly shown as:",
-      options: ["Rectangles", "Circles", "Triangles", "Arrows"],
-      correct: 1
-    },
-    {
-      question: "A cycle in a Resource Allocation Graph may indicate:",
-      options: ["Deadlock", "Sorting error", "Page fault", "Cache miss"],
-      correct: 0
-    },
-    {
-      question: "An assignment edge in RAG means:",
-      options: [
-        "Process requests resource",
-        "Resource allocated to process",
-        "Process terminated",
-        "Resource deleted"
-      ],
-      correct: 1
-    }
-  ],
-  banker: [
-    {
-      question: "Banker’s Algorithm is used for:",
-      options: ["Deadlock avoidance", "CPU burst prediction", "Disk optimization", "Page replacement"],
-      correct: 0
-    },
-    {
-      question: "A system is in a safe state if:",
-      options: ["No process exists", "A safe sequence exists", "All resources are zero", "Only one process runs"],
-      correct: 1
-    },
-    {
-      question: "Need matrix is calculated as:",
-      options: ["Allocation - Max", "Max - Allocation", "Available - Max", "Available - Allocation"],
-      correct: 1
-    }
-  ]
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
+
+const sidebarItems = [
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
+
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
+];
+
+const modeMeta = {
+  conditions: {
+    best: "O(1)",
+    average: "O(n)",
+    worst: "O(n)",
+    space: "O(1)",
+    type: "Deadlock Detection",
+  },
+
+  rag: {
+    best: "O(V + E)",
+    average: "O(V²)",
+    worst: "O(V²)",
+    space: "O(V + E)",
+    type: "Graph Based",
+  },
+
+  banker: {
+    best: "O(n²)",
+    average: "O(n² × m)",
+    worst: "O(n² × m)",
+    space: "O(n × m)",
+    type: "Deadlock Avoidance",
+  },
 };
 
-const codingProblemByMode = {
-  conditions: {
-    title: "Check deadlock conditions",
-    description:
-      "Write logic to verify whether the necessary deadlock conditions are present in a system."
-  },
-  rag: {
-    title: "Represent a Resource Allocation Graph",
-    description:
-      "Write logic to model process-resource request and assignment relationships."
-  },
-  banker: {
-    title: "Implement Banker’s Algorithm",
-    description:
-      "Write logic to compute the Need matrix and determine whether a safe sequence exists."
-  }
+const modeNames = {
+  conditions:
+    "Deadlock Conditions",
+
+  rag:
+    "Resource Allocation Graph",
+
+  banker:
+    "Banker's Algorithm",
 };
 
-const deadlockCodeTemplates = {
-  conditions: {
-    javascript: `function canDeadlock(conditions) {
-  return (
-    conditions.mutualExclusion &&
-    conditions.holdAndWait &&
-    conditions.noPreemption &&
-    conditions.circularWait
-  );
-}`,
-    python: `def can_deadlock(conditions):
-    return (
-        conditions["mutualExclusion"] and
-        conditions["holdAndWait"] and
-        conditions["noPreemption"] and
-        conditions["circularWait"]
-    )`,
-    cpp: `// Check whether all deadlock conditions are present.`,
-    c: `/* Check whether all deadlock conditions are present. */`,
-    java: `// Check whether all deadlock conditions are present.`
+const problemBank = [
+  {
+    id: 1,
+
+    mode: "conditions",
+
+    title:
+      "Check Deadlock Conditions",
+
+    problem_statement:
+      "Write logic to verify whether all Coffman deadlock conditions are present.",
+
+    sample_input:
+      "mutualExclusion=true\nholdAndWait=true\nnoPreemption=true\ncircularWait=true",
+
+    sample_output:
+      "Deadlock Possible: true",
   },
-  rag: {
-    javascript: `function addRequestEdge(graph, process, resource) {
-  graph.requests.push({ process, resource });
-  return graph;
-}`,
-    python: `def add_request_edge(graph, process, resource):
-    graph["requests"].append({"process": process, "resource": resource})
-    return graph`,
-    cpp: `// Represent request and assignment edges in a resource allocation graph.`,
-    c: `/* Represent request and assignment edges in a resource allocation graph. */`,
-    java: `// Represent request and assignment edges in a resource allocation graph.`
+
+  {
+    id: 2,
+
+    mode: "rag",
+
+    title:
+      "Implement Resource Allocation Graph",
+
+    problem_statement:
+      "Write logic to model request and assignment edges in a resource allocation graph.",
+
+    sample_input:
+      "Process=P1\nResource=R1",
+
+    sample_output:
+      "Request Edge Added: P1 -> R1",
   },
-  banker: {
-    javascript: `function calculateNeed(max, allocation) {
-  return max.map((row, i) =>
-    row.map((value, j) => value - allocation[i][j])
-  );
-}`,
-    python: `def calculate_need(max_matrix, allocation_matrix):
-    need = []
-    for i in range(len(max_matrix)):
-        row = []
-        for j in range(len(max_matrix[i])):
-            row.append(max_matrix[i][j] - allocation_matrix[i][j])
-        need.append(row)
-    return need`,
-    cpp: `// Compute Need matrix as Max - Allocation.`,
-    c: `/* Compute Need matrix as Max - Allocation. */`,
-    java: `// Compute Need matrix as Max - Allocation.`
-  }
-};
+
+  {
+    id: 3,
+
+    mode: "banker",
+
+    title:
+      "Implement Banker's Algorithm",
+
+    problem_statement:
+      "Write logic to calculate Need matrix and determine safe sequence.",
+
+    sample_input:
+      "Max=[[7,5,3]]\nAllocation=[[0,1,0]]",
+
+    sample_output:
+      "Need=[[7,4,3]]",
+  },
+];
 
 export default function DeadlockLab() {
-  const [mode, setMode] = useState("conditions");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [message] = useState("Deadlock lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
 
-  const quizQuestions = useMemo(
-    () => deadlockQuizQuestionsByMode[mode] || deadlockQuizQuestionsByMode.conditions,
-    [mode]
-  );
+  const [mode, setMode] =
+    useState("conditions");
 
-  const codingProblem = useMemo(
-    () => codingProblemByMode[mode] || codingProblemByMode.conditions,
-    [mode]
-  );
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("overview");
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(deadlockCodeTemplates.conditions.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  // =========================
+  // CODING STATES
+  // =========================
+
+  const [
+    currentProblems,
+    setCurrentProblems,
+  ] = useState([]);
+
+  const [
+    selectedLanguages,
+    setSelectedLanguages,
+  ] = useState({});
+
+  const [codes, setCodes] =
+    useState({});
+
+  const [results, setResults] =
+    useState({});
+
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus,
+  ] = useState({});
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "OS" &&
+              q.experiment ===
+                "Deadlock"
+          );
+
+        const modeQuestions =
+          filtered.filter(
+            (q) =>
+              (
+                q.topic ||
+                "conditions"
+              ).toLowerCase() ===
+              mode
+          );
+
+        setQuizQuestions(
+          modeQuestions
+        );
+
+        setQuizAnswers(
+          Array(
+            modeQuestions.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, [mode]);
 
   useEffect(() => {
-    const currentQuestions =
-      deadlockQuizQuestionsByMode[mode] || deadlockQuizQuestionsByMode.conditions;
-    setQuizAnswers(Array(currentQuestions.length).fill(null));
-    setQuizSubmitted(false);
-    setQuizScore(0);
-    setCodeResult("");
-    setExperimentRun(false);
-  }, [mode]);
 
-  useEffect(() => {
-    const templateGroup = deadlockCodeTemplates[mode] || deadlockCodeTemplates.conditions;
-    setCode(templateGroup[selectedLanguage] || templateGroup.javascript);
-    setCodeResult("");
-  }, [mode, selectedLanguage]);
+    fetchQuizQuestions();
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
+  }, [fetchQuizQuestions]);
+
+  // =========================
+  // QUIZ FUNCTIONS
+  // =========================
+
+  const handleQuizAnswer = (
+    index,
+    value
+  ) => {
+
+    const updated = [
+      ...quizAnswers,
+    ];
+
+    updated[index] = value;
+
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
-    });
+  const submitQuiz =
+    async () => {
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
+      let score = 0;
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "OS",
-      experiment: `deadlock-${mode}`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
-  };
+      quizQuestions.forEach(
+        (q, i) => {
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+            score++;
+          }
+        }
       );
-      return;
-    }
 
-    try {
-      let result;
+      setQuizScore(score);
 
-      if (mode === "conditions") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function("conditions", `${code}; return canDeadlock(conditions);`);
-        result = fn({
-          mutualExclusion: true,
-          holdAndWait: true,
-          noPreemption: true,
-          circularWait: true
-        });
-      } else if (mode === "rag") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "graph",
-          "process",
-          "resource",
-          `${code}; return addRequestEdge(graph, process, resource);`
+      setQuizSubmitted(true);
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "deadlock",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
         );
-        result = fn({ requests: [], assignments: [] }, "P1", "R1");
-      } else {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function("max", "allocation", `${code}; return calculateNeed(max, allocation);`);
-        result = fn(
-          [
-            [7, 5, 3],
-            [3, 2, 2]
-          ],
-          [
-            [0, 1, 0],
-            [2, 0, 0]
-          ]
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
         );
       }
+    };
 
-      setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
+  const redoQuiz = () => {
+
+    setQuizSubmitted(false);
+
+    setQuizScore(0);
+
+    setQuizAnswers(
+      Array(
+        quizQuestions.length
+      ).fill(null)
+    );
   };
 
+  // =========================
+  // CODING FUNCTIONS
+  // =========================
+
+  const generateProblems =
+    () => {
+
+      const filtered =
+        problemBank.filter(
+          (p) =>
+            p.mode ===
+            mode
+        );
+
+      setCurrentProblems(
+        filtered
+      );
+    };
+
+  const handleLanguageChange =
+    (
+      problemId,
+      language
+    ) => {
+
+      setSelectedLanguages(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            language,
+        })
+      );
+    };
+
+  const handleCodeChange =
+    (
+      problemId,
+      language,
+      value
+    ) => {
+
+      const key =
+        `${problemId}_${language}`;
+
+      setCodes((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    };
+
+  const runCode =
+    (
+      problemId,
+      language
+    ) => {
+
+      const key =
+        `${problemId}_${language}`;
+
+      const answer =
+        codes[key] || "";
+
+      if (!answer.trim()) {
+
+        setResults((prev) => ({
+          ...prev,
+
+          [problemId]: {
+            verdict:
+              "failed",
+
+            passedTests:
+              0,
+
+            totalTests:
+              1,
+
+            points:
+              0,
+          },
+        }));
+
+        return;
+      }
+
+      const normalized =
+        answer
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+
+      let passed = false;
+
+      if (
+        problemId === 1
+      ) {
+
+        passed =
+          normalized.includes(
+            "deadlock possible"
+          ) ||
+          normalized.includes(
+            "circularwait"
+          );
+      }
+
+      else if (
+        problemId === 2
+      ) {
+
+        passed =
+          normalized.includes(
+            "p1"
+          ) &&
+          normalized.includes(
+            "r1"
+          );
+      }
+
+      else if (
+        problemId === 3
+      ) {
+
+        passed =
+          normalized.includes(
+            "need"
+          ) ||
+          normalized.includes(
+            "safe sequence"
+          );
+      }
+
+      setResults((prev) => ({
+        ...prev,
+
+        [problemId]: {
+          verdict:
+            passed
+              ? "passed"
+              : "failed",
+
+          passedTests:
+            passed
+              ? 1
+              : 0,
+
+          totalTests: 1,
+
+          points:
+            passed
+              ? 10
+              : 0,
+        },
+      }));
+
+      setCodingSaveStatus(
+        (prev) => ({
+          ...prev,
+
+          [problemId]:
+            passed
+              ? "Coding progress saved successfully."
+              : "Incorrect answer. Try again.",
+        })
+      );
+    };
+
+  const analyzeCode =
+    () => {
+
+      alert(
+        "AI Code Analysis Coming Soon"
+      );
+    };
+
+  const correctCode =
+    () => {
+
+      alert(
+        "AI Code Correction Coming Soon"
+      );
+    };
+
+  const progressPercent =
+    activeSection ===
+    "overview"
+      ? 20
+      : activeSection ===
+        "simulation"
+      ? 50
+      : activeSection ===
+        "quiz"
+      ? 75
+      : 95;
+
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Deadlock</h1>
+    <div className="er-shell">
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Deadlock Mode</h2>
+      <aside
+        className={`er-left-rail ${
+          sidebarCollapsed
+            ? "collapsed"
+            : ""
+        }`}
+      >
 
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
+        <div className="er-brand">
+
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+            <SimuLabLogo
+              size={58}
+              showText={false}
+              variant="default"
+            />
+
+          </div>
+
+          {!sidebarCollapsed && (
+
+            <div>
+
+              <div className="er-brand-title">
+                SimuLab
+              </div>
+
+              <div className="er-brand-subtitle">
+                OS Lab
+              </div>
+
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+
+          <button
+            type="button"
+            className={`er-collapse-btn ${
+              sidebarCollapsed
+                ? "collapsed"
+                : ""
+            }`}
+            onClick={() =>
+              setSidebarCollapsed(
+                (
+                  prev
+                ) => !prev
+              )
+            }
+          >
+
+            <ChevronsLeft
+              size={18}
+            />
+
+          </button>
+        </div>
+
+        <div className="er-nav">
+
+          {sidebarItems.map(
+            (item) => {
+
+              const Icon =
+                item.icon;
+
+              return (
+                <button
+                  key={
+                    item.key
+                  }
+                  className={`er-nav-item ${
+                    activeSection ===
+                    item.key
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setActiveSection(
+                      item.key
+                    )
+                  }
+                >
+
+                  <Icon
+                    size={18}
+                  />
+
+                  {!sidebarCollapsed && (
+                    <span>
+                      {
+                        item.label
+                      }
+                    </span>
+                  )}
+                </button>
+              );
+            }
+          )}
+        </div>
+
+        {!sidebarCollapsed && (
+
+          <div className="er-progress-card">
+
+            <div className="er-progress-title">
+              Your Progress
+            </div>
+
+            <div className="er-progress-ring">
+
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(
+                    #4da8ff ${progressPercent}%,
+                    rgba(255,255,255,0.08) ${progressPercent}% 100%
+                  )`,
+                }}
+              >
+
+                <div className="er-progress-inner">
+
+                  <div className="er-progress-value">
+                    {progressPercent}%
+                  </div>
+
+                  <div className="er-progress-text">
+                    Complete
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+
+        <div className="er-page-header">
+
           <div>
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-            >
-              <option value="conditions">Deadlock Conditions</option>
-              <option value="rag">Resource Allocation Graph</option>
-              <option value="banker">Banker&apos;s Algorithm</option>
-            </select>
+
+            <h1 className="er-page-title">
+              {
+                modeNames[
+                  mode
+                ]
+              }
+            </h1>
+
+            <p className="er-page-subtitle">
+              Learn Deadlock concepts
+              visually using
+              interactive
+              simulations,
+              quizzes and coding
+              practice.
+            </p>
+
           </div>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="er-config-card">
+
+          <div className="er-config-top">
+
+            <div>
+
+              <h2>
+                Deadlock Configuration
+              </h2>
+
+              <p>
+                Configure and
+                simulate deadlock
+                concepts visually.
+              </p>
+
+            </div>
+
+            <div className="er-mode-pill">
+
+              <div className="er-mode-pill-icon">
+
+                <ShieldAlert
+                  size={18}
+                />
+
+              </div>
+
+              <div>
+
+                <strong>
+                  {
+                    modeNames[
+                      mode
+                    ]
+                  }
+                </strong>
+
+                <span>
+                  {
+                    modeMeta[
+                      mode
+                    ].type
+                  }
+                </span>
+
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+            }}
           >
-            Overview
-          </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <select
+              value={mode}
+              onChange={(e) =>
+                setMode(
+                  e.target.value
+                )
+              }
+              className="sorting-select"
+              style={{
+                maxWidth: 320,
+              }}
+            >
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+              <option value="conditions">
+                Deadlock Conditions
+              </option>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+              <option value="rag">
+                Resource Allocation Graph
+              </option>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DeadlockOverview mode={mode} message={message} />
+              <option value="banker">
+                Banker's Algorithm
+              </option>
+
+            </select>
+          </div>
+
+          <div className="er-chip-row">
+
+            <button className="er-chip active">
+              Best:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].best
+              }
+            </button>
+
+            <button className="er-chip active">
+              Avg:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].average
+              }
+            </button>
+
+            <button className="er-chip active">
+              Worst:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].worst
+              }
+            </button>
+
+            <button className="er-chip active">
+              Space:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].space
+              }
+            </button>
+
+            <button
+              className={`er-chip ${
+                experimentRun
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {experimentRun
+                ? "Experiment Run"
+                : "Not Started"}
+            </button>
+
+          </div>
+
+          {experimentRun && (
+
+            <div
+              style={{
+                marginTop: 18,
+              }}
+            >
+
+              <MarkCompleteButton
+                labSlug="os"
+                experimentSlug="deadlock"
+                points={10}
+              />
+
+            </div>
           )}
+        </section>
 
-          {activeSection === "simulation" && (
-            <DeadlockSimulation mode={mode} setExperimentRun={setExperimentRun} />
-          )}
+        <div className="er-content-layout">
 
-          {activeSection === "quiz" && (
-            <DeadlockQuiz
-              mode={mode}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+          <section className="er-content-card">
 
-         {activeSection === "coding" && (
-  <DeadlockCodingSafe
-    codingProblem={codingProblem}
-    selectedLanguage={selectedLanguage}
-    setSelectedLanguage={setSelectedLanguage}
-    code={code}
-    setCode={setCode}
-    codeResult={codeResult}
-    runCode={runCode}
-    mode={mode}
-  />
- )}
-        </main>
-      </div>
+            {activeSection ===
+              "overview" && (
+
+              <DeadlockOverview
+                mode={mode}
+              />
+            )}
+
+            {activeSection ===
+              "simulation" && (
+
+              <DeadlockSimulation
+                mode={mode}
+                setExperimentRun={
+                  setExperimentRun
+                }
+              />
+            )}
+
+            {activeSection ===
+              "quiz" && (
+
+              <DeadlockQuiz
+                mode={mode}
+                quizQuestions={
+                  quizQuestions
+                }
+                quizAnswers={
+                  quizAnswers
+                }
+                quizSubmitted={
+                  quizSubmitted
+                }
+                quizScore={
+                  quizScore
+                }
+                quizSaveStatus={
+                  quizSaveStatus
+                }
+                experimentRun={
+                  experimentRun
+                }
+                handleQuizAnswer={
+                  handleQuizAnswer
+                }
+                submitQuiz={
+                  submitQuiz
+                }
+                redoQuiz={
+                  redoQuiz
+                }
+              />
+            )}
+
+            {activeSection ===
+              "coding" && (
+
+              <DeadlockCodingSafe
+                currentProblems={
+                  currentProblems
+                }
+                selectedLanguages={
+                  selectedLanguages
+                }
+                codes={codes}
+                results={results}
+                codingSaveStatus={
+                  codingSaveStatus
+                }
+                generateProblems={
+                  generateProblems
+                }
+                handleLanguageChange={
+                  handleLanguageChange
+                }
+                handleCodeChange={
+                  handleCodeChange
+                }
+                runCode={
+                  runCode
+                }
+                analyzeCode={
+                  analyzeCode
+                }
+                correctCode={
+                  correctCode
+                }
+                mode={mode}
+              />
+            )}
+
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

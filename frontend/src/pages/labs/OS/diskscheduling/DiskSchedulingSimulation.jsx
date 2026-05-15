@@ -1,590 +1,1543 @@
-import React, { useMemo, useState } from "react";
-import StepHistoryPanel from "../../../../components/dbms/StepHistoryPanel.jsx";
-import InfoStatCard from "../../../../components/dbms/InfoStatCard.jsx";
-import ObservationBox from "../../../../components/dbms/ObservationBox.jsx";
-import SimpleTable from "../../../../components/dbms/SimpleTable.jsx";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-const defaultRequests = "98, 183, 37, 122, 14, 124, 65, 67";
-const defaultHead = "53";
-const defaultDiskSize = "200";
-const defaultDirection = "right";
+import {
+  Play,
+  RotateCcw,
+  Activity,
+  Gauge,
+  HardDrive,
+  Layers,
+  Sparkles,
+  ShieldCheck,
+  Pause,
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle2,
+  Navigation,
+  Cpu,
+  MoveRight,
+} from "lucide-react";
 
-function TrackStrip({ sequence, diskSize }) {
-  if (!sequence.length) {
-    return (
-      <section className="card">
-        <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Head Movement</h3>
-        <p style={{ color: "#9ca3af" }}>Run the simulation to view the seek sequence.</p>
-      </section>
-    );
-  }
+const modeMeta = {
+  fcfs: {
+    name:
+      "First Come First Serve",
 
-  const maxTrack = Math.max(diskSize - 1, ...sequence);
+    type:
+      "Arrival Order Scheduling",
+
+    complexity:
+      "O(n)",
+
+    space:
+      "O(1)",
+
+    insight:
+      "FCFS services disk requests in the exact order they arrive in the request queue.",
+  },
+
+  sstf: {
+    name:
+      "Shortest Seek Time First",
+
+    type:
+      "Seek Optimization Scheduling",
+
+    complexity:
+      "O(n²)",
+
+    space:
+      "O(n)",
+
+    insight:
+      "SSTF selects the request nearest to the current head position to reduce seek time.",
+  },
+
+  scan: {
+    name:
+      "SCAN Disk Scheduling",
+
+    type:
+      "Elevator Scheduling",
+
+    complexity:
+      "O(n log n)",
+
+    space:
+      "O(n)",
+
+    insight:
+      "SCAN moves in one direction servicing requests, then reverses like an elevator.",
+  },
+
+  cscan: {
+    name:
+      "Circular SCAN",
+
+    type:
+      "Circular Elevator Scheduling",
+
+    complexity:
+      "O(n log n)",
+
+    space:
+      "O(n)",
+
+    insight:
+      "C-SCAN services requests in one direction only and jumps back to the start.",
+  },
+};
+
+const defaultRequests =
+  "98, 183, 37, 122, 14, 124, 65, 67";
+
+const defaultHead =
+  "53";
+
+const defaultDiskSize =
+  "200";
+
+const defaultDirection =
+  "right";
+
+function TrackCard({
+  track,
+  active,
+  completed,
+}) {
 
   return (
-    <section className="card">
-      <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Head Movement</h3>
+    <div
+      style={{
+        minWidth: 110,
+
+        height: 130,
+
+        borderRadius: 22,
+
+        background: active
+          ? "linear-gradient(135deg, rgba(56,189,248,0.35), rgba(59,130,246,0.22))"
+          : completed
+          ? "linear-gradient(135deg, rgba(34,197,94,0.28), rgba(16,185,129,0.18))"
+          : "linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))",
+
+        border: active
+          ? "2px solid rgba(56,189,248,0.8)"
+          : completed
+          ? "2px solid rgba(34,197,94,0.6)"
+          : "1px solid rgba(56,189,248,0.25)",
+
+        display:
+          "flex",
+
+        flexDirection:
+          "column",
+
+        justifyContent:
+          "center",
+
+        alignItems:
+          "center",
+
+        transition:
+          "all 0.4s ease",
+
+        transform: active
+          ? "translateY(-8px) scale(1.05)"
+          : "translateY(0px)",
+
+        boxShadow: active
+          ? "0 0 28px rgba(56,189,248,0.35)"
+          : "none",
+      }}
+    >
+
+      <HardDrive
+        size={28}
+        color="#ffffff"
+        style={{
+          marginBottom: 12,
+        }}
+      />
 
       <div
         style={{
-          position: "relative",
-          height: 120,
-          borderRadius: 12,
-          background: "rgba(15,23,42,0.35)",
-          border: "1px solid rgba(56,189,248,0.22)",
-          overflowX: "auto",
-          padding: "20px 16px"
+          color:
+            "#ffffff",
+
+          fontWeight:
+            800,
+
+          fontSize:
+            "1.5rem",
         }}
       >
-        <div
-          style={{
-            position: "relative",
-            minWidth: 900,
-            height: 80
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: 36,
-              height: 2,
-              background: "rgba(148,163,184,0.3)"
-            }}
-          />
 
-          {sequence.map((track, index) => {
-            const leftPercent = (track / maxTrack) * 100;
+        {track}
 
-            return (
-              <React.Fragment key={`${track}-${index}`}>
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `calc(${leftPercent}% - 10px)`,
-                    top: 28,
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    background:
-                      index === 0
-                        ? "#facc15"
-                        : index === sequence.length - 1
-                        ? "#22c55e"
-                        : "#38bdf8",
-                    boxShadow: "0 0 10px rgba(56,189,248,0.35)"
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    left: `calc(${leftPercent}% - 14px)`,
-                    top: 0,
-                    color: "#e5e7eb",
-                    fontWeight: 700,
-                    fontSize: "0.85rem"
-                  }}
-                >
-                  {track}
-                </div>
-
-                {index < sequence.length - 1 && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: `${Math.min(leftPercent, (sequence[index + 1] / maxTrack) * 100)}%`,
-                      width: `${Math.abs(((sequence[index + 1] - track) / maxTrack) * 100)}%`,
-                      top: 37,
-                      height: 4,
-                      background: "rgba(56,189,248,0.55)"
-                    }}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
       </div>
-    </section>
+
+    </div>
   );
 }
 
-function parseRequests(input) {
-  return input
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item) => item !== "")
-    .map(Number)
-    .filter((num) => !Number.isNaN(num));
-}
-
-function simulateFCFS(requests, head, addStep) {
-  const sequence = [head];
-  let current = head;
-  let totalHeadMovement = 0;
-
-  requests.forEach((request) => {
-    totalHeadMovement += Math.abs(request - current);
-    addStep(`Move from ${current} to ${request}. Head movement = ${Math.abs(request - current)}.`);
-    current = request;
-    sequence.push(request);
-  });
-
-  return {
-    sequence,
-    serviceOrder: requests,
-    totalHeadMovement
-  };
-}
-
-function simulateSSTF(requests, head, addStep) {
-  const pending = [...requests];
-  const sequence = [head];
-  const serviceOrder = [];
-  let current = head;
-  let totalHeadMovement = 0;
-
-  while (pending.length) {
-    let nearestIndex = 0;
-
-    for (let i = 1; i < pending.length; i++) {
-      if (Math.abs(pending[i] - current) < Math.abs(pending[nearestIndex] - current)) {
-        nearestIndex = i;
-      }
-    }
-
-    const next = pending[nearestIndex];
-    totalHeadMovement += Math.abs(next - current);
-    addStep(`Nearest request to ${current} is ${next}. Move = ${Math.abs(next - current)}.`);
-    current = next;
-    sequence.push(next);
-    serviceOrder.push(next);
-    pending.splice(nearestIndex, 1);
-  }
-
-  return {
-    sequence,
-    serviceOrder,
-    totalHeadMovement
-  };
-}
-
-function simulateSCAN(requests, head, diskSize, direction, addStep) {
-  const left = requests.filter((r) => r < head).sort((a, b) => a - b);
-  const right = requests.filter((r) => r >= head).sort((a, b) => a - b);
-  const sequence = [head];
-  const serviceOrder = [];
-  let current = head;
-  let totalHeadMovement = 0;
-
-  if (direction === "right") {
-    right.forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Move right from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-
-    if (current !== diskSize - 1) {
-      totalHeadMovement += Math.abs((diskSize - 1) - current);
-      addStep(`Continue to end of disk at ${diskSize - 1} and reverse direction.`);
-      current = diskSize - 1;
-      sequence.push(current);
-    }
-
-    [...left].reverse().forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Move left from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-  } else {
-    [...left].reverse().forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Move left from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-
-    if (current !== 0) {
-      totalHeadMovement += Math.abs(current - 0);
-      addStep("Continue to start of disk at 0 and reverse direction.");
-      current = 0;
-      sequence.push(current);
-    }
-
-    right.forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Move right from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-  }
-
-  return {
-    sequence,
-    serviceOrder,
-    totalHeadMovement
-  };
-}
-
-function simulateCSCAN(requests, head, diskSize, direction, addStep) {
-  const left = requests.filter((r) => r < head).sort((a, b) => a - b);
-  const right = requests.filter((r) => r >= head).sort((a, b) => a - b);
-  const sequence = [head];
-  const serviceOrder = [];
-  let current = head;
-  let totalHeadMovement = 0;
-
-  if (direction === "right") {
-    right.forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Move right from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-
-    if (current !== diskSize - 1) {
-      totalHeadMovement += Math.abs((diskSize - 1) - current);
-      addStep(`Move to disk end at ${diskSize - 1}.`);
-      current = diskSize - 1;
-      sequence.push(current);
-    }
-
-    totalHeadMovement += Math.abs((diskSize - 1) - 0);
-    addStep("Jump from end to start of disk.");
-    current = 0;
-    sequence.push(current);
-
-    left.forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Continue right from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-  } else {
-    [...left].reverse().forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Move left from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-
-    if (current !== 0) {
-      totalHeadMovement += Math.abs(current - 0);
-      addStep("Move to disk start at 0.");
-      current = 0;
-      sequence.push(current);
-    }
-
-    totalHeadMovement += Math.abs((diskSize - 1) - 0);
-    addStep("Jump from start to end of disk.");
-    current = diskSize - 1;
-    sequence.push(current);
-
-    [...right].reverse().forEach((request) => {
-      totalHeadMovement += Math.abs(request - current);
-      addStep(`Continue left from ${current} to ${request}.`);
-      current = request;
-      sequence.push(request);
-      serviceOrder.push(request);
-    });
-  }
-
-  return {
-    sequence,
-    serviceOrder,
-    totalHeadMovement
-  };
-}
-
 export default function DiskSchedulingSimulation({
-  mode = "fcfs",
-  setExperimentRun
+  mode =
+    "fcfs",
+
+  setExperimentRun,
 }) {
-  const [requestInput, setRequestInput] = useState(defaultRequests);
-  const [headInput, setHeadInput] = useState(defaultHead);
-  const [diskSizeInput, setDiskSizeInput] = useState(defaultDiskSize);
-  const [direction, setDirection] = useState(defaultDirection);
-  const [message, setMessage] = useState("Disk Scheduling simulation initialized.");
-  const [stepHistory, setStepHistory] = useState([]);
-  const [sequence, setSequence] = useState([]);
-  const [serviceOrder, setServiceOrder] = useState([]);
-  const [totalHeadMovement, setTotalHeadMovement] = useState(0);
 
-  const requestList = useMemo(() => parseRequests(requestInput), [requestInput]);
+  const meta =
+    modeMeta[mode];
 
-//   const addStep = (text) => {
-//     setStepHistory((prev) => [...prev, text]);
-//   };
+  const [message, setMessage] =
+    useState(
+      "Disk Scheduling simulation initialized."
+    );
 
-  const loadSample = () => {
-    setRequestInput(defaultRequests);
-    setHeadInput(defaultHead);
-    setDiskSizeInput(defaultDiskSize);
-    setDirection(defaultDirection);
-    setMessage("Sample disk requests loaded.");
-    setStepHistory(["Sample loaded for Disk Scheduling."]);
-    setSequence([]);
-    setServiceOrder([]);
-    setTotalHeadMovement(0);
-    if (setExperimentRun) setExperimentRun(false);
-  };
+  const [steps, setSteps] =
+    useState([]);
 
-  const reset = () => {
-    setRequestInput("");
-    setHeadInput(defaultHead);
-    setDiskSizeInput(defaultDiskSize);
-    setDirection(defaultDirection);
-    setMessage("Simulation reset.");
-    setStepHistory([]);
-    setSequence([]);
-    setServiceOrder([]);
-    setTotalHeadMovement(0);
-    if (setExperimentRun) setExperimentRun(false);
-  };
+  const [stepIndex, setStepIndex] =
+    useState(0);
 
-  const runSimulation = () => {
-    const requests = parseRequests(requestInput);
-    const head = Number(headInput);
-    const diskSize = Number(diskSizeInput);
+  const [running, setRunning] =
+    useState(false);
 
-    if (!requests.length) {
-      setMessage("Please enter a valid request queue.");
-      return;
-    }
+  const timerRef =
+    useRef(null);
 
-    if (Number.isNaN(head) || head < 0) {
-      setMessage("Please enter a valid initial head position.");
-      return;
-    }
+  const [
+    requestInput,
+    setRequestInput,
+  ] = useState(
+    defaultRequests
+  );
 
-    if (Number.isNaN(diskSize) || diskSize <= 0) {
-      setMessage("Please enter a valid disk size.");
-      return;
-    }
+  const [
+    headInput,
+    setHeadInput,
+  ] = useState(
+    defaultHead
+  );
 
-    if (head >= diskSize) {
-      setMessage("Initial head position must be smaller than disk size.");
-      return;
-    }
+  const [
+    diskSizeInput,
+    setDiskSizeInput,
+  ] = useState(
+    defaultDiskSize
+  );
 
-    if (requests.some((req) => req < 0 || req >= diskSize)) {
-      setMessage("All disk requests must be within disk range.");
-      return;
-    }
+  const [
+    direction,
+    setDirection,
+  ] = useState(
+    defaultDirection
+  );
 
-    setStepHistory([]);
-    setSequence([]);
-    setServiceOrder([]);
-    setTotalHeadMovement(0);
+  const [
+    seekSequence,
+    setSeekSequence,
+  ] = useState([]);
 
-    const localSteps = [];
-    const pushStep = (text) => {
-      localSteps.push(text);
+  const [
+    currentTrack,
+    setCurrentTrack,
+  ] = useState(null);
+
+  const [
+    totalMovement,
+    setTotalMovement,
+  ] = useState(0);
+
+  const [
+    currentMovement,
+    setCurrentMovement,
+  ] = useState(0);
+
+  const parseRequests =
+    () => {
+
+      return requestInput
+        .split(",")
+        .map(
+          (item) =>
+            Number(
+              item.trim()
+            )
+        )
+        .filter(
+          (num) =>
+            !Number.isNaN(
+              num
+            )
+        );
     };
 
-    let result;
+  const reset =
+    () => {
 
-    if (mode === "fcfs") {
-      result = simulateFCFS(requests, head, pushStep);
-      setMessage("FCFS disk scheduling completed.");
-    } else if (mode === "sstf") {
-      result = simulateSSTF(requests, head, pushStep);
-      setMessage("SSTF disk scheduling completed.");
-    } else if (mode === "scan") {
-      result = simulateSCAN(requests, head, diskSize, direction, pushStep);
-      setMessage("SCAN disk scheduling completed.");
-    } else {
-      result = simulateCSCAN(requests, head, diskSize, direction, pushStep);
-      setMessage("C-SCAN disk scheduling completed.");
+      clearInterval(
+        timerRef.current
+      );
+
+      setRunning(false);
+
+      setMessage(
+        "Simulation reset."
+      );
+
+      setSteps([]);
+
+      setStepIndex(0);
+
+      setSeekSequence([]);
+
+      setCurrentTrack(null);
+
+      setTotalMovement(0);
+
+      setCurrentMovement(0);
+    };
+
+  const generateSequence =
+    () => {
+
+      const requests =
+        parseRequests();
+
+      const head =
+        Number(
+          headInput
+        );
+
+      const diskSize =
+        Number(
+          diskSizeInput
+        );
+
+      const sequence =
+        [head];
+
+      const logs = [];
+
+      let total = 0;
+
+      if (
+        mode === "fcfs"
+      ) {
+
+        requests.forEach(
+          (
+            request
+          ) => {
+
+            total +=
+              Math.abs(
+                request -
+                  sequence[
+                    sequence.length -
+                      1
+                  ]
+              );
+
+            logs.push(
+              `Move head from ${
+                sequence[
+                  sequence.length -
+                    1
+                ]
+              } to ${request}.`
+            );
+
+            sequence.push(
+              request
+            );
+          }
+        );
+      }
+
+      else if (
+        mode === "sstf"
+      ) {
+
+        const pending =
+          [
+            ...requests,
+          ];
+
+        let current =
+          head;
+
+        while (
+          pending.length
+        ) {
+
+          let nearest =
+            pending[0];
+
+          const currentHead =
+  current;
+
+pending.forEach(
+  (request) => {
+
+    if (
+      Math.abs(
+        request -
+          currentHead
+      ) <
+      Math.abs(
+        nearest -
+          currentHead
+      )
+    ) {
+
+      nearest =
+        request;
     }
+  }
+);
 
-    setStepHistory(localSteps);
-    setSequence(result.sequence);
-    setServiceOrder(result.serviceOrder);
-    setTotalHeadMovement(result.totalHeadMovement);
-    if (setExperimentRun) setExperimentRun(true);
+          total +=
+            Math.abs(
+              nearest -
+                current
+            );
 
-    localStorage.setItem(
-      "vlab_last_experiment",
-      JSON.stringify({
-        name: `disk-scheduling-${mode}`,
-        time: Date.now()
-      })
-    );
-  };
+          logs.push(
+            `Nearest request from ${current} is ${nearest}.`
+          );
 
-  const observationText =
-    mode === "fcfs"
-      ? "FCFS serves requests in arrival order. It is simple but may result in high total head movement."
-      : mode === "sstf"
-      ? "SSTF always chooses the nearest request to the current head position, often reducing seek time."
-      : mode === "scan"
-      ? "SCAN moves like an elevator: it services requests in one direction, then reverses."
-      : "C-SCAN services requests in one direction only, then jumps back for more uniform waiting time.";
+          current =
+            nearest;
+
+          sequence.push(
+            nearest
+          );
+
+          pending.splice(
+            pending.indexOf(
+              nearest
+            ),
+            1
+          );
+        }
+      }
+
+      else if (
+        mode === "scan"
+      ) {
+
+        const left =
+          requests
+            .filter(
+              (
+                r
+              ) =>
+                r <
+                head
+            )
+            .sort(
+              (
+                a,
+                b
+              ) =>
+                a - b
+            );
+
+        const right =
+          requests
+            .filter(
+              (
+                r
+              ) =>
+                r >=
+                head
+            )
+            .sort(
+              (
+                a,
+                b
+              ) =>
+                a - b
+            );
+
+        let current =
+          head;
+
+        if (
+          direction ===
+          "right"
+        ) {
+
+          right.forEach(
+            (
+              request
+            ) => {
+
+              total +=
+                Math.abs(
+                  request -
+                    current
+                );
+
+              logs.push(
+                `Move right from ${current} to ${request}.`
+              );
+
+              current =
+                request;
+
+              sequence.push(
+                request
+              );
+            }
+          );
+
+          if (
+            current !==
+            diskSize - 1
+          ) {
+
+            total +=
+              Math.abs(
+                diskSize -
+                  1 -
+                  current
+              );
+
+            sequence.push(
+              diskSize - 1
+            );
+
+            current =
+              diskSize - 1;
+          }
+
+          [
+            ...left,
+          ]
+            .reverse()
+            .forEach(
+              (
+                request
+              ) => {
+
+                total +=
+                  Math.abs(
+                    request -
+                      current
+                  );
+
+                logs.push(
+                  `Reverse and move left from ${current} to ${request}.`
+                );
+
+                current =
+                  request;
+
+                sequence.push(
+                  request
+                );
+              }
+            );
+        }
+
+        else {
+
+          [
+            ...left,
+          ]
+            .reverse()
+            .forEach(
+              (
+                request
+              ) => {
+
+                total +=
+                  Math.abs(
+                    request -
+                      current
+                  );
+
+                logs.push(
+                  `Move left from ${current} to ${request}.`
+                );
+
+                current =
+                  request;
+
+                sequence.push(
+                  request
+                );
+              }
+            );
+
+          if (
+            current !== 0
+          ) {
+
+            total +=
+              current;
+
+            sequence.push(
+              0
+            );
+
+            current = 0;
+          }
+
+          right.forEach(
+            (
+              request
+            ) => {
+
+              total +=
+                Math.abs(
+                  request -
+                    current
+                );
+
+              logs.push(
+                `Reverse and move right from ${current} to ${request}.`
+              );
+
+              current =
+                request;
+
+              sequence.push(
+                request
+              );
+            }
+          );
+        }
+      }
+
+      else {
+
+        const left =
+          requests
+            .filter(
+              (
+                r
+              ) =>
+                r <
+                head
+            )
+            .sort(
+              (
+                a,
+                b
+              ) =>
+                a - b
+            );
+
+        const right =
+          requests
+            .filter(
+              (
+                r
+              ) =>
+                r >=
+                head
+            )
+            .sort(
+              (
+                a,
+                b
+              ) =>
+                a - b
+            );
+
+        let current =
+          head;
+
+        right.forEach(
+          (
+            request
+          ) => {
+
+            total +=
+              Math.abs(
+                request -
+                  current
+              );
+
+            logs.push(
+              `Move right from ${current} to ${request}.`
+            );
+
+            current =
+              request;
+
+            sequence.push(
+              request
+            );
+          }
+        );
+
+        total +=
+          Math.abs(
+            diskSize -
+              1 -
+              current
+          );
+
+        sequence.push(
+          diskSize - 1
+        );
+
+        current =
+          diskSize - 1;
+
+        total +=
+          diskSize - 1;
+
+        logs.push(
+          "Jump back to disk start."
+        );
+
+        sequence.push(
+          0
+        );
+
+        current = 0;
+
+        left.forEach(
+          (
+            request
+          ) => {
+
+            total +=
+              Math.abs(
+                request -
+                  current
+              );
+
+            logs.push(
+              `Continue moving right to ${request}.`
+            );
+
+            current =
+              request;
+
+            sequence.push(
+              request
+            );
+          }
+        );
+      }
+
+      return {
+        sequence,
+        logs,
+        total,
+      };
+    };
+
+  const runSimulation =
+    () => {
+
+      reset();
+
+      const data =
+        generateSequence();
+
+      if (
+        data.sequence
+          .length === 0
+      ) {
+
+        setMessage(
+          "Please enter valid requests."
+        );
+
+        return;
+      }
+
+      setRunning(true);
+
+      const applyStep =
+        (
+          index
+        ) => {
+
+          const activeTrack =
+            data.sequence[
+              index
+            ];
+
+          const previousTrack =
+            index === 0
+              ? activeTrack
+              : data.sequence[
+                  index -
+                    1
+                ];
+
+          setCurrentTrack(
+            activeTrack
+          );
+
+          setCurrentMovement(
+            Math.abs(
+              activeTrack -
+                previousTrack
+            )
+          );
+
+          setTotalMovement(
+            data.sequence
+              .slice(
+                1,
+                index + 1
+              )
+              .reduce(
+                (
+                  acc,
+                  track,
+                  idx
+                ) =>
+                  acc +
+                  Math.abs(
+                    track -
+                      data
+                        .sequence[
+                        idx
+                      ]
+                  ),
+                0
+              )
+          );
+
+          setMessage(
+            index === 0
+              ? `Initial Head Position: ${activeTrack}`
+              : data.logs[
+                  index -
+                    1
+                ]
+          );
+
+          setSteps(
+            (
+              prev
+            ) => [
+              ...prev,
+              index ===
+              0
+                ? `Head initialized at ${activeTrack}.`
+                : data.logs[
+                    index -
+                      1
+                  ],
+            ]
+          );
+
+          setSeekSequence(
+            data.sequence.slice(
+              0,
+              index + 1
+            )
+          );
+
+          setStepIndex(
+            index
+          );
+        };
+
+      applyStep(0);
+
+      let currentStep = 0;
+
+      timerRef.current =
+        setInterval(
+          () => {
+
+            currentStep += 1;
+
+            if (
+              currentStep >=
+              data.sequence
+                .length
+            ) {
+
+              clearInterval(
+                timerRef.current
+              );
+
+              setRunning(
+                false
+              );
+
+              if (
+                setExperimentRun
+              ) {
+
+                setExperimentRun(
+                  true
+                );
+              }
+
+              return;
+            }
+
+            const nextStep =
+              currentStep;
+
+            applyStep(
+              nextStep
+            );
+
+          },
+          1800
+        );
+    };
+
+  const pauseSimulation =
+    () => {
+
+      clearInterval(
+        timerRef.current
+      );
+
+      setRunning(false);
+    };
+
+  useEffect(() => {
+
+    return () =>
+      clearInterval(
+        timerRef.current
+      );
+
+  }, []);
+
+  const requestCount =
+    parseRequests().length;
 
   const stats = [
-    { label: "Requests", value: requestList.length },
-    { label: "Initial Head", value: headInput || "-" },
-    { label: "Total Head Movement", value: totalHeadMovement }
+
+    {
+      label:
+        "Requests",
+
+      value:
+        requestCount,
+    },
+
+    {
+      label:
+        "Current Track",
+
+      value:
+        currentTrack ??
+        "-",
+    },
+
+    {
+      label:
+        "Head Movement",
+
+      value:
+        totalMovement,
+    },
+
   ];
 
-  const resultRows = serviceOrder.map((request, index) => ({
-    step: index + 1,
-    track: request,
-    from:
-      index === 0
-        ? Number(headInput)
-        : serviceOrder[index - 1],
-    movement:
-      index === 0
-        ? Math.abs(request - Number(headInput))
-        : Math.abs(request - serviceOrder[index - 1])
-  }));
-
   return (
-    <>
-      <section className="card experiment">
-        <h2>
-          Simulation <span style={{ color: "#38bdf8" }}>({mode.toUpperCase()})</span>
-        </h2>
+    <section className="sorting-sim-card">
 
-        <div style={{ display: "grid", gap: 16 }}>
+      <div className="sorting-sim-header">
+
+        <div className="sorting-sim-title-wrap">
+
+          <div className="sorting-sim-icon">
+
+            <Activity size={18} />
+
+          </div>
+
           <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: 8,
-                color: "#e5e7eb",
-                fontWeight: 600
-              }}
-            >
-              Request Queue
-            </label>
-            <input
-              value={requestInput}
-              onChange={(e) => setRequestInput(e.target.value)}
-              className="lab-input"
-              style={{ width: "100%" }}
-              placeholder="Enter tracks like 98, 183, 37, 122"
-            />
+
+            <h2 className="sorting-sim-title">
+              Simulation
+            </h2>
+
+            <p className="sorting-sim-subtitle">
+              Advanced animated visualization for Disk Scheduling algorithms.
+            </p>
+
           </div>
 
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  color: "#e5e7eb",
-                  fontWeight: 600
-                }}
-              >
-                Initial Head Position
-              </label>
-              <input
-                value={headInput}
-                onChange={(e) => setHeadInput(e.target.value)}
-                className="lab-input"
-                style={{ width: "220px" }}
-              />
-            </div>
-
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  marginBottom: 8,
-                  color: "#e5e7eb",
-                  fontWeight: 600
-                }}
-              >
-                Disk Size
-              </label>
-              <input
-                value={diskSizeInput}
-                onChange={(e) => setDiskSizeInput(e.target.value)}
-                className="lab-input"
-                style={{ width: "220px" }}
-              />
-            </div>
-
-            {(mode === "scan" || mode === "cscan") && (
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: 8,
-                    color: "#e5e7eb",
-                    fontWeight: 600
-                  }}
-                >
-                  Initial Direction
-                </label>
-                <select
-                  value={direction}
-                  onChange={(e) => setDirection(e.target.value)}
-                  className="lab-select"
-                  style={{ width: "220px" }}
-                >
-                  <option value="right">Right</option>
-                  <option value="left">Left</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          <div className="buttons">
-            <button className="btn primary" onClick={runSimulation}>
-              Run Simulation
-            </button>
-
-            <button className="btn info" onClick={loadSample}>
-              Load Sample
-            </button>
-
-            <button className="btn secondary" onClick={reset}>
-              Reset
-            </button>
-          </div>
         </div>
 
-        <div className="info-box" style={{ marginTop: 16 }}>
-          {message}
+      </div>
+
+      <div
+        className="overview-grid"
+        style={{
+          marginBottom: 20,
+        }}
+      >
+
+        <div className="overview-card">
+
+          <div className="overview-card-head">
+
+            <Gauge size={18} />
+
+            <h4>
+              Complexity
+            </h4>
+
+          </div>
+
+          <p>
+            {
+              meta.complexity
+            }
+          </p>
+
+        </div>
+
+        <div className="overview-card">
+
+          <div className="overview-card-head">
+
+            <Cpu size={18} />
+
+            <h4>
+              Space
+            </h4>
+
+          </div>
+
+          <p>
+            {
+              meta.space
+            }
+          </p>
+
+        </div>
+
+        <div className="overview-card">
+
+          <div className="overview-card-head">
+
+            <ShieldCheck
+              size={18}
+            />
+
+            <h4>
+              Type
+            </h4>
+
+          </div>
+
+          <p>
+            {
+              meta.type
+            }
+          </p>
+
+        </div>
+
+      </div>
+
+      <div
+        className="sorting-info-box"
+        style={{
+          marginBottom: 20,
+        }}
+      >
+
+        <Sparkles
+          size={16}
+          style={{
+            marginRight: 10,
+          }}
+        />
+
+        {
+          meta.insight
+        }
+
+      </div>
+
+      <div
+        style={{
+          display:
+            "grid",
+
+          gap: 16,
+
+          marginBottom: 24,
+        }}
+      >
+
+        <div>
+
+          <label className="sorting-label">
+            Request Queue
+          </label>
+
+          <input
+            value={
+              requestInput
+            }
+            onChange={(e) =>
+              setRequestInput(
+                e.target.value
+              )
+            }
+            className="sorting-input"
+            placeholder="98, 183, 37, 122"
+          />
+
         </div>
 
         <div
           style={{
-            marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16
+            display:
+              "grid",
+
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(220px,1fr))",
+
+            gap: 16,
           }}
         >
-          {stats.map((stat) => (
-            <InfoStatCard key={stat.label} label={stat.label} value={stat.value} />
-          ))}
+
+          <div>
+
+            <label className="sorting-label">
+              Initial Head
+            </label>
+
+            <input
+              value={
+                headInput
+              }
+              onChange={(e) =>
+                setHeadInput(
+                  e.target.value
+                )
+              }
+              className="sorting-input"
+            />
+
+          </div>
+
+          <div>
+
+            <label className="sorting-label">
+              Disk Size
+            </label>
+
+            <input
+              value={
+                diskSizeInput
+              }
+              onChange={(e) =>
+                setDiskSizeInput(
+                  e.target.value
+                )
+              }
+              className="sorting-input"
+            />
+
+          </div>
+
+          {(mode ===
+            "scan" ||
+            mode ===
+              "cscan") && (
+
+            <div>
+
+              <label className="sorting-label">
+                Direction
+              </label>
+
+              <select
+                value={
+                  direction
+                }
+                onChange={(e) =>
+                  setDirection(
+                    e.target.value
+                  )
+                }
+                className="sorting-select"
+              >
+
+                <option value="right">
+                  Right
+                </option>
+
+                <option value="left">
+                  Left
+                </option>
+
+              </select>
+
+            </div>
+          )}
+
         </div>
 
-        <ObservationBox text={observationText} />
-      </section>
+      </div>
 
-      <TrackStrip
-        sequence={sequence}
-        diskSize={Number(diskSizeInput) || 200}
-      />
+      <div
+        className="sorting-btn-group"
+        style={{
+          marginBottom: 24,
+        }}
+      >
 
-      <SimpleTable title="Seek Sequence Table" rows={resultRows} />
-      <StepHistoryPanel steps={stepHistory} />
-    </>
+        <button
+          className="sim-btn sim-btn-primary"
+          onClick={
+            runSimulation
+          }
+        >
+
+          <Play size={16} />
+
+          Start
+
+        </button>
+
+        <button
+          className="sim-btn sim-btn-muted"
+          onClick={
+            pauseSimulation
+          }
+        >
+
+          <Pause size={16} />
+
+          Pause
+
+        </button>
+
+        <button
+          className="sim-btn sim-btn-danger"
+          onClick={
+            reset
+          }
+        >
+
+          <RotateCcw
+            size={16}
+          />
+
+          Reset
+
+        </button>
+
+      </div>
+
+      <div
+        className="sorting-info-box"
+      >
+
+        <ChevronRight
+          size={16}
+          style={{
+            marginRight: 10,
+          }}
+        />
+
+        {message}
+
+      </div>
+
+      <div
+        className="sorting-stats-grid"
+        style={{
+          marginTop: 24,
+        }}
+      >
+
+        {stats.map(
+          (
+            stat
+          ) => (
+
+            <div
+              key={
+                stat.label
+              }
+              className="sorting-stat-box"
+            >
+
+              <span className="sorting-stat-label">
+                {
+                  stat.label
+                }
+              </span>
+
+              <span className="sorting-stat-value">
+                {
+                  stat.value
+                }
+              </span>
+
+            </div>
+          )
+        )}
+
+      </div>
+
+      <div
+        style={{
+          marginTop: 42,
+        }}
+      >
+
+        <div
+          style={{
+            display:
+              "flex",
+
+            justifyContent:
+              "center",
+
+            alignItems:
+              "center",
+
+            gap: 18,
+
+            flexWrap:
+              "wrap",
+          }}
+        >
+
+          {seekSequence.map(
+            (
+              track,
+              index
+            ) => (
+
+              <React.Fragment
+                key={
+                  index
+                }
+              >
+
+                <TrackCard
+                  track={
+                    track
+                  }
+                  active={
+                    index ===
+                    stepIndex
+                  }
+                  completed={
+                    index <
+                    stepIndex
+                  }
+                />
+
+                {index !==
+                  seekSequence.length -
+                    1 && (
+
+                  <MoveRight
+                    size={28}
+                    color="#38bdf8"
+                  />
+                )}
+
+              </React.Fragment>
+            )
+          )}
+
+        </div>
+
+      </div>
+
+      <div
+        className="sorting-info-box"
+        style={{
+          marginTop: 24,
+
+          border:
+            "1px solid rgba(56,189,248,0.35)",
+
+          background:
+            "rgba(56,189,248,0.10)",
+        }}
+      >
+
+        <Navigation
+          size={16}
+          style={{
+            marginRight: 10,
+          }}
+        />
+
+        Current Head Movement:
+        {" "}
+        {
+          currentMovement
+        }
+
+      </div>
+
+      {totalMovement >
+        0 && (
+
+        <div
+          className="sorting-info-box"
+          style={{
+            marginTop: 20,
+
+            border:
+              "1px solid rgba(34,197,94,0.35)",
+
+            background:
+              "rgba(34,197,94,0.12)",
+
+            color:
+              "#dcfce7",
+          }}
+        >
+
+          <CheckCircle2
+            size={16}
+            style={{
+              marginRight: 10,
+            }}
+          />
+
+          Total Head Movement:
+          {" "}
+          {
+            totalMovement
+          }
+
+        </div>
+      )}
+
+      {running && (
+
+        <div
+          className="sorting-info-box"
+          style={{
+            marginTop: 20,
+
+            border:
+              "1px solid rgba(250,204,21,0.35)",
+
+            background:
+              "rgba(250,204,21,0.12)",
+
+            color:
+              "#fde68a",
+          }}
+        >
+
+          <AlertTriangle
+            size={16}
+            style={{
+              marginRight: 10,
+            }}
+          />
+
+          Disk head is actively servicing requests.
+
+        </div>
+      )}
+
+      <div
+        className="overview-card overview-steps-card"
+        style={{
+          marginTop: 40,
+        }}
+      >
+
+        <div className="overview-card-head">
+
+          <Layers size={18} />
+
+          <h4>
+            Execution Steps
+          </h4>
+
+        </div>
+
+        <ol className="overview-steps-list">
+
+          {steps.length ===
+          0 ? (
+
+            <li>
+
+              <span>
+                Start the
+                simulation to
+                visualize Disk
+                Scheduling flow.
+              </span>
+
+            </li>
+
+          ) : (
+
+            steps.map(
+              (
+                step,
+                index
+              ) => (
+
+                <li
+                  key={
+                    index
+                  }
+                  style={{
+                    opacity:
+                      index <=
+                      stepIndex
+                        ? 1
+                        : 0.45,
+
+                    transform:
+                      index ===
+                      stepIndex
+                        ? "translateX(8px)"
+                        : "translateX(0px)",
+
+                    transition:
+                      "all 0.35s ease",
+                  }}
+                >
+
+                  <span className="overview-step-index">
+                    {index + 1}
+                  </span>
+
+                  <span>
+                    {step}
+                  </span>
+
+                </li>
+              )
+            )
+          )}
+
+        </ol>
+
+      </div>
+
+    </section>
   );
 }

@@ -1,16 +1,25 @@
-import React, { useMemo, useState } from "react";
+/* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
 import {
   BookOpen,
   PlayCircle,
   Brain,
   FileCode2,
   ChevronsLeft,
-  Cpu,
+  Database,
 } from "lucide-react";
 
 import "../../../SortingLab.css";
 
-import { saveQuizResult} from "../../../../API/progressApi";
+import SimuLabLogo from "../../../../components/SimuLabLogo";
 import MarkCompleteButton from "../../../../components/MarkCompleteButton";
 
 import DBMSSQLBasicsOverview from "./SQLBasicsOverview.jsx";
@@ -18,428 +27,1098 @@ import DBMSSQLBasicsSimulation from "./SQLBasicsSimulation.jsx";
 import DBMSSQLBasicsQuiz from "./SQLBasicsQuiz.jsx";
 import DBMSSQLBasicsCoding from "./SQLBasicsCoding.jsx";
 
-const simulabLogo = "/assets/logo.png";
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
 
 const sidebarItems = [
-  { key: "overview", label: "Overview", icon: BookOpen },
-  { key: "simulation", label: "Simulation", icon: PlayCircle },
-  { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
+
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
 ];
+
+const queryModes = {
+  "select-where-order-limit": {
+    title:
+      "SELECT Pipeline",
+
+    type:
+      "Query Processing",
+
+    best:
+      "O(n)",
+
+    average:
+      "O(n log n)",
+
+    worst:
+      "O(n²)",
+
+    space:
+      "O(n)",
+
+    difficulty:
+      "Intermediate",
+
+    status:
+      "Interactive",
+
+    icon:
+      Database,
+
+    glow:
+      "rgba(77,168,255,0.35)",
+  },
+};
 
 const sampleTable = [
-  { id: 1, name: "Aarav", department: "CSE", age: 20, marks: 82 },
-  { id: 2, name: "Diya", department: "ECE", age: 21, marks: 91 },
-  { id: 3, name: "Kabir", department: "CSE", age: 19, marks: 76 },
-  { id: 4, name: "Meera", department: "ME", age: 22, marks: 88 },
-  { id: 5, name: "Rohan", department: "CSE", age: 20, marks: 95 },
-  { id: 6, name: "Ishita", department: "ECE", age: 19, marks: 84 }
+  {
+    id: 1,
+    name: "Aarav",
+    department: "CSE",
+    age: 20,
+    marks: 82,
+  },
+
+  {
+    id: 2,
+    name: "Diya",
+    department: "ECE",
+    age: 21,
+    marks: 91,
+  },
+
+  {
+    id: 3,
+    name: "Kabir",
+    department: "CSE",
+    age: 19,
+    marks: 76,
+  },
+
+  {
+    id: 4,
+    name: "Meera",
+    department: "ME",
+    age: 22,
+    marks: 88,
+  },
+
+  {
+    id: 5,
+    name: "Rohan",
+    department: "CSE",
+    age: 20,
+    marks: 95,
+  },
+
+  {
+    id: 6,
+    name: "Ishita",
+    department: "ECE",
+    age: 19,
+    marks: 84,
+  },
 ];
 
-const allColumns = ["id", "name", "department", "age", "marks"];
-
-const sqlQuizQuestions = [
-  {
-    question: "Which SQL clause is used to choose specific columns?",
-    options: ["WHERE", "LIMIT", "SELECT", "ORDER BY"],
-    correct: 2
-  },
-  {
-    question: "Which clause is used to filter rows?",
-    options: ["SELECT", "WHERE", "ORDER BY", "FROM"],
-    correct: 1
-  },
-  {
-    question: "What does ORDER BY do?",
-    options: ["Deletes rows", "Filters rows", "Sorts rows", "Adds new rows"],
-    correct: 2
-  },
-  {
-    question: "What does LIMIT do?",
-    options: [
-      "Sorts all rows",
-      "Restricts the number of returned rows",
-      "Renames columns",
-      "Removes duplicates"
-    ],
-    correct: 1
-  }
+const allColumns = [
+  "id",
+  "name",
+  "department",
+  "age",
+  "marks",
 ];
 
-function projectColumns(rows, columns) {
-  return rows.map((row) => {
-    const projected = {};
-    columns.forEach((col) => {
-      projected[col] = row[col];
-    });
-    return projected;
-  });
+
+//eslint-disable-next-line
+const advancedSQLProblems = [
+  {
+    id: 1,
+
+    title:
+      "Department Wise Topper Analysis",
+
+    difficulty:
+      "Hard",
+
+    problem_statement:
+      "Write an SQL query to display the highest scoring student from each department using GROUP BY, MAX and JOIN logic.",
+
+    sample_input:
+      "Students table",
+
+    sample_output:
+      "Topper from every department",
+  },
+
+  {
+    id: 2,
+
+    title:
+      "Second Highest Salary Query",
+
+    difficulty:
+      "Hard",
+
+    problem_statement:
+      "Write an SQL query to find the second highest salary from an Employees table without using LIMIT.",
+
+    sample_input:
+      "Employees table",
+
+    sample_output:
+      "Second highest salary",
+  },
+
+  {
+    id: 3,
+
+    title:
+      "Customers Without Orders",
+
+    difficulty:
+      "Hard",
+
+    problem_statement:
+      "Write an SQL query using LEFT JOIN to display customers who have never placed an order.",
+
+    sample_input:
+      "Customers and Orders tables",
+
+    sample_output:
+      "Customers without orders",
+  },
+
+  {
+    id: 4,
+
+    title:
+      "Nth Highest Marks Query",
+
+    difficulty:
+      "Hard",
+
+    problem_statement:
+      "Write an SQL query to find the 3rd highest marks scored by students using nested subqueries.",
+
+    sample_input:
+      "Students table",
+
+    sample_output:
+      "3rd highest marks",
+  },
+];
+
+function projectColumns(
+  rows,
+  columns
+) {
+
+  return rows.map(
+    (row) => {
+
+      const projected = {};
+
+      columns.forEach(
+        (col) => {
+
+          projected[col] =
+            row[col];
+        }
+      );
+
+      return projected;
+    }
+  );
 }
 
 export default function DBMSSQLBasicsLab() {
-  const [queryType, setQueryType] = useState("select-where-order-limit");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const [message, setMessage] = useState("DBMS SQL Basics lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useState(700);
-  const [stepHistory, setStepHistory] = useState([]);
+  const [queryType] =
+    useState(
+      "select-where-order-limit"
+    );
 
-  const [selectedColumns, setSelectedColumns] = useState([
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("overview");
+
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    message,
+    setMessage,
+  ] = useState(
+    "DBMS SQL Basics lab initialized."
+  );
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  const [
+    isRunning,
+    setIsRunning,
+  ] = useState(false);
+
+  const [
+    animationSpeed,
+    setAnimationSpeed,
+  ] = useState(700);
+
+  const [
+    stepHistory,
+    setStepHistory,
+  ] = useState([]);
+
+  const [
+    selectedColumns,
+    setSelectedColumns,
+  ] = useState([
     "name",
     "department",
-    "marks"
+    "marks",
   ]);
-  const [whereColumn, setWhereColumn] = useState("department");
-  const [whereOperator, setWhereOperator] = useState("=");
-  const [whereValue, setWhereValue] = useState("CSE");
-  const [orderByColumn, setOrderByColumn] = useState("marks");
-  const [orderDirection, setOrderDirection] = useState("desc");
-  const [limitValue, setLimitValue] = useState("3");
 
-  const [displayRows, setDisplayRows] = useState([]);
-  const [highlightedRowIds, setHighlightedRowIds] = useState([]);
-  const [selectedStep, setSelectedStep] = useState("");
-  const [generatedSQL, setGeneratedSQL] = useState("");
-
-  const quizQuestions = useMemo(() => sqlQuizQuestions, []);
-  const [quizAnswers, setQuizAnswers] = useState(
-    Array(sqlQuizQuestions.length).fill(null)
+  const [
+    whereColumn,
+    setWhereColumn,
+  ] = useState(
+    "department"
   );
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+
+  const [
+    whereOperator,
+    setWhereOperator,
+  ] = useState("=");
+
+  const [
+    whereValue,
+    setWhereValue,
+  ] = useState("CSE");
+
+  const [
+    orderByColumn,
+    setOrderByColumn,
+  ] = useState("marks");
+
+  const [
+    orderDirection,
+    setOrderDirection,
+  ] = useState("desc");
+
+  const [
+    limitValue,
+    setLimitValue,
+  ] = useState("3");
+
+  const [
+    displayRows,
+    setDisplayRows,
+  ] = useState([]);
+
+  const [
+    highlightedRowIds,
+    setHighlightedRowIds,
+  ] = useState([]);
+
+  const [
+    selectedStep,
+    setSelectedStep,
+  ] = useState("");
+
+  const [
+    generatedSQL,
+    setGeneratedSQL,
+  ] = useState("");
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "DBMS" &&
+              q.experiment ===
+                "SQL Basics"
+          );
+
+        setQuizQuestions(
+          filtered
+        );
+
+        setQuizAnswers(
+          Array(
+            filtered.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, []);
+
+  useEffect(() => {
+
+    fetchQuizQuestions();
+
+  }, [fetchQuizQuestions]);
+
+  // =========================
+  // SAFE MODE META
+  // =========================
+
+  const currentMeta =
+    queryModes[
+      queryType
+    ] ||
+    queryModes[
+      "select-where-order-limit"
+    ];
+
+  const CurrentIcon =
+    currentMeta.icon ||
+    Database;
+
+  // =========================
+  // PROGRESS
+  // =========================
 
   const progressPercent =
-    activeSection === "overview"
+    activeSection ===
+    "overview"
       ? 20
-      : activeSection === "simulation"
+      : activeSection ===
+        "simulation"
       ? 55
-      : activeSection === "quiz"
+      : activeSection ===
+        "quiz"
       ? 82
       : 95;
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  // =========================
+  // HELPERS
+  // =========================
 
-  const addStep = (text) => {
-    setStepHistory((prev) => [...prev, text]);
-  };
+  const sleep =
+    useCallback(
+      (ms) =>
+        new Promise(
+          (resolve) => {
+            setTimeout(
+              resolve,
+              ms
+            );
+          }
+        ),
+      []
+    );
 
-  const buildSQLQuery = () => {
-    const selectClause =
-      selectedColumns.length > 0 ? selectedColumns.join(", ") : "*";
+  const addStep =
+    useCallback(
+      (text) => {
 
-    const isNumericColumn =
-      whereColumn === "id" || whereColumn === "age" || whereColumn === "marks";
+        setStepHistory(
+          (prev) => [
+            ...prev,
+            text,
+          ]
+        );
+      },
+      []
+    );
 
-    const formattedWhereValue =
-      whereValue.trim() === ""
-        ? ""
-        : isNumericColumn
-        ? whereValue
-        : `'${whereValue}'`;
+  const buildSQLQuery =
+    useCallback(() => {
 
-    let query = `SELECT ${selectClause} FROM students`;
+      const selectClause =
+        selectedColumns.length >
+        0
+          ? selectedColumns.join(
+              ", "
+            )
+          : "*";
 
-    if (whereValue.trim() !== "") {
-      query += ` WHERE ${whereColumn} ${whereOperator} ${formattedWhereValue}`;
-    }
+      const isNumericColumn =
+        whereColumn ===
+          "id" ||
+        whereColumn ===
+          "age" ||
+        whereColumn ===
+          "marks";
 
-    if (orderByColumn) {
-      query += ` ORDER BY ${orderByColumn} ${orderDirection.toUpperCase()}`;
-    }
+      const formattedWhereValue =
+        whereValue.trim() ===
+        ""
+          ? ""
+          : isNumericColumn
+          ? whereValue
+          : `'${whereValue}'`;
 
-    if (limitValue.trim() !== "") {
-      query += ` LIMIT ${limitValue}`;
-    }
+      let query =
+        `SELECT ${selectClause} FROM students`;
 
-    return `${query};`;
-  };
+      if (
+        whereValue.trim() !==
+        ""
+      ) {
 
-  const compareValue = (rowValue, operator, inputValue) => {
+        query +=
+          ` WHERE ${whereColumn} ${whereOperator} ${formattedWhereValue}`;
+      }
+
+      if (orderByColumn) {
+
+        query +=
+          ` ORDER BY ${orderByColumn} ${orderDirection.toUpperCase()}`;
+      }
+
+      if (
+        limitValue.trim() !==
+        ""
+      ) {
+
+        query +=
+          ` LIMIT ${limitValue}`;
+      }
+
+      return `${query};`;
+
+    }, [
+      selectedColumns,
+      whereColumn,
+      whereOperator,
+      whereValue,
+      orderByColumn,
+      orderDirection,
+      limitValue,
+    ]);
+
+  const compareValue = (
+    rowValue,
+    operator,
+    inputValue
+  ) => {
+
     switch (operator) {
+
       case "=":
-        return rowValue === inputValue;
+        return (
+          rowValue ===
+          inputValue
+        );
+
       case ">":
-        return rowValue > inputValue;
+        return (
+          rowValue >
+          inputValue
+        );
+
       case "<":
-        return rowValue < inputValue;
+        return (
+          rowValue <
+          inputValue
+        );
+
       case ">=":
-        return rowValue >= inputValue;
+        return (
+          rowValue >=
+          inputValue
+        );
+
       case "<=":
-        return rowValue <= inputValue;
+        return (
+          rowValue <=
+          inputValue
+        );
+
       default:
         return true;
     }
   };
 
-  const runSimulation = async () => {
-    if (isRunning) return;
+  // =========================
+  // SIMULATION
+  // =========================
 
-    if (selectedColumns.length === 0) {
-      setMessage("Please select at least one column.");
-      return;
-    }
+  const runSimulation =
+    async () => {
 
-    if (limitValue.trim() !== "" && Number.isNaN(Number(limitValue))) {
-      setMessage("Please enter a valid LIMIT value.");
-      return;
-    }
+      if (isRunning) {
+        return;
+      }
 
-    if (
-      (whereColumn === "id" ||
-        whereColumn === "age" ||
-        whereColumn === "marks") &&
-      whereValue.trim() !== "" &&
-      Number.isNaN(Number(whereValue))
-    ) {
-      setMessage("Please enter a valid numeric WHERE value.");
-      return;
-    }
+      if (
+        selectedColumns.length ===
+        0
+      ) {
 
-    setIsRunning(true);
-    setExperimentRun(true);
-    setStepHistory([]);
-    setHighlightedRowIds([]);
-    setSelectedStep("");
-    setGeneratedSQL(buildSQLQuery());
-
-    try {
-      let rows = [...sampleTable];
-
-      setDisplayRows(rows);
-      setMessage("Loaded original students table.");
-      setSelectedStep("Initial Table");
-      addStep("Loaded the original students table.");
-      await sleep(animationSpeed);
-
-      if (whereValue.trim() !== "") {
-        const typedWhereValue =
-          whereColumn === "id" ||
-          whereColumn === "age" ||
-          whereColumn === "marks"
-            ? Number(whereValue)
-            : whereValue;
-
-        const matchedRows = rows.filter((row) =>
-          compareValue(row[whereColumn], whereOperator, typedWhereValue)
-        );
-
-        setHighlightedRowIds(matchedRows.map((row) => row.id));
         setMessage(
-          `Applying WHERE ${whereColumn} ${whereOperator} ${whereValue}...`
+          "Please select at least one column."
         );
-        setSelectedStep("WHERE Applied");
-        addStep(
-          `Applied WHERE condition: ${whereColumn} ${whereOperator} ${whereValue}.`
-        );
-        await sleep(animationSpeed);
 
-        rows = matchedRows;
-        setDisplayRows(rows);
-        await sleep(animationSpeed);
+        return;
       }
 
-      if (orderByColumn) {
-        rows = [...rows].sort((a, b) => {
-          const first = a[orderByColumn];
-          const second = b[orderByColumn];
+      setIsRunning(true);
 
-          if (typeof first === "string") {
-            return orderDirection === "asc"
-              ? first.localeCompare(second)
-              : second.localeCompare(first);
-          }
+      setExperimentRun(true);
 
-          return orderDirection === "asc" ? first - second : second - first;
-        });
+      setStepHistory([]);
 
-        setDisplayRows(rows);
-        setHighlightedRowIds(rows.map((row) => row.id));
-        setMessage(
-          `Applying ORDER BY ${orderByColumn} ${orderDirection.toUpperCase()}...`
-        );
-        setSelectedStep("ORDER BY Applied");
-        addStep(
-          `Applied ORDER BY on ${orderByColumn} in ${orderDirection.toUpperCase()} order.`
-        );
-        await sleep(animationSpeed);
-      }
-
-      if (limitValue.trim() !== "") {
-        rows = rows.slice(0, Number(limitValue));
-
-        setDisplayRows(rows);
-        setHighlightedRowIds(rows.map((row) => row.id));
-        setMessage(`Applying LIMIT ${limitValue}...`);
-        setSelectedStep("LIMIT Applied");
-        addStep(`Applied LIMIT ${limitValue}.`);
-        await sleep(animationSpeed);
-      }
-
-      const projectedRows = projectColumns(rows, selectedColumns);
-
-      setDisplayRows(projectedRows);
-      setHighlightedRowIds([]);
-      setMessage("Applying SELECT projection...");
-      setSelectedStep("SELECT Applied");
-      addStep(`Projected selected columns: ${selectedColumns.join(", ")}.`);
-      await sleep(animationSpeed);
-
-      setMessage("SQL query simulation completed.");
-      addStep("Simulation completed successfully.");
-
-      localStorage.setItem(
-        "vlab_last_experiment",
-        JSON.stringify({ name: "dbms-sql-basics", time: Date.now() })
+      setHighlightedRowIds(
+        []
       );
-    } finally {
-      setIsRunning(false);
-    }
-  };
 
-  const loadSample = () => {
-    if (isRunning) return;
+      setSelectedStep("");
 
-    setSelectedColumns(["name", "department", "marks"]);
-    setWhereColumn("department");
-    setWhereOperator("=");
-    setWhereValue("CSE");
-    setOrderByColumn("marks");
-    setOrderDirection("desc");
-    setLimitValue("2");
-    setGeneratedSQL("");
-    setDisplayRows([]);
-    setHighlightedRowIds([]);
-    setSelectedStep("");
-    setStepHistory(["Sample SQL query loaded."]);
-    setMessage("Loaded sample query.");
-  };
+      setGeneratedSQL(
+        buildSQLQuery()
+      );
 
-  const reset = () => {
-    if (isRunning) return;
+      try {
 
-    setSelectedColumns(["name", "department", "marks"]);
-    setWhereColumn("department");
-    setWhereOperator("=");
-    setWhereValue("CSE");
-    setOrderByColumn("marks");
-    setOrderDirection("desc");
-    setLimitValue("3");
-    setDisplayRows([]);
-    setHighlightedRowIds([]);
-    setStepHistory([]);
-    setSelectedStep("");
-    setGeneratedSQL("");
-    setMessage("DBMS SQL Basics lab reset.");
-    setExperimentRun(false);
-  };
+        let rows = [
+          ...sampleTable,
+        ];
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
-    setQuizAnswers(updated);
-  };
+        setDisplayRows(rows);
 
-  const submitQuiz = async () => {
-  let score = 0;
+        setMessage(
+          "Loaded original students table."
+        );
 
-  quizQuestions.forEach((q, i) => {
-    if (quizAnswers[i] === q.correct) score++;
-  });
+        addStep(
+          "Loaded the original students table."
+        );
 
-  setQuizScore(score);
-  setQuizSubmitted(true);
-  setQuizSaveStatus("Saving quiz result...");
+        await sleep(
+          animationSpeed
+        );
 
-  try {
-    await saveQuizResult({
-      labSlug: "dbms",
-      experimentSlug: "sql-basics",
-      correctAnswers: score,
-      totalQuestions: quizQuestions.length
-    });
+        if (
+          whereValue.trim() !==
+          ""
+        ) {
 
-    setQuizSaveStatus("Quiz result saved to dashboard.");
-  } catch (error) {
-    console.error("Quiz save failed:", error);
-    setQuizSaveStatus("Quiz submitted, but backend save failed.");
-  }
-};
+          const typedWhereValue =
+            whereColumn ===
+              "id" ||
+            whereColumn ===
+              "age" ||
+            whereColumn ===
+              "marks"
+              ? Number(
+                  whereValue
+                )
+              : whereValue;
+
+          const matchedRows =
+            rows.filter(
+              (row) =>
+                compareValue(
+                  row[
+                    whereColumn
+                  ],
+                  whereOperator,
+                  typedWhereValue
+                )
+            );
+
+          rows = matchedRows;
+
+          setDisplayRows(rows);
+
+          setHighlightedRowIds(
+            matchedRows.map(
+              (row) =>
+                row.id
+            )
+          );
+
+          addStep(
+            `Applied WHERE condition: ${whereColumn} ${whereOperator} ${whereValue}.`
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        if (orderByColumn) {
+
+          rows = [
+            ...rows,
+          ].sort(
+            (a, b) => {
+
+              const first =
+                a[
+                  orderByColumn
+                ];
+
+              const second =
+                b[
+                  orderByColumn
+                ];
+
+              if (
+                typeof first ===
+                "string"
+              ) {
+
+                return orderDirection ===
+                  "asc"
+                  ? first.localeCompare(
+                      second
+                    )
+                  : second.localeCompare(
+                      first
+                    );
+              }
+
+              return orderDirection ===
+                "asc"
+                ? first -
+                    second
+                : second -
+                    first;
+            }
+          );
+
+          setDisplayRows(rows);
+
+          addStep(
+            `Applied ORDER BY on ${orderByColumn}.`
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        if (
+          limitValue.trim() !==
+          ""
+        ) {
+
+          rows = rows.slice(
+            0,
+            Number(limitValue)
+          );
+
+          setDisplayRows(rows);
+
+          addStep(
+            `Applied LIMIT ${limitValue}.`
+          );
+
+          await sleep(
+            animationSpeed
+          );
+        }
+
+        const projectedRows =
+          projectColumns(
+            rows,
+            selectedColumns
+          );
+
+        setDisplayRows(
+          projectedRows
+        );
+
+        addStep(
+          `Projected selected columns: ${selectedColumns.join(", ")}.`
+        );
+
+        setMessage(
+          "SQL query simulation completed."
+        );
+
+      } finally {
+
+        setIsRunning(false);
+      }
+    };
+
+  const loadSample =
+    () => {
+
+      if (isRunning) {
+        return;
+      }
+
+      setSelectedColumns([
+        "name",
+        "department",
+        "marks",
+      ]);
+
+      setWhereColumn(
+        "department"
+      );
+
+      setWhereOperator("=");
+
+      setWhereValue("CSE");
+
+      setOrderByColumn(
+        "marks"
+      );
+
+      setOrderDirection(
+        "desc"
+      );
+
+      setLimitValue("2");
+
+      setGeneratedSQL("");
+
+      setDisplayRows([]);
+
+      setHighlightedRowIds(
+        []
+      );
+
+      setSelectedStep("");
+
+      setStepHistory([
+        "Sample SQL query loaded.",
+      ]);
+
+      setMessage(
+        "Loaded sample query."
+      );
+    };
+
+  const reset =
+    () => {
+
+      if (isRunning) {
+        return;
+      }
+
+      setDisplayRows([]);
+
+      setHighlightedRowIds(
+        []
+      );
+
+      setStepHistory([]);
+
+      setSelectedStep("");
+
+      setGeneratedSQL("");
+
+      setMessage(
+        "DBMS SQL Basics lab reset."
+      );
+
+      setExperimentRun(false);
+    };
+
+  // =========================
+  // QUIZ FUNCTIONS
+  // =========================
+
+  const handleQuizAnswer =
+    (index, value) => {
+
+      const updated = [
+        ...quizAnswers,
+      ];
+
+      updated[index] =
+        value;
+
+      setQuizAnswers(
+        updated
+      );
+    };
+
+  const submitQuiz =
+    async () => {
+
+      let score = 0;
+
+      quizQuestions.forEach(
+        (q, i) => {
+
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(true);
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "sql-basics",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
+        );
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
+        );
+      }
+    };
 
   const redoQuiz = () => {
-    setQuizAnswers(Array(quizQuestions.length).fill(null));
+
     setQuizSubmitted(false);
+
     setQuizScore(0);
+
+    setQuizAnswers(
+      Array(
+        quizQuestions.length
+      ).fill(null)
+    );
   };
 
   return (
     <div className="er-shell">
-      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+
+      <aside
+        className={`er-left-rail ${
+          sidebarCollapsed
+            ? "collapsed"
+            : ""
+        }`}
+      >
+
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+            <SimuLabLogo
+              size={58}
+              showText={false}
+              variant="default"
             />
+
           </div>
 
           {!sidebarCollapsed && (
+
             <div>
-              <div className="er-brand-title">SimuLab</div>
-              <div className="er-brand-subtitle">DBMS Lab</div>
+
+              <div className="er-brand-title">
+                SimuLab
+              </div>
+
+              <div className="er-brand-subtitle">
+                DBMS Lab
+              </div>
+
             </div>
           )}
         </div>
 
         <div className="er-collapse-wrap">
+
           <button
             type="button"
-            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
-            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            className={`er-collapse-btn ${
+              sidebarCollapsed
+                ? "collapsed"
+                : ""
+            }`}
+            onClick={() =>
+              setSidebarCollapsed(
+                (
+                  prev
+                ) => !prev
+              )
+            }
           >
-            <ChevronsLeft size={18} />
+
+            <ChevronsLeft
+              size={18}
+            />
+
           </button>
         </div>
 
         <div className="er-nav">
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
 
-            return (
-              <button
-                key={item.key}
-                className={`er-nav-item ${
-                  activeSection === item.key ? "active" : ""
-                }`}
-                onClick={() => setActiveSection(item.key)}
-                title={item.label}
-              >
-                <Icon size={18} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </button>
-            );
-          })}
+          {sidebarItems.map(
+            (item) => {
+
+              const Icon =
+                item.icon;
+
+              return (
+                <button
+                  key={
+                    item.key
+                  }
+                  className={`er-nav-item ${
+                    activeSection ===
+                    item.key
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setActiveSection(
+                      item.key
+                    )
+                  }
+                >
+
+                  <Icon
+                    size={18}
+                  />
+
+                  {!sidebarCollapsed && (
+                    <span>
+                      {
+                        item.label
+                      }
+                    </span>
+                  )}
+                </button>
+              );
+            }
+          )}
         </div>
 
         {!sidebarCollapsed && (
+
           <div className="er-progress-card">
-            <div className="er-progress-title">Your Progress</div>
+
+            <div className="er-progress-title">
+              Your Progress
+            </div>
+
             <div className="er-progress-ring">
+
               <div
                 className="er-progress-circle"
                 style={{
-                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                  background: `conic-gradient(
+                    #4da8ff ${progressPercent}%,
+                    rgba(255,255,255,0.08) ${progressPercent}% 100%
+                  )`,
                 }}
               >
+
                 <div className="er-progress-inner">
-                  <div className="er-progress-value">{progressPercent}%</div>
-                  <div className="er-progress-text">Complete</div>
+
+                  <div className="er-progress-value">
+                    {progressPercent}%
+                  </div>
+
+                  <div className="er-progress-text">
+                    Complete
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -448,138 +1127,380 @@ export default function DBMSSQLBasicsLab() {
       </aside>
 
       <main className="er-main-area">
+
         <div className="er-page-header">
+
           <div>
-            <h1 className="er-page-title">SQL Basics</h1>
+
+            <h1 className="er-page-title">
+              SQL Basics
+            </h1>
+
             <p className="er-page-subtitle">
-              Explore SQL visually through query simulation, quiz, and coding
-              practice.
+
+              Explore SQL query
+              processing visually
+              through immersive
+              simulations, quizzes,
+              execution analysis and
+              coding practice.
+
             </p>
+
           </div>
         </div>
 
         <section className="er-config-card">
+
           <div className="er-config-top">
+
             <div>
-              <h2>Query Configuration</h2>
+
+              <h2>
+                Query Configuration
+              </h2>
+
               <p>
-                Build a SELECT pipeline and observe how rows and columns change
-                during execution.
+                Configure SELECT,
+                WHERE, ORDER BY and
+                LIMIT operations and
+                visualize query
+                execution step by
+                step.
               </p>
+
             </div>
 
-            <div className="er-mode-pill">
+            <div
+              className="er-mode-pill"
+              style={{
+                boxShadow: `0 0 24px ${currentMeta.glow}`,
+              }}
+            >
+
               <div className="er-mode-pill-icon">
-                <Cpu size={18} />
+
+                <CurrentIcon
+                  size={18}
+                />
+
               </div>
+
               <div>
-                <strong>SELECT Pipeline</strong>
-                <span>WHERE • ORDER BY • LIMIT</span>
+
+                <strong>
+                  {
+                    currentMeta.title
+                  }
+                </strong>
+
+                <span>
+                  {
+                    currentMeta.type
+                  }
+                </span>
+
               </div>
             </div>
           </div>
 
-          <div className="er-config-grid">
+          <div
+            className="er-config-grid"
+            style={{
+              marginTop: 20,
+            }}
+          >
+
             <div>
-              <label className="sorting-label">Query Type</label>
+
+              <label className="sorting-label">
+                Query Pipeline
+              </label>
+
               <select
                 value={queryType}
-                onChange={(e) => setQueryType(e.target.value)}
                 className="sorting-select"
-                disabled={isRunning}
+                disabled
               >
+
                 <option value="select-where-order-limit">
-                  SELECT + WHERE + ORDER BY + LIMIT
+                  SELECT + WHERE +
+                  ORDER BY + LIMIT
                 </option>
+
               </select>
             </div>
 
             <div>
-              <label className="sorting-label">Animation Speed</label>
+
+              <label className="sorting-label">
+                Animation Speed
+              </label>
+
               <select
-                value={animationSpeed}
-                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                value={
+                  animationSpeed
+                }
+                onChange={(e) =>
+                  setAnimationSpeed(
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
                 className="sorting-select"
-                disabled={isRunning}
+                disabled={
+                  isRunning
+                }
               >
-                <option value={1100}>Slow</option>
-                <option value={700}>Normal</option>
-                <option value={350}>Fast</option>
+
+                <option
+                  value={1100}
+                >
+                  Slow
+                </option>
+
+                <option
+                  value={700}
+                >
+                  Normal
+                </option>
+
+                <option
+                  value={350}
+                >
+                  Fast
+                </option>
+
               </select>
             </div>
           </div>
 
           <div className="er-chip-row">
-            <button className="er-chip active">Table: students</button>
-            <button className="er-chip active">Rows: {sampleTable.length}</button>
+
             <button className="er-chip active">
-              Selected Columns: {selectedColumns.length}
+              Best:
+              {" "}
+              {
+                currentMeta.best
+              }
             </button>
-            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
-              {experimentRun ? "Simulation Run" : "Status: Ready"}
+
+            <button className="er-chip active">
+              Avg:
+              {" "}
+              {
+                currentMeta.average
+              }
             </button>
+
+            <button className="er-chip active">
+              Worst:
+              {" "}
+              {
+                currentMeta.worst
+              }
+            </button>
+
+            <button className="er-chip active">
+              Space:
+              {" "}
+              {
+                currentMeta.space
+              }
+            </button>
+
+            <button className="er-chip active">
+              Rows:
+              {" "}
+              {
+                sampleTable.length
+              }
+            </button>
+
+            <button className="er-chip active">
+              Columns:
+              {" "}
+              {
+                selectedColumns.length
+              }
+            </button>
+
+            <button className="er-chip active">
+              {
+                currentMeta.difficulty
+              }
+            </button>
+
+            <button
+              className={`er-chip ${
+                experimentRun
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {experimentRun
+                ? "Simulation Run"
+                : "Ready"}
+            </button>
+
           </div>
-          <div style={{ marginTop: 18 }}>
-  <MarkCompleteButton
-    labSlug="dbms"
-    experimentSlug="sql-basics"
-    points={10}
-  />
-</div>
+
+          {experimentRun && (
+
+            <div
+              style={{
+                marginTop: 18,
+              }}
+            >
+
+              <MarkCompleteButton
+                labSlug="dbms"
+                experimentSlug="sql-basics"
+                points={10}
+              />
+
+            </div>
+          )}
         </section>
 
         <div className="er-content-layout">
-          <section className="er-content-card">
-            {activeSection === "overview" && (
-              <DBMSSQLBasicsOverview sampleTable={sampleTable} />
-            )}
 
-            {activeSection === "simulation" && (
-              <DBMSSQLBasicsSimulation
-                sampleTable={sampleTable}
-                allColumns={allColumns}
-                selectedColumns={selectedColumns}
-                setSelectedColumns={setSelectedColumns}
-                whereColumn={whereColumn}
-                setWhereColumn={setWhereColumn}
-                whereOperator={whereOperator}
-                setWhereOperator={setWhereOperator}
-                whereValue={whereValue}
-                setWhereValue={setWhereValue}
-                orderByColumn={orderByColumn}
-                setOrderByColumn={setOrderByColumn}
-                orderDirection={orderDirection}
-                setOrderDirection={setOrderDirection}
-                limitValue={limitValue}
-                setLimitValue={setLimitValue}
-                runSimulation={runSimulation}
-                reset={reset}
-                loadSample={loadSample}
-                message={message}
-                displayRows={displayRows}
-                highlightedRowIds={highlightedRowIds}
-                stepHistory={stepHistory}
-                selectedStep={selectedStep}
-                generatedSQL={generatedSQL}
-                isRunning={isRunning}
+          <section className="er-content-card">
+
+            {activeSection ===
+              "overview" && (
+
+              <DBMSSQLBasicsOverview
+                sampleTable={
+                  sampleTable
+                }
               />
             )}
 
-            {activeSection === "quiz" && (
-              <DBMSSQLBasicsQuiz
-  quizQuestions={quizQuestions}
-  quizAnswers={quizAnswers}
-  quizSubmitted={quizSubmitted}
-  quizScore={quizScore}
-  quizSaveStatus={quizSaveStatus}
-  experimentRun={experimentRun}
-  handleQuizAnswer={handleQuizAnswer}
-  submitQuiz={submitQuiz}
-  redoQuiz={redoQuiz}
-/>
+            {activeSection ===
+              "simulation" && (
+
+              <DBMSSQLBasicsSimulation
+                sampleTable={
+                  sampleTable
+                }
+                allColumns={
+                  allColumns
+                }
+                selectedColumns={
+                  selectedColumns
+                }
+                setSelectedColumns={
+                  setSelectedColumns
+                }
+                whereColumn={
+                  whereColumn
+                }
+                setWhereColumn={
+                  setWhereColumn
+                }
+                whereOperator={
+                  whereOperator
+                }
+                setWhereOperator={
+                  setWhereOperator
+                }
+                whereValue={
+                  whereValue
+                }
+                setWhereValue={
+                  setWhereValue
+                }
+                orderByColumn={
+                  orderByColumn
+                }
+                setOrderByColumn={
+                  setOrderByColumn
+                }
+                orderDirection={
+                  orderDirection
+                }
+                setOrderDirection={
+                  setOrderDirection
+                }
+                limitValue={
+                  limitValue
+                }
+                setLimitValue={
+                  setLimitValue
+                }
+                runSimulation={
+                  runSimulation
+                }
+                reset={reset}
+                loadSample={
+                  loadSample
+                }
+                message={
+                  message
+                }
+                displayRows={
+                  displayRows
+                }
+                highlightedRowIds={
+                  highlightedRowIds
+                }
+                stepHistory={
+                  stepHistory
+                }
+                selectedStep={
+                  selectedStep
+                }
+                generatedSQL={
+                  generatedSQL
+                }
+                isRunning={
+                  isRunning
+                }
+              />
             )}
 
-            {activeSection === "coding" && <DBMSSQLBasicsCoding />}
+            {activeSection ===
+              "quiz" && (
+
+              <DBMSSQLBasicsQuiz
+                quizQuestions={
+                  quizQuestions
+                }
+                quizAnswers={
+                  quizAnswers
+                }
+                quizSubmitted={
+                  quizSubmitted
+                }
+                quizScore={
+                  quizScore
+                }
+                quizSaveStatus={
+                  quizSaveStatus
+                }
+                experimentRun={
+                  experimentRun
+                }
+                handleQuizAnswer={
+                  handleQuizAnswer
+                }
+                submitQuiz={
+                  submitQuiz
+                }
+                redoQuiz={
+                  redoQuiz
+                }
+              />
+            )}
+
+            {activeSection ===
+              "coding" && (
+
+              <DBMSSQLBasicsCoding />
+            )}
+
           </section>
         </div>
       </main>

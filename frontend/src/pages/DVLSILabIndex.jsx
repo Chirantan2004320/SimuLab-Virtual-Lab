@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import SimulabNavbar from "../components/SimulabNavbar";
+import api from "../API/api";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 22 },
@@ -15,9 +16,12 @@ const fadeUp = {
 };
 
 export default function DVLSILabIndex() {
+  const [completedExperiments, setCompletedExperiments] = useState([]);
+
   const experiments = [
     {
       name: "MOSFET Characteristics",
+      slug: "mosfet-characteristics",
       path: "/labs/dvlsi/mosfet-characteristics",
       desc: "Study the output and transfer characteristics of nMOS and pMOS devices.",
       icon: "⚡",
@@ -25,6 +29,7 @@ export default function DVLSILabIndex() {
     },
     {
       name: "Lambda Rules and Microwind",
+      slug: "lambda-rules-microwind",
       path: "/labs/dvlsi/lambda-rules-microwind",
       desc: "Explore lambda-based layout rules, spacing constraints, and Microwind concepts.",
       icon: "📐",
@@ -32,6 +37,7 @@ export default function DVLSILabIndex() {
     },
     {
       name: "CMOS Inverter Simulation",
+      slug: "cmos-inverter-simulation",
       path: "/labs/dvlsi/cmos-inverter-simulation",
       desc: "Analyze inverter behavior through VTC, transient response, and delay concepts.",
       icon: "🔁",
@@ -39,6 +45,7 @@ export default function DVLSILabIndex() {
     },
     {
       name: "CMOS Inverter Layout",
+      slug: "cmos-inverter-layout",
       path: "/labs/dvlsi/cmos-inverter-layout",
       desc: "Understand stick diagrams, transistor placement, and layout-level inverter design.",
       icon: "🧩",
@@ -46,6 +53,7 @@ export default function DVLSILabIndex() {
     },
     {
       name: "CMOS NOR Gate",
+      slug: "cmos-nor-gate",
       path: "/labs/dvlsi/cmos-nor-gate",
       desc: "Study the structure and behavior of a 2-input CMOS NOR gate.",
       icon: "🔲",
@@ -53,6 +61,7 @@ export default function DVLSILabIndex() {
     },
     {
       name: "CMOS NAND Gate",
+      slug: "cmos-nand-gate",
       path: "/labs/dvlsi/cmos-nand-gate",
       desc: "Study a 2-input CMOS NAND gate and observe its behavior for different inputs.",
       icon: "🟩",
@@ -60,6 +69,7 @@ export default function DVLSILabIndex() {
     },
     {
       name: "Transmission Gate",
+      slug: "transmission-gate",
       path: "/labs/dvlsi/transmission-gate",
       desc: "Study how transmission gates and pass transistors transmit and switch signals.",
       icon: "🔀",
@@ -67,6 +77,7 @@ export default function DVLSILabIndex() {
     },
     {
       name: "Ring Oscillator",
+      slug: "ring-oscillator",
       path: "/labs/dvlsi/ring-oscillator",
       desc: "Study oscillation in an odd-number inverter loop through delay and feedback.",
       icon: "🔄",
@@ -74,12 +85,43 @@ export default function DVLSILabIndex() {
     },
     {
       name: "SRAM Cell Basics",
+      slug: "sram-cell",
       path: "/labs/dvlsi/sram-cell",
       desc: "Study how an SRAM cell stores, holds, reads, and writes one bit.",
       icon: "🧠",
       color: "190 95% 39%",
     },
   ];
+
+  const fetchCompletedExperiments = async () => {
+    try {
+      const res = await api.get("/api/progress/me");
+
+      const completed = res.data.experiments
+        .filter((exp) => exp.status === "completed")
+        .map((exp) => exp.experimentSlug);
+
+      setCompletedExperiments(completed);
+    } catch (error) {
+      console.error("Failed to load experiment progress:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompletedExperiments();
+  }, []);
+
+  useEffect(() => {
+    const refresh = () => fetchCompletedExperiments();
+
+    window.addEventListener("progress-updated", refresh);
+
+    return () => {
+      window.removeEventListener("progress-updated", refresh);
+    };
+  }, []);
+
+  const isCompleted = (slug) => completedExperiments.includes(slug);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -105,8 +147,8 @@ export default function DVLSILabIndex() {
             </div>
 
             <p className="text-muted-foreground text-base sm:text-lg max-w-4xl mx-auto leading-relaxed">
-              Explore Digital VLSI experiments covering device behavior, layout rules,
-              CMOS analysis, layout design, and basic VLSI building blocks.
+              Explore Digital VLSI experiments covering device behavior, layout
+              rules, CMOS analysis, layout design, and basic VLSI building blocks.
             </p>
           </motion.div>
 
@@ -144,14 +186,30 @@ export default function DVLSILabIndex() {
                     {exp.desc}
                   </p>
 
-                  <Link to={exp.path}>
-                    <Button
-                      variant="hero"
-                      className="font-display gap-2 rounded-xl px-7 py-5 text-base"
-                    >
-                      Start Experiment <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Link to={exp.path}>
+                      <Button
+                        variant="hero"
+                        className="font-display gap-2 rounded-xl px-7 py-5 text-base"
+                      >
+                        Start Experiment
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
+
+                    <button
+  disabled
+  className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold transition-all duration-300 cursor-default border backdrop-blur-sm
+    ${
+      isCompleted(exp.slug)
+        ? "bg-green-500/15 border-green-400/40 text-green-300 shadow-lg shadow-green-500/10"
+        : "bg-white/5 border-white/10 text-muted-foreground"
+    }`}
+>
+  <CheckCircle2 className="w-4 h-4" />
+  {isCompleted(exp.slug) ? "Completed" : "Not Completed"}
+</button>
+                  </div>
                 </div>
               </motion.div>
             ))}

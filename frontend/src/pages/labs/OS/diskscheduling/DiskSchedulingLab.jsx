@@ -1,458 +1,1049 @@
-import React, { useEffect, useMemo, useState } from "react";
-import "../../../Lab.css";
+ /* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
+import {
+  BookOpen,
+  PlayCircle,
+  Brain,
+  FileCode2,
+  ChevronsLeft,
+  HardDrive,
+} from "lucide-react";
+
 import "../../../SortingLab.css";
+
 import DiskSchedulingOverview from "./DiskSchedulingOverview.jsx";
 import DiskSchedulingQuiz from "./DiskSchedulingQuiz.jsx";
 import DiskSchedulingCoding from "./DiskSchedulingCoding.jsx";
 import DiskSchedulingSimulation from "./DiskSchedulingSimulation.jsx";
 
-const diskQuizQuestionsByMode = {
-  fcfs: [
-    {
-      question: "FCFS disk scheduling serves requests in:",
-      options: [
-        "Shortest seek order",
-        "Arrival order",
-        "Circular order only",
-        "Descending order"
-      ],
-      correct: 1
-    },
-    {
-      question: "A drawback of FCFS disk scheduling is:",
-      options: [
-        "Needs future knowledge",
-        "Can cause large total head movement",
-        "Works only for SSDs",
-        "Cannot handle more than 5 requests"
-      ],
-      correct: 1
-    },
-    {
-      question: "FCFS stands for:",
-      options: [
-        "First Come First Serve",
-        "Fastest Cylinder First Scan",
-        "First Cylinder First Seek",
-        "Fixed Circular File System"
-      ],
-      correct: 0
-    }
-  ],
-  sstf: [
-    {
-      question: "SSTF selects the request that is:",
-      options: [
-        "Oldest",
-        "Closest to current head position",
-        "Largest track number",
-        "Last in queue"
-      ],
-      correct: 1
-    },
-    {
-      question: "SSTF may lead to:",
-      options: [
-        "Starvation of far requests",
-        "No head movement",
-        "Only circular movement",
-        "Immediate deadlock"
-      ],
-      correct: 0
-    },
-    {
-      question: "SSTF stands for:",
-      options: [
-        "Shortest Seek Time First",
-        "Smallest Sector Track First",
-        "Seek Scan Track Function",
-        "Sector Scheduling Time Formula"
-      ],
-      correct: 0
-    }
-  ],
-  scan: [
-    {
-      question: "SCAN is also known as:",
-      options: [
-        "Cyclic scheduling",
-        "Elevator algorithm",
-        "Round robin disk scheduling",
-        "Priority seek"
-      ],
-      correct: 1
-    },
-    {
-      question: "In SCAN, the disk head:",
-      options: [
-        "Always jumps randomly",
-        "Moves in one direction servicing requests, then reverses",
-        "Never reverses direction",
-        "Only serves nearest request"
-      ],
-      correct: 1
-    },
-    {
-      question: "SCAN improves over FCFS by:",
-      options: [
-        "Reducing unnecessary head movement",
-        "Using no head movement at all",
-        "Replacing pages",
-        "Avoiding interrupts"
-      ],
-      correct: 0
-    }
-  ],
-  cscan: [
-    {
-      question: "In C-SCAN, the disk head:",
-      options: [
-        "Moves back and forth servicing requests",
-        "Moves in one direction and jumps back to start",
-        "Always chooses nearest request",
-        "Stops after first pass"
-      ],
-      correct: 1
-    },
-    {
-      question: "C-SCAN provides:",
-      options: [
-        "More uniform waiting time",
-        "No seek time",
-        "No head movement",
-        "Only descending traversal"
-      ],
-      correct: 0
-    },
-    {
-      question: "C-SCAN differs from SCAN because it:",
-      options: [
-        "Never services requests",
-        "Uses circular return instead of reversing service direction",
-        "Works only on magnetic tapes",
-        "Ignores current head position"
-      ],
-      correct: 1
-    }
-  ]
-};
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+import MarkCompleteButton from "../../../../components/MarkCompleteButton";
 
-const codingProblemByMode = {
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
+
+const sidebarItems = [
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
+
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
+];
+
+const modeMeta = {
   fcfs: {
-    title: "Implement FCFS Disk Scheduling",
-    description:
-      "Write logic to serve disk requests in arrival order and calculate total head movement."
+    best: "O(n)",
+    average: "O(n)",
+    worst: "O(n)",
+    space: "O(1)",
+    type: "Arrival Order Scheduling",
   },
+
   sstf: {
-    title: "Implement SSTF Disk Scheduling",
-    description:
-      "Write logic to always serve the nearest pending disk request and calculate total head movement."
+    best: "O(n log n)",
+    average: "O(n²)",
+    worst: "O(n²)",
+    space: "O(n)",
+    type: "Seek Optimization",
   },
+
   scan: {
-    title: "Implement SCAN Disk Scheduling",
-    description:
-      "Write logic to move the head in one direction, service requests, then reverse direction."
+    best: "O(n log n)",
+    average: "O(n log n)",
+    worst: "O(n log n)",
+    space: "O(n)",
+    type: "Elevator Algorithm",
   },
+
   cscan: {
-    title: "Implement C-SCAN Disk Scheduling",
-    description:
-      "Write logic to move the head in one direction, then jump back to the start and continue."
-  }
+    best: "O(n log n)",
+    average: "O(n log n)",
+    worst: "O(n log n)",
+    space: "O(n)",
+    type: "Circular Elevator",
+  },
 };
 
-const diskCodeTemplates = {
-  fcfs: {
-    javascript: `function fcfsDiskScheduling(requests, head) {
-  let totalMovement = 0;
-  let current = head;
+const modeNames = {
+  fcfs:
+    "FCFS Disk Scheduling",
 
-  for (const request of requests) {
-    totalMovement += Math.abs(request - current);
-    current = request;
-  }
+  sstf:
+    "SSTF Disk Scheduling",
 
-  return totalMovement;
-}`,
-    python: `def fcfs_disk_scheduling(requests, head):
-    total_movement = 0
-    current = head
+  scan:
+    "SCAN Disk Scheduling",
 
-    for request in requests:
-        total_movement += abs(request - current)
-        current = request
-
-    return total_movement`,
-    cpp: `// Implement FCFS disk scheduling and total head movement.`,
-    c: `/* Implement FCFS disk scheduling and total head movement. */`,
-    java: `// Implement FCFS disk scheduling and total head movement.`
-  },
-  sstf: {
-    javascript: `function sstfDiskScheduling(requests, head) {
-  let pending = [...requests];
-  let current = head;
-  let totalMovement = 0;
-
-  while (pending.length > 0) {
-    let nearestIndex = 0;
-
-    for (let i = 1; i < pending.length; i++) {
-      if (
-        Math.abs(pending[i] - current) <
-        Math.abs(pending[nearestIndex] - current)
-      ) {
-        nearestIndex = i;
-      }
-    }
-
-    totalMovement += Math.abs(pending[nearestIndex] - current);
-    current = pending[nearestIndex];
-    pending.splice(nearestIndex, 1);
-  }
-
-  return totalMovement;
-}`,
-    python: `def sstf_disk_scheduling(requests, head):
-    pending = requests[:]
-    current = head
-    total_movement = 0
-
-    while pending:
-        nearest = min(pending, key=lambda x: abs(x - current))
-        total_movement += abs(nearest - current)
-        current = nearest
-        pending.remove(nearest)
-
-    return total_movement`,
-    cpp: `// Implement SSTF disk scheduling and total head movement.`,
-    c: `/* Implement SSTF disk scheduling and total head movement. */`,
-    java: `// Implement SSTF disk scheduling and total head movement.`
-  },
-  scan: {
-    javascript: `function scanDiskScheduling(requests, head) {
-  return "Implement SCAN scheduling here";
-}`,
-    python: `def scan_disk_scheduling(requests, head):
-    return "Implement SCAN scheduling here"`,
-    cpp: `// Implement SCAN disk scheduling.`,
-    c: `/* Implement SCAN disk scheduling. */`,
-    java: `// Implement SCAN disk scheduling.`
-  },
-  cscan: {
-    javascript: `function cscanDiskScheduling(requests, head) {
-  return "Implement C-SCAN scheduling here";
-}`,
-    python: `def cscan_disk_scheduling(requests, head):
-    return "Implement C-SCAN scheduling here"`,
-    cpp: `// Implement C-SCAN disk scheduling.`,
-    c: `/* Implement C-SCAN disk scheduling. */`,
-    java: `// Implement C-SCAN disk scheduling.`
-  }
+  cscan:
+    "C-SCAN Disk Scheduling",
 };
+
+const problemBank = [
+  {
+    id: 1,
+
+    mode: "fcfs",
+
+    title:
+      "Implement FCFS Disk Scheduling",
+
+    problem_statement:
+      "Write logic to serve disk requests in arrival order and calculate total head movement.",
+
+    sample_input:
+      "Requests=[98,183,37,122]\nHead=53",
+
+    sample_output:
+      "Total Head Movement = 236",
+  },
+
+  {
+    id: 2,
+
+    mode: "sstf",
+
+    title:
+      "Implement SSTF Disk Scheduling",
+
+    problem_statement:
+      "Write logic to always select the nearest pending disk request.",
+
+    sample_input:
+      "Requests=[98,183,37,122]\nHead=53",
+
+    sample_output:
+      "Seek sequence optimized using nearest request.",
+  },
+
+  {
+    id: 3,
+
+    mode: "scan",
+
+    title:
+      "Implement SCAN Algorithm",
+
+    problem_statement:
+      "Write logic to move the disk head in one direction and reverse after servicing requests.",
+
+    sample_input:
+      "Direction=Right",
+
+    sample_output:
+      "SCAN traversal completed.",
+  },
+
+  {
+    id: 4,
+
+    mode: "cscan",
+
+    title:
+      "Implement C-SCAN Algorithm",
+
+    problem_statement:
+      "Write logic for circular scanning disk scheduling.",
+
+    sample_input:
+      "Direction=Right",
+
+    sample_output:
+      "Circular SCAN traversal completed.",
+  },
+];
 
 export default function DiskSchedulingLab() {
-  const [mode, setMode] = useState("fcfs");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [message] = useState("Disk Scheduling lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
 
-  const quizQuestions = useMemo(
-    () => diskQuizQuestionsByMode[mode],
-    [mode]
-  );
+  const [mode, setMode] =
+    useState("fcfs");
 
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("overview");
 
-  const [selectedLanguage, setSelectedLanguage] = useState("javascript");
-  const [code, setCode] = useState(diskCodeTemplates.fcfs.javascript);
-  const [codeResult, setCodeResult] = useState("");
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  // =========================
+  // CODING STATES
+  // =========================
+
+  const [
+    currentProblems,
+    setCurrentProblems,
+  ] = useState([]);
+
+  const [
+    selectedLanguages,
+    setSelectedLanguages,
+  ] = useState({});
+
+  const [codes, setCodes] =
+    useState({});
+
+  const [results, setResults] =
+    useState({});
+
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus,
+  ] = useState({});
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "OS" &&
+              q.experiment ===
+                "Disk Scheduling"
+          );
+
+        const modeQuestions =
+          filtered.filter(
+            (q) =>
+              (
+                q.topic ||
+                "fcfs"
+              ).toLowerCase() ===
+              mode
+          );
+
+        setQuizQuestions(
+          modeQuestions
+        );
+
+        setQuizAnswers(
+          Array(
+            modeQuestions.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, [mode]);
 
   useEffect(() => {
-    setQuizAnswers(Array(diskQuizQuestionsByMode[mode].length).fill(null));
-    setQuizSubmitted(false);
-    setQuizScore(0);
-    setCodeResult("");
-    setExperimentRun(false);
-  }, [mode]);
 
-  useEffect(() => {
-    setCode(diskCodeTemplates[mode][selectedLanguage]);
-    setCodeResult("");
-  }, [mode, selectedLanguage]);
+    fetchQuizQuestions();
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
+  }, [fetchQuizQuestions]);
+
+  // =========================
+  // QUIZ FUNCTIONS
+  // =========================
+
+  const handleQuizAnswer = (
+    index,
+    value
+  ) => {
+
+    const updated = [
+      ...quizAnswers,
+    ];
+
+    updated[index] = value;
+
     setQuizAnswers(updated);
   };
 
-  const submitQuiz = () => {
-    let score = 0;
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
-    });
+  const submitQuiz =
+    async () => {
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
+      let score = 0;
 
-    const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-    scores.push({
-      subject: "OS",
-      experiment: `disk-scheduling-${mode}`,
-      correct: score,
-      total: quizQuestions.length,
-      time: Date.now()
-    });
-    localStorage.setItem("vlab_scores", JSON.stringify(scores));
+      quizQuestions.forEach(
+        (q, i) => {
+
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(true);
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "disk-scheduling",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
+        );
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
+        );
+      }
+    };
+
+  const redoQuiz = () => {
+
+    setQuizSubmitted(false);
+
+    setQuizScore(0);
+
+    setQuizAnswers(
+      Array(
+        quizQuestions.length
+      ).fill(null)
+    );
   };
 
-  const runCode = () => {
-    if (selectedLanguage !== "javascript") {
-      setCodeResult(
-        `Execution for ${selectedLanguage.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
+  // =========================
+  // CODING FUNCTIONS
+  // =========================
+
+  const generateProblems =
+    () => {
+
+      const filtered =
+        problemBank.filter(
+          (p) =>
+            p.mode ===
+            mode
+        );
+
+      setCurrentProblems(
+        filtered
       );
-      return;
-    }
+    };
 
-    try {
-      let result;
+  const handleLanguageChange =
+    (
+      problemId,
+      language
+    ) => {
 
-      if (mode === "fcfs") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "requests",
-          "head",
-          `${code}; return fcfsDiskScheduling(requests, head);`
-        );
-        result = fn([98, 183, 37, 122, 14, 124, 65, 67], 53);
-      } else if (mode === "sstf") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "requests",
-          "head",
-          `${code}; return sstfDiskScheduling(requests, head);`
-        );
-        result = fn([98, 183, 37, 122, 14, 124, 65, 67], 53);
-      } else if (mode === "scan") {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "requests",
-          "head",
-          `${code}; return scanDiskScheduling(requests, head);`
-        );
-        result = fn([98, 183, 37, 122, 14, 124, 65, 67], 53);
-      } else {
-        // eslint-disable-next-line no-new-func
-        const fn = new Function(
-          "requests",
-          "head",
-          `${code}; return cscanDiskScheduling(requests, head);`
-        );
-        result = fn([98, 183, 37, 122, 14, 124, 65, 67], 53);
+      setSelectedLanguages(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            language,
+        })
+      );
+    };
+
+  const handleCodeChange =
+    (
+      problemId,
+      language,
+      value
+    ) => {
+
+      const key =
+        `${problemId}_${language}`;
+
+      setCodes((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    };
+
+  const runCode =
+    (
+      problemId,
+      language
+    ) => {
+
+      const key =
+        `${problemId}_${language}`;
+
+      const answer =
+        codes[key] || "";
+
+      if (!answer.trim()) {
+
+        setResults((prev) => ({
+          ...prev,
+
+          [problemId]: {
+            verdict:
+              "failed",
+
+            passedTests:
+              0,
+
+            totalTests:
+              1,
+
+            points:
+              0,
+          },
+        }));
+
+        return;
       }
 
-      setCodeResult(`Output:\n${JSON.stringify(result, null, 2)}`);
-    } catch (error) {
-      setCodeResult(`Error: ${error.message}`);
-    }
-  };
+      const normalized =
+        answer
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
 
-  const codingProblem = codingProblemByMode[mode];
+      let passed = false;
+
+      if (
+        problemId === 1
+      ) {
+
+        passed =
+          normalized.includes(
+            "total"
+          ) ||
+          normalized.includes(
+            "movement"
+          );
+      }
+
+      else if (
+        problemId === 2
+      ) {
+
+        passed =
+          normalized.includes(
+            "nearest"
+          ) ||
+          normalized.includes(
+            "sstf"
+          );
+      }
+
+      else if (
+        problemId === 3
+      ) {
+
+        passed =
+          normalized.includes(
+            "scan"
+          ) ||
+          normalized.includes(
+            "direction"
+          );
+      }
+
+      else if (
+        problemId === 4
+      ) {
+
+        passed =
+          normalized.includes(
+            "cscan"
+          ) ||
+          normalized.includes(
+            "c-scan"
+          );
+      }
+
+      setResults((prev) => ({
+        ...prev,
+
+        [problemId]: {
+          verdict:
+            passed
+              ? "passed"
+              : "failed",
+
+          passedTests:
+            passed
+              ? 1
+              : 0,
+
+          totalTests: 1,
+
+          points:
+            passed
+              ? 10
+              : 0,
+        },
+      }));
+
+      setCodingSaveStatus(
+        (prev) => ({
+          ...prev,
+
+          [problemId]:
+            passed
+              ? "Coding progress saved successfully."
+              : "Incorrect answer. Try again.",
+        })
+      );
+    };
+
+  const analyzeCode =
+    () => {
+
+      alert(
+        "AI Code Analysis Coming Soon"
+      );
+    };
+
+  const correctCode =
+    () => {
+
+      alert(
+        "AI Code Correction Coming Soon"
+      );
+    };
+
+  const progressPercent =
+    activeSection ===
+    "overview"
+      ? 20
+      : activeSection ===
+        "simulation"
+      ? 50
+      : activeSection ===
+        "quiz"
+      ? 75
+      : 95;
 
   return (
-    <div className="lab-page">
-      <h1>SimuLab: Virtual Lab – Disk Scheduling</h1>
+    <div className="er-shell">
 
-      <section className="card" style={{ marginBottom: "20px" }}>
-        <h2>Disk Scheduling Mode</h2>
+      <aside
+        className={`er-left-rail ${
+          sidebarCollapsed
+            ? "collapsed"
+            : ""
+        }`}
+      >
 
-        <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", alignItems: "end" }}>
+        <div className="er-brand">
+
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+            <SimuLabLogo
+              size={58}
+              showText={false}
+              variant="default"
+            />
+
+          </div>
+
+          {!sidebarCollapsed && (
+
+            <div>
+
+              <div className="er-brand-title">
+                SimuLab
+              </div>
+
+              <div className="er-brand-subtitle">
+                OS Lab
+              </div>
+
+            </div>
+          )}
+        </div>
+
+        <div className="er-collapse-wrap">
+
+          <button
+            type="button"
+            className={`er-collapse-btn ${
+              sidebarCollapsed
+                ? "collapsed"
+                : ""
+            }`}
+            onClick={() =>
+              setSidebarCollapsed(
+                (
+                  prev
+                ) => !prev
+              )
+            }
+          >
+
+            <ChevronsLeft
+              size={18}
+            />
+
+          </button>
+        </div>
+
+        <div className="er-nav">
+
+          {sidebarItems.map(
+            (item) => {
+
+              const Icon =
+                item.icon;
+
+              return (
+                <button
+                  key={
+                    item.key
+                  }
+                  className={`er-nav-item ${
+                    activeSection ===
+                    item.key
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setActiveSection(
+                      item.key
+                    )
+                  }
+                >
+
+                  <Icon
+                    size={18}
+                  />
+
+                  {!sidebarCollapsed && (
+                    <span>
+                      {
+                        item.label
+                      }
+                    </span>
+                  )}
+                </button>
+              );
+            }
+          )}
+        </div>
+
+        {!sidebarCollapsed && (
+
+          <div className="er-progress-card">
+
+            <div className="er-progress-title">
+              Your Progress
+            </div>
+
+            <div className="er-progress-ring">
+
+              <div
+                className="er-progress-circle"
+                style={{
+                  background: `conic-gradient(
+                    #4da8ff ${progressPercent}%,
+                    rgba(255,255,255,0.08) ${progressPercent}% 100%
+                  )`,
+                }}
+              >
+
+                <div className="er-progress-inner">
+
+                  <div className="er-progress-value">
+                    {progressPercent}%
+                  </div>
+
+                  <div className="er-progress-text">
+                    Complete
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      <main className="er-main-area">
+
+        <div className="er-page-header">
+
           <div>
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-              className="lab-select"
-              style={{ minWidth: "240px" }}
-            >
-              <option value="fcfs">FCFS</option>
-              <option value="sstf">SSTF</option>
-              <option value="scan">SCAN</option>
-              <option value="cscan">C-SCAN</option>
-            </select>
+
+            <h1 className="er-page-title">
+              {
+                modeNames[
+                  mode
+                ]
+              }
+            </h1>
+
+            <p className="er-page-subtitle">
+
+              Learn Disk Scheduling
+              concepts visually using
+              interactive simulations,
+              quizzes and coding
+              practice.
+
+            </p>
+
           </div>
         </div>
-      </section>
 
-      <div className="sorting-lab-layout">
-        <aside className="sorting-sidebar">
-          <button
-            className={`sorting-sidebar-item ${activeSection === "overview" ? "active" : ""}`}
-            onClick={() => setActiveSection("overview")}
+        <section className="er-config-card">
+
+          <div className="er-config-top">
+
+            <div>
+
+              <h2>
+                Disk Scheduling Configuration
+              </h2>
+
+              <p>
+                Configure and
+                simulate disk
+                scheduling algorithms
+                visually.
+              </p>
+
+            </div>
+
+            <div className="er-mode-pill">
+
+              <div className="er-mode-pill-icon">
+
+                <HardDrive
+                  size={18}
+                />
+
+              </div>
+
+              <div>
+
+                <strong>
+                  {
+                    modeNames[
+                      mode
+                    ]
+                  }
+                </strong>
+
+                <span>
+                  {
+                    modeMeta[
+                      mode
+                    ].type
+                  }
+                </span>
+
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 20,
+            }}
           >
-            Overview
-          </button>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "simulation" ? "active" : ""}`}
-            onClick={() => setActiveSection("simulation")}
-          >
-            Simulation
-          </button>
+            <select
+              value={mode}
+              onChange={(e) =>
+                setMode(
+                  e.target.value
+                )
+              }
+              className="sorting-select"
+              style={{
+                maxWidth: 320,
+              }}
+            >
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "quiz" ? "active" : ""}`}
-            onClick={() => setActiveSection("quiz")}
-          >
-            Quiz
-          </button>
+              <option value="fcfs">
+                FCFS
+              </option>
 
-          <button
-            className={`sorting-sidebar-item ${activeSection === "coding" ? "active" : ""}`}
-            onClick={() => setActiveSection("coding")}
-          >
-            Coding
-          </button>
-        </aside>
+              <option value="sstf">
+                SSTF
+              </option>
 
-        <main className="sorting-content">
-          {activeSection === "overview" && (
-            <DiskSchedulingOverview mode={mode} message={message} />
+              <option value="scan">
+                SCAN
+              </option>
+
+              <option value="cscan">
+                C-SCAN
+              </option>
+
+            </select>
+          </div>
+
+          <div className="er-chip-row">
+
+            <button className="er-chip active">
+              Best:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].best
+              }
+            </button>
+
+            <button className="er-chip active">
+              Avg:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].average
+              }
+            </button>
+
+            <button className="er-chip active">
+              Worst:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].worst
+              }
+            </button>
+
+            <button className="er-chip active">
+              Space:
+              {" "}
+              {
+                modeMeta[
+                  mode
+                ].space
+              }
+            </button>
+
+            <button
+              className={`er-chip ${
+                experimentRun
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {experimentRun
+                ? "Experiment Run"
+                : "Not Started"}
+            </button>
+
+          </div>
+
+          {experimentRun && (
+
+            <div
+              style={{
+                marginTop: 18,
+              }}
+            >
+
+              <MarkCompleteButton
+                labSlug="os"
+                experimentSlug="disk-scheduling"
+                points={10}
+              />
+
+            </div>
           )}
+        </section>
 
-          {activeSection === "simulation" && (
-  <DiskSchedulingSimulation
-    mode={mode}
-    setExperimentRun={setExperimentRun}
-  />
-)}
-          {activeSection === "quiz" && (
-            <DiskSchedulingQuiz
-              mode={mode}
-              quizQuestions={quizQuestions}
-              quizAnswers={quizAnswers}
-              quizSubmitted={quizSubmitted}
-              quizScore={quizScore}
-              experimentRun={experimentRun}
-              handleQuizAnswer={handleQuizAnswer}
-              submitQuiz={submitQuiz}
-            />
-          )}
+        <div className="er-content-layout">
 
-          {activeSection === "coding" && (
-            <DiskSchedulingCoding
-              codingProblem={codingProblem}
-              selectedLanguage={selectedLanguage}
-              setSelectedLanguage={setSelectedLanguage}
-              code={code}
-              setCode={setCode}
-              codeResult={codeResult}
-              runCode={runCode}
-              mode={mode}
-            />
-          )}
-        </main>
-      </div>
+          <section className="er-content-card">
+
+            {activeSection ===
+              "overview" && (
+
+              <DiskSchedulingOverview
+                mode={mode}
+              />
+            )}
+
+            {activeSection ===
+              "simulation" && (
+
+              <DiskSchedulingSimulation
+                mode={mode}
+                setExperimentRun={
+                  setExperimentRun
+                }
+              />
+            )}
+
+            {activeSection ===
+              "quiz" && (
+
+              <DiskSchedulingQuiz
+                mode={mode}
+                quizQuestions={
+                  quizQuestions
+                }
+                quizAnswers={
+                  quizAnswers
+                }
+                quizSubmitted={
+                  quizSubmitted
+                }
+                quizScore={
+                  quizScore
+                }
+                quizSaveStatus={
+                  quizSaveStatus
+                }
+                experimentRun={
+                  experimentRun
+                }
+                handleQuizAnswer={
+                  handleQuizAnswer
+                }
+                submitQuiz={
+                  submitQuiz
+                }
+                redoQuiz={
+                  redoQuiz
+                }
+              />
+            )}
+
+            {activeSection ===
+              "coding" && (
+
+              <DiskSchedulingCoding
+                currentProblems={
+                  currentProblems
+                }
+                selectedLanguages={
+                  selectedLanguages
+                }
+                codes={codes}
+                results={results}
+                codingSaveStatus={
+                  codingSaveStatus
+                }
+                generateProblems={
+                  generateProblems
+                }
+                handleLanguageChange={
+                  handleLanguageChange
+                }
+                handleCodeChange={
+                  handleCodeChange
+                }
+                runCode={
+                  runCode
+                }
+                analyzeCode={
+                  analyzeCode
+                }
+                correctCode={
+                  correctCode
+                }
+                mode={mode}
+              />
+            )}
+
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

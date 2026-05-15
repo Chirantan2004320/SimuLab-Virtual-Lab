@@ -375,10 +375,13 @@ export default function DVLSILambdaRulesMicrowindLab() {
 
           <div style={{ marginTop: 18 }}>
             <MarkCompleteButton
-              labSlug="dvlsi"
-              experimentSlug="lambda-rules-microwind"
-              points={10}
-            />
+  labSlug="dvlsi"
+  experimentSlug="lambda-rules-microwind"
+  points={10}
+  onComplete={() => {
+    window.dispatchEvent(new Event("progress-updated"));
+  }}
+/>
           </div>
         </section>
 

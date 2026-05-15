@@ -163,7 +163,7 @@ const AIAssistant = ({ currentPage = "home", instituteMode = false }) => {
       setTimeout(() => {
         const statsMessage = {
           type: "ai",
-          content: "🎉 Great job completing the quiz! Here's your updated performance summary:\n\n" + getStudentStats()
+          content: "🎉 Great job completing the quiz! Here's your updated performance summary:\n\n"
         };
         setMessages(prev => [...prev, statsMessage]);
         localStorage.removeItem('vlab_last_quiz_completion'); // Clear the flag
@@ -351,9 +351,11 @@ const AIAssistant = ({ currentPage = "home", instituteMode = false }) => {
 
     // Check for basic syntax
     try {
+      //eslint-disable-next-line no-new-func
       new Function('arr', code);
     } catch (e) {
       try {
+        //eslint-disable-next-line no-new-func
         new Function('stack', 'value', code);
       } catch (e2) {
         return configs.general.syntaxError.replace('{error}', e.message);

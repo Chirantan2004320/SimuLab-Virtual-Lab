@@ -1,141 +1,252 @@
-import React, { useState } from "react";
+import React from "react";
 
-const questions = [
-  {
-    q: "A ring oscillator requires how many inverter stages to oscillate?",
-    options: [
-      "An even number only",
-      "An odd number only",
-      "Exactly two",
-      "Exactly four"
-    ],
-    correct: 1
-  },
-  {
-    q: "The oscillation period of a ring oscillator is approximately:",
-    options: [
-      "T ≈ N / tp",
-      "T ≈ 2 × N × tp",
-      "T ≈ VDD × tp",
-      "T ≈ tp / N"
-    ],
-    correct: 1
-  },
-  {
-    q: "If the number of inverter stages is even, the ring oscillator usually:",
-    options: [
-      "Oscillates faster",
-      "Settles instead of oscillating",
-      "Draws no power ever",
-      "Acts like a NAND gate"
-    ],
-    correct: 1
-  },
-  {
-    q: "The main reason oscillation occurs is:",
-    options: [
-      "Odd inversion plus delay in feedback loop",
-      "No power supply needed",
-      "Infinite gain alone",
-      "Removing all delay"
-    ],
-    correct: 0
-  },
-  {
-    q: "Ring oscillators are often used for:",
-    options: [
-      "Only memory storage",
-      "Process monitoring and clock-like signal generation",
-      "Only database indexing",
-      "Only layout extraction"
-    ],
-    correct: 1
-  }
-];
+import {
+  Brain,
+  Lock,
+  Trophy,
+  RotateCcw
+} from "lucide-react";
 
-export default function DVLSIRingOscillatorQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
+export default function DVLSIRingOscillatorQuiz({
+  experimentRun,
+  questions,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total =
+    questions.length;
 
-  const handleAnswer = (index, value) => {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+  const percentage = total
+    ? Math.round(
+        (score / total) *
+          100
+      )
+    : 0;
 
   return (
-    <section className="card">
-      <h2>Quiz</h2>
+    <section className="quiz-shell">
+      <div
+        className="sorting-sim-title-wrap"
+        style={{
+          marginBottom: 18
+        }}
+      >
+        <div className="sorting-sim-icon">
+          <Brain size={18} />
+        </div>
+
+        <div>
+          <h2 className="sorting-sim-title">
+            Quiz
+          </h2>
+
+          <p className="sorting-sim-subtitle">
+            Test your understanding of
+            ring oscillator feedback,
+            propagation delay, timing,
+            and oscillation conditions.
+          </p>
+        </div>
+      </div>
 
       {!experimentRun ? (
-        <p>Please interact with the ring oscillator simulation before attempting the quiz.</p>
-      ) : (
-        <div>
-          {questions.map((q, i) => (
-            <div key={i} className="quiz-question">
-              <p>
-                <strong>{i + 1}. {q.q}</strong>
-              </p>
+        <div className="quiz-locked-box">
+          <Lock size={18} />
 
-              {q.options.map((opt, j) => (
-                <label
-                  key={j}
-                  className={`quiz-option ${
-                    submitted
-                      ? j === q.correct
-                        ? "correct"
-                        : answers[i] === j
-                        ? "wrong"
-                        : ""
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q${i}`}
-                    value={j}
-                    checked={answers[i] === j}
-                    onChange={() => handleAnswer(i, j)}
-                    disabled={submitted}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          ))}
+          <span>
+            Please interact with the
+            ring oscillator simulation
+            before attempting the
+            quiz.
+          </span>
+        </div>
+      ) : !submitted ? (
+        <div className="quiz-list">
+          {questions.map(
+            (q, i) => (
+              <div
+                key={i}
+                className="quiz-card-upgraded"
+              >
+                <div className="quiz-question-title">
+                  {i + 1}.{" "}
+                  {q.q}
+                </div>
 
-          {!submitted ? (
+                <div className="quiz-options-grid">
+                  {q.options.map(
+                    (
+                      opt,
+                      j
+                    ) => (
+                      <label
+                        key={j}
+                        className={`quiz-option-card ${
+                          answers[
+                            i
+                          ] === j
+                            ? "selected"
+                            : ""
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`q${i}`}
+                          checked={
+                            answers[
+                              i
+                            ] ===
+                            j
+                          }
+                          onChange={() =>
+                            handleAnswer(
+                              i,
+                              j
+                            )
+                          }
+                        />
+
+                        <span>
+                          {opt}
+                        </span>
+                      </label>
+                    )
+                  )}
+                </div>
+              </div>
+            )
+          )}
+
+          <div className="quiz-actions-row">
             <button
-              className="btn primary"
-              onClick={submitQuiz}
-              disabled={answers.includes(null)}
+              className="sim-btn sim-btn-primary"
+              onClick={
+                submitQuiz
+              }
+              disabled={answers.includes(
+                null
+              )}
             >
               Submit Quiz
             </button>
-          ) : (
+          </div>
+        </div>
+      ) : (
+        <div className="quiz-result-shell">
+          <div className="quiz-score-box">
+            <Trophy size={22} />
+
             <div>
-              <p>Score: {score} / {questions.length}</p>
-              <button className="btn secondary" onClick={redoQuiz}>
-                Redo Quiz
-              </button>
+              <h3>
+                Quiz Completed
+              </h3>
+
+              <p>
+                Score:{" "}
+                <strong>
+                  {score} /{" "}
+                  {total}
+                </strong>{" "}
+                (
+                {
+                  percentage
+                }
+                %)
+              </p>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p
+              style={{
+                marginTop: 8
+              }}
+            >
+              {
+                quizSaveStatus
+              }
+            </p>
           )}
+
+          <div className="quiz-list">
+            {questions.map(
+              (
+                q,
+                i
+              ) => (
+                <div
+                  key={i}
+                  className="quiz-card-upgraded"
+                >
+                  <div className="quiz-question-title">
+                    {i + 1}.{" "}
+                    {q.q}
+                  </div>
+
+                  <div className="quiz-options-grid">
+                    {q.options.map(
+                      (
+                        opt,
+                        j
+                      ) => {
+                        const isCorrect =
+                          j ===
+                          q.correct;
+
+                        const isWrong =
+                          answers[
+                            i
+                          ] ===
+                            j &&
+                          j !==
+                            q.correct;
+
+                        return (
+                          <div
+                            key={
+                              j
+                            }
+                            className={`quiz-option-card result-mode ${
+                              isCorrect
+                                ? "correct"
+                                : isWrong
+                                ? "wrong"
+                                : ""
+                            }`}
+                          >
+                            <span>
+                              {
+                                opt
+                              }
+                            </span>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+
+          <div className="quiz-actions-row">
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={
+                redoQuiz
+              }
+            >
+              <RotateCcw
+                size={16}
+              />
+              Retry Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>

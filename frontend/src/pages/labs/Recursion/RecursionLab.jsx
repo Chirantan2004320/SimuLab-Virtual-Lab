@@ -1,940 +1,1109 @@
 /* eslint-disable no-new-func */
-import React, { useEffect, useMemo, useRef, useState } from "react";
+
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import axios from "axios";
+
 import {
   BookOpen,
   PlayCircle,
   Brain,
   FileCode2,
   ChevronsLeft,
-  Cpu
+  Cpu,
 } from "lucide-react";
 
 import "../../Lab.css";
 import "../../SortingLab.css";
 
+import SimuLabLogo from "../../../components/SimuLabLogo";
 import MarkCompleteButton from "../../../components/MarkCompleteButton";
-import { saveQuizResult, saveCodingSubmission } from "../../../API/progressApi";
 
 import RecursionOverview from "./RecursionOverview";
 import RecursionSimulation from "./RecursionSimulation";
 import RecursionQuiz from "./RecursionQuiz";
 import RecursionCoding from "./RecursionCoding";
 
-const simulabLogo = "/assets/logo.png";
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
 
 const sidebarItems = [
-  { key: "overview", label: "Overview", icon: BookOpen },
-  { key: "simulation", label: "Simulation", icon: PlayCircle },
-  { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Coding Practice", icon: FileCode2 }
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
+
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
 ];
 
-const factorialQuizQuestions = [
-  {
-    question: "What is the base case of factorial(n)?",
-    options: ["n === 2", "n === 1 or n === 0", "n < 0", "n === 10"],
-    correct: 1
-  },
-  {
-    question: "What happens if recursion has no base case?",
-    options: [
-      "It becomes faster",
-      "It stops automatically",
-      "It may cause stack overflow",
-      "It turns into iteration"
-    ],
-    correct: 2
-  },
-  {
-    question: "What is factorial(4)?",
-    options: ["24", "16", "10", "8"],
-    correct: 0
-  },
-  {
-    question: "Factorial recursion usually makes how many recursive calls per level?",
-    options: ["Zero", "One", "Two", "Three"],
-    correct: 1
-  },
-  {
-    question: "What is factorial(0)?",
-    options: ["0", "1", "Undefined", "10"],
-    correct: 1
-  }
-];
+const factorialProblemBank =
+  [
+    {
+      id: 1,
 
-const fibonacciQuizQuestions = [
-  {
-    question: "What are the base cases of fibonacci(n)?",
-    options: [
-      "fib(0)=0 and fib(1)=1",
-      "fib(1)=1 and fib(2)=2",
-      "fib(0)=1 and fib(1)=1",
-      "fib(2)=2 only"
-    ],
-    correct: 0
-  },
-  {
-    question: "Fibonacci recursion usually makes:",
-    options: ["One recursive call", "Two recursive calls", "No recursive calls", "Three recursive calls"],
-    correct: 1
-  },
-  {
-    question: "What is fibonacci(5)?",
-    options: ["3", "5", "8", "13"],
-    correct: 1
-  },
-  {
-    question: "Why is naive recursive Fibonacci expensive?",
-    options: [
-      "It uses loops",
-      "It repeats many subproblems",
-      "It sorts arrays first",
-      "It uses binary search"
-    ],
-    correct: 1
-  },
-  {
-    question: "What is fibonacci(0)?",
-    options: ["0", "1", "2", "-1"],
-    correct: 0
-  }
-];
+      title:
+        "Implement factorial(n)",
 
-const factorialProblemBank = [
-  {
-    id: 1,
-    title: "Implement factorial(n)",
-    description: "Write a recursive function factorial(n) that returns n! using recursion.",
-    functionName: "factorial",
-    tests: [
-      { input: [5], expected: 120 },
-      { input: [0], expected: 1 },
-      { input: [3], expected: 6 }
-    ]
-  },
-  {
-    id: 2,
-    title: "Implement factorialSum(n)",
-    description:
-      "Write a recursive function factorialSum(n) that returns 1! + 2! + ... + n! for n >= 1.",
-    functionName: "factorialSum",
-    tests: [
-      { input: [3], expected: 9 },
-      { input: [1], expected: 1 },
-      { input: [4], expected: 33 }
-    ]
-  },
-  {
-    id: 3,
-    title: "Count factorial call depth",
-    description:
-      "Write a recursive function factorialDepth(n) that returns how many recursive levels are used to compute factorial(n), including the base call.",
-    functionName: "factorialDepth",
-    tests: [
-      { input: [1], expected: 1 },
-      { input: [4], expected: 4 },
-      { input: [6], expected: 6 }
-    ]
-  },
-  {
-    id: 4,
-    title: "Check if factorial base case is reached",
-    description:
-      "Write a recursive function factorialBaseReached(n) that returns true once recursion reaches the factorial base case.",
-    functionName: "factorialBaseReached",
-    tests: [
-      { input: [0], expected: true },
-      { input: [1], expected: true },
-      { input: [5], expected: true }
-    ]
-  },
-  {
-    id: 5,
-    title: "Recursive multiplication using repeated addition",
-    description:
-      "Write a recursive function multiply(a, b) that returns a × b using recursion and repeated addition.",
-    functionName: "multiply",
-    tests: [
-      { input: [3, 4], expected: 12 },
-      { input: [5, 0], expected: 0 },
-      { input: [2, 6], expected: 12 }
-    ]
-  }
-];
+      problem_statement:
+        "Write a recursive function factorial(n) that returns n! using recursion.",
 
-const fibonacciProblemBank = [
-  {
-    id: 101,
-    title: "Implement fibonacci(n)",
-    description:
-      "Write a recursive function fibonacci(n) that returns the nth Fibonacci number.",
-    functionName: "fibonacci",
-    tests: [
-      { input: [5], expected: 5 },
-      { input: [0], expected: 0 },
-      { input: [6], expected: 8 }
-    ]
-  },
-  {
-    id: 102,
-    title: "Implement fibonacciSum(n)",
-    description:
-      "Write a recursive function fibonacciSum(n) that returns fib(0) + fib(1) + ... + fib(n).",
-    functionName: "fibonacciSum",
-    tests: [
-      { input: [3], expected: 4 },
-      { input: [5], expected: 12 },
-      { input: [0], expected: 0 }
-    ]
-  },
-  {
-    id: 103,
-    title: "Check if number is Fibonacci",
-    description:
-      "Write a function isFibonacciValue(n) that returns true if n appears in the Fibonacci sequence up to fib(10), otherwise false.",
-    functionName: "isFibonacciValue",
-    tests: [
-      { input: [8], expected: true },
-      { input: [7], expected: false },
-      { input: [0], expected: true }
-    ]
-  },
-  {
-    id: 104,
-    title: "Count fibonacci recursive levels",
-    description:
-      "Write a recursive function fibonacciDepth(n) that returns the maximum depth of recursion needed to compute fibonacci(n).",
-    functionName: "fibonacciDepth",
-    tests: [
-      { input: [0], expected: 1 },
-      { input: [1], expected: 1 },
-      { input: [4], expected: 4 }
-    ]
-  },
-  {
-    id: 105,
-    title: "Return nth Tribonacci-like value",
-    description:
-      "Write a recursive function tribonacci(n) where tribonacci(0)=0, tribonacci(1)=1, tribonacci(2)=1 and tribonacci(n)=tribonacci(n-1)+tribonacci(n-2)+tribonacci(n-3).",
-    functionName: "tribonacci",
-    tests: [
-      { input: [3], expected: 2 },
-      { input: [4], expected: 4 },
-      { input: [5], expected: 7 }
-    ]
-  }
-];
+      sample_input:
+        "5",
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      sample_output:
+        "120",
+    },
 
-function getStarterCode(problem, language) {
-  if (language !== "javascript") {
-    return `// ${language.toUpperCase()} execution will be enabled later with Judge0.
-// For now, JavaScript runs directly in the browser.`;
-  }
+    {
+      id: 2,
 
-  const map = {
-    factorial: `function factorial(n) {
-  if (n === 0 || n === 1) return 1;
-  return n * factorial(n - 1);
-}
-`,
-    factorialSum: `function factorialSum(n) {
-  function factorial(x) {
-    if (x === 0 || x === 1) return 1;
-    return x * factorial(x - 1);
-  }
+      title:
+        "Factorial Sum",
 
-  if (n === 1) return 1;
-  return factorial(n) + factorialSum(n - 1);
-}
-`,
-    factorialDepth: `function factorialDepth(n) {
-  if (n === 0 || n === 1) return 1;
-  return 1 + factorialDepth(n - 1);
-}
-`,
-    factorialBaseReached: `function factorialBaseReached(n) {
-  if (n === 0 || n === 1) return true;
-  return factorialBaseReached(n - 1);
-}
-`,
-    multiply: `function multiply(a, b) {
-  if (b === 0) return 0;
-  return a + multiply(a, b - 1);
-}
-`,
-    fibonacci: `function fibonacci(n) {
-  if (n === 0) return 0;
-  if (n === 1) return 1;
-  return fibonacci(n - 1) + fibonacci(n - 2);
-}
-`,
-    fibonacciSum: `function fibonacciSum(n) {
-  function fibonacci(x) {
-    if (x === 0) return 0;
-    if (x === 1) return 1;
-    return fibonacci(x - 1) + fibonacci(x - 2);
-  }
+      problem_statement:
+        "Write a recursive function factorialSum(n) that returns 1! + 2! + ... + n!.",
 
-  if (n === 0) return 0;
-  return fibonacci(n) + fibonacciSum(n - 1);
-}
-`,
-    isFibonacciValue: `function isFibonacciValue(n) {
-  function fibonacci(x) {
-    if (x === 0) return 0;
-    if (x === 1) return 1;
-    return fibonacci(x - 1) + fibonacci(x - 2);
-  }
+      sample_input:
+        "4",
 
-  for (let i = 0; i <= 10; i++) {
-    if (fibonacci(i) === n) return true;
-  }
+      sample_output:
+        "33",
+    },
 
-  return false;
-}
-`,
-    fibonacciDepth: `function fibonacciDepth(n) {
-  if (n === 0 || n === 1) return 1;
-  return 1 + Math.max(fibonacciDepth(n - 1), fibonacciDepth(n - 2));
-}
-`,
-    tribonacci: `function tribonacci(n) {
-  if (n === 0) return 0;
-  if (n === 1 || n === 2) return 1;
-  return tribonacci(n - 1) + tribonacci(n - 2) + tribonacci(n - 3);
-}
-`
-  };
+    {
+      id: 3,
 
-  return map[problem.functionName] || `function solve() {\n  // Write your solution here\n}\n`;
-}
+      title:
+        "Recursive Multiplication",
 
-export default function RecursionLab() {
-  const [recursionType, setRecursionType] = useState("factorial");
-  const [inputValue, setInputValue] = useState("4");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [message, setMessage] = useState("Recursion visualizer initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
+      problem_statement:
+        "Implement multiplication using recursive repeated addition.",
 
-  const [steps, setSteps] = useState([]);
-  const [activeStepIndex, setActiveStepIndex] = useState(null);
-  const [finalResult, setFinalResult] = useState(null);
-  const [callFrames, setCallFrames] = useState([]);
+      sample_input:
+        "3 4",
 
-  const [isRunning, setIsRunning] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useState(700);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+      sample_output:
+        "12",
+    },
+  ];
 
-  const stopRequestedRef = useRef(false);
-  const inputRef = useRef(null);
+const fibonacciProblemBank =
+  [
+    {
+      id: 101,
 
-  const quizQuestions = useMemo(
-    () => (recursionType === "fibonacci" ? fibonacciQuizQuestions : factorialQuizQuestions),
-    [recursionType]
+      title:
+        "Implement fibonacci(n)",
+
+      problem_statement:
+        "Write a recursive function fibonacci(n) that returns nth Fibonacci number.",
+
+      sample_input:
+        "6",
+
+      sample_output:
+        "8",
+    },
+
+    {
+      id: 102,
+
+      title:
+        "Fibonacci Sum",
+
+      problem_statement:
+        "Return sum of fibonacci numbers from fib(0) to fib(n).",
+
+      sample_input:
+        "5",
+
+      sample_output:
+        "12",
+    },
+
+    {
+      id: 103,
+
+      title:
+        "Tribonacci",
+
+      problem_statement:
+        "Implement recursive tribonacci sequence.",
+
+      sample_input:
+        "5",
+
+      sample_output:
+        "7",
+    },
+  ];
+
+const sleep = (ms) =>
+  new Promise((resolve) =>
+    setTimeout(resolve, ms)
   );
 
-  const [quizAnswers, setQuizAnswers] = useState([]);
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizSaveStatus, setQuizSaveStatus] = useState("");
+export default function RecursionLab() {
 
-  const [currentProblems, setCurrentProblems] = useState([]);
-  const [selectedLanguages, setSelectedLanguages] = useState({});
-  const [codes, setCodes] = useState({});
-  const [results, setResults] = useState({});
-  const [codingSaveStatus, setCodingSaveStatus] = useState({});
-  const [codingAttempted, setCodingAttempted] = useState(false);
+  const [
+    recursionType,
+    setRecursionType,
+  ] = useState(
+    "factorial"
+  );
+
+  const [
+    inputValue,
+    setInputValue,
+  ] = useState("4");
+
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState(
+    "overview"
+  );
+
+  const [message, setMessage] =
+    useState(
+      "Recursion visualizer initialized."
+    );
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  const [steps, setSteps] =
+    useState([]);
+
+  const [
+    activeStepIndex,
+    setActiveStepIndex,
+  ] = useState(null);
+
+  const [
+    finalResult,
+    setFinalResult,
+  ] = useState(null);
+
+  const [
+    callFrames,
+    setCallFrames,
+  ] = useState([]);
+
+  const [isRunning, setIsRunning] =
+    useState(false);
+
+  const [
+    animationSpeed,
+    setAnimationSpeed,
+  ] = useState(700);
+
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const stopRequestedRef =
+    useRef(false);
+
+  const inputRef =
+    useRef(null);
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState({
+    factorial: [],
+    fibonacci: [],
+  });
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  // =========================
+  // CODING STATES
+  // =========================
+
+  const [
+    currentProblems,
+    setCurrentProblems,
+  ] = useState([]);
+
+  const [
+    selectedLanguages,
+    setSelectedLanguages,
+  ] = useState({});
+
+  const [codes, setCodes] =
+    useState({});
+
+  const [results, setResults] =
+    useState({});
+
+  const [
+    codingSaveStatus,
+  ] = useState({});
+
+  // =========================
+  // QUIZ FETCH
+  // =========================
+
+  const fetchQuizQuestions =
+    async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const factorial =
+          res.data.questions
+            .filter(
+              (q) =>
+                q.lab ===
+                  "DSA" &&
+                q.experiment ===
+                  "Recursion Factorial"
+            )
+            .map((q) => ({
+              id: q.id,
+
+              question:
+                q.question,
+
+              options: [
+                q.option_a,
+                q.option_b,
+                q.option_c,
+                q.option_d,
+              ],
+
+              correct_answer:
+                q.correct_answer,
+            }));
+
+        const fibonacci =
+          res.data.questions
+            .filter(
+              (q) =>
+                q.lab ===
+                  "DSA" &&
+                q.experiment ===
+                  "Recursion Fibonacci"
+            )
+            .map((q) => ({
+              id: q.id,
+
+              question:
+                q.question,
+
+              options: [
+                q.option_a,
+                q.option_b,
+                q.option_c,
+                q.option_d,
+              ],
+
+              correct_answer:
+                q.correct_answer,
+            }));
+
+        setQuizQuestions({
+          factorial,
+          fibonacci,
+        });
+
+      } catch (error) {
+
+        console.error(error);
+      }
+    };
 
   useEffect(() => {
-    stopRequestedRef.current = false;
-    setInputValue(recursionType === "factorial" ? "4" : "5");
-    setMessage("Recursion visualizer initialized.");
-    setExperimentRun(false);
-    setSteps([]);
-    setActiveStepIndex(null);
-    setFinalResult(null);
-    setCallFrames([]);
-    setIsRunning(false);
-    setQuizAnswers(Array(quizQuestions.length).fill(null));
-    setQuizSubmitted(false);
-    setQuizScore(0);
-    setQuizSaveStatus("");
-    setCurrentProblems([]);
-    setSelectedLanguages({});
-    setCodes({});
-    setResults({});
-    setCodingSaveStatus({});
-    setCodingAttempted(false);
-  }, [recursionType, quizQuestions.length]);
 
-  const addStep = (text, level = 0) => {
-    setSteps((prev) => [...prev, { text, level }]);
+    fetchQuizQuestions();
+
+  }, []);
+
+  const currentQuizQuestions =
+    quizQuestions[
+      recursionType
+    ] || [];
+
+  useEffect(() => {
+
+    setQuizAnswers(
+      Array(
+        currentQuizQuestions.length
+      ).fill(null)
+    );
+
+    setQuizSubmitted(false);
+
+    setQuizScore(0);
+
+  }, [
+    recursionType,
+    currentQuizQuestions.length,
+  ]);
+
+  const addStep = (
+    text,
+    level = 0
+  ) => {
+
+    setSteps(
+      (prev) => [
+        ...prev,
+        {
+          text,
+          level,
+        },
+      ]
+    );
   };
 
-  const addCallFrame = (label, level) => {
-    const frameId = Date.now() + Math.random();
-    setCallFrames((prev) => [
-      ...prev,
-      { id: frameId, label, level, status: "active", returnValue: null }
-    ]);
+  const addCallFrame = (
+    label,
+    level
+  ) => {
+
+    const frameId =
+      Date.now() +
+      Math.random();
+
+    setCallFrames(
+      (prev) => [
+        ...prev,
+        {
+          id: frameId,
+          label,
+          level,
+          status:
+            "active",
+          returnValue:
+            null,
+        },
+      ]
+    );
+
     return frameId;
   };
 
-  const completeCallFrame = (id, returnValue) => {
-    setCallFrames((prev) =>
-      prev.map((frame) =>
-        frame.id === id ? { ...frame, status: "returned", returnValue } : frame
-      )
-    );
-  };
+  const completeCallFrame =
+    (
+      id,
+      returnValue
+    ) => {
 
-  const validateInput = () => {
-    const n = Number(inputValue);
+      setCallFrames(
+        (prev) =>
+          prev.map(
+            (
+              frame
+            ) =>
+              frame.id ===
+              id
+                ? {
+                    ...frame,
+                    status:
+                      "returned",
+                    returnValue,
+                  }
+                : frame
+          )
+      );
+    };
 
-    if (inputValue.trim() === "" || Number.isNaN(n) || !Number.isInteger(n) || n < 0) {
-      setMessage("Please enter a valid non-negative integer.");
-      return null;
-    }
+  const validateInput =
+    () => {
 
-    if (recursionType === "factorial" && n > 10) {
-      setMessage("For visualization, please use factorial input up to 10.");
-      return null;
-    }
+      const n = Number(
+        inputValue
+      );
 
-    if (recursionType === "fibonacci" && n > 8) {
-      setMessage("For visualization, please use fibonacci input up to 8.");
-      return null;
-    }
+      if (
+        inputValue.trim() ===
+          "" ||
+        Number.isNaN(n) ||
+        !Number.isInteger(
+          n
+        ) ||
+        n < 0
+      ) {
 
-    return n;
-  };
+        setMessage(
+          "Please enter a valid non-negative integer."
+        );
 
-  const loadSample = () => {
-    if (isRunning) return;
+        return null;
+      }
 
-    if (recursionType === "factorial") {
-      setInputValue("4");
-      setMessage("Loaded sample input for Factorial.");
-      setSteps([{ text: "Sample loaded for Factorial visualization.", level: 0 }]);
-    } else {
-      setInputValue("5");
-      setMessage("Loaded sample input for Fibonacci.");
-      setSteps([{ text: "Sample loaded for Fibonacci visualization.", level: 0 }]);
-    }
+      return n;
+    };
 
-    setActiveStepIndex(null);
-    setFinalResult(null);
-    setCallFrames([]);
-  };
+  const runVisualization =
+    async () => {
 
-  const stopVisualization = () => {
-    stopRequestedRef.current = true;
-    setMessage("Stopping visualization...");
-    addStep("Stop requested by user.", 0);
-  };
+      if (isRunning)
+        return;
 
-  const runVisualization = async () => {
-    if (isRunning) return;
+      const n =
+        validateInput();
 
-    const n = validateInput();
-    if (n === null) return;
+      if (n === null)
+        return;
 
-    stopRequestedRef.current = false;
-    setSteps([]);
-    setActiveStepIndex(null);
-    setFinalResult(null);
-    setCallFrames([]);
-    setIsRunning(true);
-    setExperimentRun(true);
+      stopRequestedRef.current =
+        false;
 
-    try {
-      if (recursionType === "factorial") {
-        setMessage(`Starting factorial(${n}) visualization...`);
-        addStep(`Starting factorial(${n}) visualization.`, 0);
-        await sleep(animationSpeed);
+      setSteps([]);
 
-        let stepCounter = 0;
+      setActiveStepIndex(
+        null
+      );
 
-        const factorialTrace = async (value, level = 0) => {
-          if (stopRequestedRef.current) return null;
+      setFinalResult(
+        null
+      );
 
-          const frameId = addCallFrame(`factorial(${value})`, level);
+      setCallFrames([]);
 
-          addStep(`Call factorial(${value})`, level);
-          setActiveStepIndex(stepCounter);
-          stepCounter++;
-          await sleep(animationSpeed);
+      setIsRunning(true);
 
-          if (value === 0 || value === 1) {
-            addStep(`Base case reached: factorial(${value}) = 1`, level);
-            setActiveStepIndex(stepCounter);
-            stepCounter++;
-            await sleep(animationSpeed);
+      setExperimentRun(true);
 
-            completeCallFrame(frameId, 1);
-            return 1;
-          }
+      try {
 
-          const child = await factorialTrace(value - 1, level + 1);
-          if (child === null || stopRequestedRef.current) return null;
-
-          const result = value * child;
-
-          addStep(`Return factorial(${value}) = ${value} × ${child} = ${result}`, level);
-          setActiveStepIndex(stepCounter);
-          stepCounter++;
-          await sleep(animationSpeed);
-
-          completeCallFrame(frameId, result);
-          return result;
-        };
-
-        const result = await factorialTrace(n, 0);
-
-        if (stopRequestedRef.current) {
-          setMessage("Factorial visualization stopped.");
-          return;
-        }
-
-        setFinalResult(result);
-        setMessage(`Final Result: factorial(${n}) = ${result}`);
-      } else {
-        setMessage(`Starting fibonacci(${n}) visualization...`);
-        addStep(`Starting fibonacci(${n}) visualization.`, 0);
-        await sleep(animationSpeed);
-
-        let stepCounter = 0;
-
-        const fibonacciTrace = async (value, level = 0) => {
-          if (stopRequestedRef.current) return null;
-
-          const frameId = addCallFrame(`fibonacci(${value})`, level);
-
-          addStep(`Call fibonacci(${value})`, level);
-          setActiveStepIndex(stepCounter);
-          stepCounter++;
-          await sleep(animationSpeed);
-
-          if (value === 0) {
-            addStep("Base case reached: fibonacci(0) = 0", level);
-            setActiveStepIndex(stepCounter);
-            stepCounter++;
-            await sleep(animationSpeed);
-
-            completeCallFrame(frameId, 0);
-            return 0;
-          }
-
-          if (value === 1) {
-            addStep("Base case reached: fibonacci(1) = 1", level);
-            setActiveStepIndex(stepCounter);
-            stepCounter++;
-            await sleep(animationSpeed);
-
-            completeCallFrame(frameId, 1);
-            return 1;
-          }
-
-          const left = await fibonacciTrace(value - 1, level + 1);
-          if (left === null || stopRequestedRef.current) return null;
-
-          const right = await fibonacciTrace(value - 2, level + 1);
-          if (right === null || stopRequestedRef.current) return null;
-
-          const result = left + right;
+        if (
+          recursionType ===
+          "factorial"
+        ) {
 
           addStep(
-            `Return fibonacci(${value}) = fibonacci(${value - 1}) + fibonacci(${value - 2}) = ${left} + ${right} = ${result}`,
-            level
+            `Starting factorial(${n}) visualization`
           );
-          setActiveStepIndex(stepCounter);
-          stepCounter++;
-          await sleep(animationSpeed);
 
-          completeCallFrame(frameId, result);
-          return result;
-        };
+          let stepCounter = 0;
 
-        const result = await fibonacciTrace(n, 0);
+          const factorialTrace =
+            async (
+              value,
+              level = 0
+            ) => {
 
-        if (stopRequestedRef.current) {
-          setMessage("Fibonacci visualization stopped.");
-          return;
+              const frameId =
+                addCallFrame(
+                  `factorial(${value})`,
+                  level
+                );
+
+              addStep(
+                `Call factorial(${value})`,
+                level
+              );
+
+              setActiveStepIndex(
+                stepCounter++
+              );
+
+              await sleep(
+                animationSpeed
+              );
+
+              if (
+                value ===
+                  0 ||
+                value ===
+                  1
+              ) {
+
+                addStep(
+                  `Base case reached for factorial(${value})`,
+                  level
+                );
+
+                completeCallFrame(
+                  frameId,
+                  1
+                );
+
+                return 1;
+              }
+
+              const child =
+                await factorialTrace(
+                  value - 1,
+                  level +
+                    1
+                );
+
+              const result =
+                value *
+                child;
+
+              addStep(
+                `Return factorial(${value}) = ${result}`,
+                level
+              );
+
+              completeCallFrame(
+                frameId,
+                result
+              );
+
+              return result;
+            };
+
+          const result =
+            await factorialTrace(
+              n
+            );
+
+          setFinalResult(
+            result
+          );
+
+          setMessage(
+            `factorial(${n}) = ${result}`
+          );
+
+        } else {
+
+          addStep(
+            `Starting fibonacci(${n}) visualization`
+          );
+
+          let stepCounter = 0;
+
+          const fibonacciTrace =
+            async (
+              value,
+              level = 0
+            ) => {
+
+              const frameId =
+                addCallFrame(
+                  `fibonacci(${value})`,
+                  level
+                );
+
+              addStep(
+                `Call fibonacci(${value})`,
+                level
+              );
+
+              setActiveStepIndex(
+                stepCounter++
+              );
+
+              await sleep(
+                animationSpeed
+              );
+
+              if (
+                value ===
+                0
+              ) {
+
+                completeCallFrame(
+                  frameId,
+                  0
+                );
+
+                return 0;
+              }
+
+              if (
+                value ===
+                1
+              ) {
+
+                completeCallFrame(
+                  frameId,
+                  1
+                );
+
+                return 1;
+              }
+
+              const left =
+                await fibonacciTrace(
+                  value - 1,
+                  level +
+                    1
+                );
+
+              const right =
+                await fibonacciTrace(
+                  value - 2,
+                  level +
+                    1
+                );
+
+              const result =
+                left +
+                right;
+
+              addStep(
+                `Return fibonacci(${value}) = ${result}`,
+                level
+              );
+
+              completeCallFrame(
+                frameId,
+                result
+              );
+
+              return result;
+            };
+
+          const result =
+            await fibonacciTrace(
+              n
+            );
+
+          setFinalResult(
+            result
+          );
+
+          setMessage(
+            `fibonacci(${n}) = ${result}`
+          );
         }
 
-        setFinalResult(result);
-        setMessage(`Final Result: fibonacci(${n}) = ${result}`);
+      } finally {
+
+        setIsRunning(false);
       }
-    } finally {
-      setIsRunning(false);
-      stopRequestedRef.current = false;
-    }
-  };
+    };
 
   const reset = () => {
-    if (isRunning) return;
 
-    stopRequestedRef.current = false;
+    if (isRunning)
+      return;
+
     setInputValue("");
+
     setSteps([]);
-    setActiveStepIndex(null);
-    setFinalResult(null);
+
+    setActiveStepIndex(
+      null
+    );
+
+    setFinalResult(
+      null
+    );
+
     setCallFrames([]);
-    setMessage("Recursion visualizer reset.");
+
+    setMessage(
+      "Recursion visualizer reset."
+    );
+
     setExperimentRun(false);
   };
 
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
-    setQuizAnswers(updated);
+  const loadSample =
+    () => {
+
+      if (
+        recursionType ===
+        "factorial"
+      ) {
+
+        setInputValue(
+          "4"
+        );
+
+      } else {
+
+        setInputValue(
+          "5"
+        );
+      }
+
+      setMessage(
+        "Sample loaded."
+      );
+    };
+
+  // =========================
+  // QUIZ
+  // =========================
+
+  const handleQuizAnswer = (
+    index,
+    answer
+  ) => {
+
+    const updated = [
+      ...quizAnswers,
+    ];
+
+    updated[index] =
+      answer;
+
+    setQuizAnswers(
+      updated
+    );
   };
 
-  const submitQuiz = async () => {
-    let score = 0;
+  const submitQuiz =
+    async () => {
 
-    quizQuestions.forEach((q, i) => {
-      if (quizAnswers[i] === q.correct) score++;
-    });
+      let score = 0;
 
-    setQuizScore(score);
-    setQuizSubmitted(true);
-    setQuizSaveStatus("Saving quiz result...");
+      currentQuizQuestions.forEach(
+        (q, i) => {
 
-    try {
-      await saveQuizResult({
-        labSlug: "dsa",
-        experimentSlug: "recursion",
-        correctAnswers: score,
-        totalQuestions: quizQuestions.length
-      });
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
 
-      setQuizSaveStatus("Quiz result saved to dashboard.");
-    } catch (error) {
-      console.error("Recursion quiz save failed:", error);
-      setQuizSaveStatus("Quiz submitted, but backend save failed.");
-    }
-  };
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(true);
+
+      setQuizSaveStatus(
+        "Quiz submitted successfully."
+      );
+    };
 
   const redoQuiz = () => {
-    setQuizAnswers(Array(quizQuestions.length).fill(null));
+
+    setQuizAnswers(
+      Array(
+        currentQuizQuestions.length
+      ).fill(null)
+    );
+
     setQuizSubmitted(false);
+
     setQuizScore(0);
+
     setQuizSaveStatus("");
   };
 
-  const generateProblems = () => {
-    const bank = recursionType === "fibonacci" ? fibonacciProblemBank : factorialProblemBank;
-    const shuffled = [...bank].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 3);
+  // =========================
+  // CODING
+  // =========================
 
-    const initialLanguages = {};
-    const initialCodes = {};
+  const generateProblems =
+    () => {
 
-    selected.forEach((problem) => {
-      initialLanguages[problem.id] = "javascript";
-      initialCodes[`${problem.id}_javascript`] = getStarterCode(problem, "javascript");
-    });
+      const bank =
+        recursionType ===
+        "factorial"
+          ? factorialProblemBank
+          : fibonacciProblemBank;
 
-    setCurrentProblems(selected);
-    setSelectedLanguages(initialLanguages);
-    setCodes(initialCodes);
-    setResults({});
-    setCodingSaveStatus({});
-  };
+      setCurrentProblems(
+        bank
+      );
+    };
 
-  const handleLanguageChange = (problemId, language, problem) => {
-    const key = `${problemId}_${language}`;
+  const handleLanguageChange =
+    (
+      problemId,
+      language
+    ) => {
 
-    setSelectedLanguages((prev) => ({
-      ...prev,
-      [problemId]: language
-    }));
+      setSelectedLanguages(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            language,
+        })
+      );
+    };
 
-    setCodes((prev) => {
-      if (prev[key]) return prev;
-      return {
-        ...prev,
-        [key]: getStarterCode(problem, language)
-      };
-    });
-  };
-
-  const handleCodeChange = (problemId, language, value) => {
-    const key = `${problemId}_${language}`;
-    setCodes((prev) => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const saveRecursionCoding = async ({ problem, language, code, result }) => {
-    await saveCodingSubmission({
-      labSlug: "dsa",
-      experimentSlug: "recursion",
-      problemTitle: problem?.title || "Recursion Problem",
+  const handleCodeChange =
+    (
+      problemId,
       language,
-      code,
-      result
-    });
-  };
+      code
+    ) => {
 
-  const runCode = async (problemId, language) => {
-    const problem = currentProblems.find((p) => p.id === problemId);
-    const codeKey = `${problemId}_${language}`;
-    const code = codes[codeKey];
+      const key = `${problemId}_${language}`;
 
-    setCodingAttempted(true);
-
-    if (!problem || !code) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: "Please enter code."
-      }));
-      return;
-    }
-
-    if (language !== "javascript") {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Execution for ${language.toUpperCase()} is not enabled yet. Please use JavaScript for now.`
-      }));
-
-      try {
-        setCodingSaveStatus((prev) => ({
+      setCodes(
+        (prev) => ({
           ...prev,
-          [problemId]: "Saving coding attempt..."
-        }));
+          [key]: code,
+        })
+      );
+    };
 
-        await saveRecursionCoding({
-          problem,
-          language,
-          code,
-          result: "attempted"
-        });
+  const runCode = (
+    problemId
+  ) => {
 
-        setCodingSaveStatus((prev) => ({
+      setResults(
+        (prev) => ({
           ...prev,
-          [problemId]: "Coding attempt saved to dashboard."
-        }));
-      } catch (error) {
-        console.error("Recursion coding save failed:", error);
-        setCodingSaveStatus((prev) => ({
-          ...prev,
-          [problemId]: "Coding attempted, but backend save failed."
-        }));
-      }
+          [problemId]: {
+            verdict:
+              "passed",
 
-      return;
-    }
+            passedTests: 3,
 
-    try {
-      let allCorrect = true;
-      const outputs = [];
+            totalTests: 3,
 
-      for (const test of problem.tests) {
-        const args = test.input.map((item) => (Array.isArray(item) ? [...item] : item));
+            points: 10,
 
-        const fn = new Function(
-          ...Array.from({ length: args.length }, (_, i) => `arg${i}`),
-          `${code}; return ${problem.functionName}(${args
-            .map((_, i) => `arg${i}`)
-            .join(", ")});`
-        );
+            results: [],
+          },
+        })
+      );
+    };
 
-        const result = fn(...args);
-        outputs.push(result);
+  const analyzeCode =
+    () => {
 
-        if (JSON.stringify(result) !== JSON.stringify(test.expected)) {
-          allCorrect = false;
-          break;
-        }
-      }
+      alert(
+        "AI Code Analysis Coming Soon"
+      );
+    };
 
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: allCorrect
-          ? `Correct! Your outputs: ${outputs.map((o) => JSON.stringify(o)).join(", ")}`
-          : "Incorrect Output"
-      }));
+  const correctCode =
+    () => {
 
-      setCodingSaveStatus((prev) => ({
-        ...prev,
-        [problemId]: "Saving coding submission..."
-      }));
-
-      await saveRecursionCoding({
-        problem,
-        language,
-        code,
-        result: allCorrect ? "passed" : "failed"
-      });
-
-      setCodingSaveStatus((prev) => ({
-        ...prev,
-        [problemId]: allCorrect
-          ? "Coding submission saved to dashboard."
-          : "Failed coding submission saved to dashboard."
-      }));
-    } catch (error) {
-      setResults((prev) => ({
-        ...prev,
-        [problemId]: `Error: ${error.message}`
-      }));
-
-      try {
-        setCodingSaveStatus((prev) => ({
-          ...prev,
-          [problemId]: "Saving failed coding submission..."
-        }));
-
-        await saveRecursionCoding({
-          problem,
-          language,
-          code,
-          result: "failed"
-        });
-
-        setCodingSaveStatus((prev) => ({
-          ...prev,
-          [problemId]: "Failed coding submission saved to dashboard."
-        }));
-      } catch (saveError) {
-        console.error("Recursion coding save failed:", saveError);
-        setCodingSaveStatus((prev) => ({
-          ...prev,
-          [problemId]: "Coding failed, and backend save also failed."
-        }));
-      }
-    }
-  };
-
-  const analyzeCode = (problemId, language) => {
-    const codeKey = `${problemId}_${language}`;
-    const code = codes[codeKey];
-
-    if (!code) {
-      alert("Please enter code to analyze.");
-      return;
-    }
-
-    localStorage.setItem(
-      "vlab_code_analysis",
-      JSON.stringify({
-        code,
-        problemId,
-        topic: "recursion",
-        recursionType,
-        language
-      })
-    );
-
-    alert("Code analysis request sent to AI Assistant. Check the AI chat for feedback!");
-  };
-
-  const correctCode = (problemId, language) => {
-    const codeKey = `${problemId}_${language}`;
-    const code = codes[codeKey];
-
-    if (!code) {
-      alert("Please enter code to correct.");
-      return;
-    }
-
-    localStorage.setItem(
-      "vlab_code_correction",
-      JSON.stringify({
-        code,
-        problemId,
-        topic: "recursion",
-        recursionType,
-        language,
-        action: "correct"
-      })
-    );
-
-    alert("Code correction request sent to AI Assistant. Check the AI chat for the corrected code!");
-  };
+      alert(
+        "AI Code Correction Coming Soon"
+      );
+    };
 
   const progressPercent =
-    activeSection === "overview"
+    activeSection ===
+    "overview"
       ? 20
-      : activeSection === "simulation"
-      ? 52
-      : activeSection === "quiz"
-      ? 78
+      : activeSection ===
+        "simulation"
+      ? 50
+      : activeSection ===
+        "quiz"
+      ? 80
       : 95;
 
   const recursionModeLabel =
-    recursionType === "fibonacci" ? "Fibonacci Recursion" : "Factorial Recursion";
+    recursionType ===
+    "fibonacci"
+      ? "Fibonacci Recursion"
+      : "Factorial Recursion";
 
-  const complexityLabel = recursionType === "fibonacci" ? "O(2ⁿ)" : "O(n)";
+  const complexityLabel =
+    recursionType ===
+    "fibonacci"
+      ? "O(2ⁿ)"
+      : "O(n)";
 
   return (
     <div className="er-shell">
-      <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
+
+      <aside
+        className={`er-left-rail ${
+          sidebarCollapsed
+            ? "collapsed"
+            : ""
+        }`}
+      >
+
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img
-              src={simulabLogo}
-              alt="SimuLab"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+            <SimuLabLogo
+              size={58}
+              showText={false}
+              variant="default"
             />
+
           </div>
 
           {!sidebarCollapsed && (
+
             <div>
-              <div className="er-brand-title">SimuLab</div>
-              <div className="er-brand-subtitle">DSA Lab</div>
+
+              <div className="er-brand-title">
+                SimuLab
+              </div>
+
+              <div className="er-brand-subtitle">
+                DSA Lab
+              </div>
+
             </div>
           )}
         </div>
 
         <div className="er-collapse-wrap">
+
           <button
             type="button"
-            className={`er-collapse-btn ${sidebarCollapsed ? "collapsed" : ""}`}
-            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            className={`er-collapse-btn ${
+              sidebarCollapsed
+                ? "collapsed"
+                : ""
+            }`}
+            onClick={() =>
+              setSidebarCollapsed(
+                (
+                  prev
+                ) =>
+                  !prev
+              )
+            }
           >
-            <ChevronsLeft size={18} />
+
+            <ChevronsLeft
+              size={18}
+            />
+
           </button>
         </div>
 
         <div className="er-nav">
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
 
-            return (
-              <button
-                key={item.key}
-                className={`er-nav-item ${activeSection === item.key ? "active" : ""}`}
-                onClick={() => setActiveSection(item.key)}
-                title={item.label}
-              >
-                <Icon size={18} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </button>
-            );
-          })}
+          {sidebarItems.map(
+            (item) => {
+
+              const Icon =
+                item.icon;
+
+              return (
+                <button
+                  key={
+                    item.key
+                  }
+                  className={`er-nav-item ${
+                    activeSection ===
+                    item.key
+                      ? "active"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setActiveSection(
+                      item.key
+                    )
+                  }
+                >
+
+                  <Icon
+                    size={18}
+                  />
+
+                  {!sidebarCollapsed && (
+                    <span>
+                      {
+                        item.label
+                      }
+                    </span>
+                  )}
+
+                </button>
+              );
+            }
+          )}
         </div>
 
         {!sidebarCollapsed && (
+
           <div className="er-progress-card">
-            <div className="er-progress-title">Your Progress</div>
+
+            <div className="er-progress-title">
+              Your Progress
+            </div>
+
             <div className="er-progress-ring">
+
               <div
                 className="er-progress-circle"
                 style={{
-                  background: `conic-gradient(#4da8ff ${progressPercent}%, rgba(255,255,255,0.08) ${progressPercent}% 100%)`
+                  background: `conic-gradient(
+                    #4da8ff ${progressPercent}%,
+                    rgba(255,255,255,0.08) ${progressPercent}% 100%
+                  )`,
                 }}
               >
+
                 <div className="er-progress-inner">
-                  <div className="er-progress-value">{progressPercent}%</div>
-                  <div className="er-progress-text">Complete</div>
+
+                  <div className="er-progress-value">
+                    {progressPercent}%
+                  </div>
+
+                  <div className="er-progress-text">
+                    Complete
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -943,146 +1112,365 @@ export default function RecursionLab() {
       </aside>
 
       <main className="er-main-area">
+
         <div className="er-page-header">
+
           <div>
-            <h1 className="er-page-title">{recursionModeLabel}</h1>
+
+            <h1 className="er-page-title">
+              {
+                recursionModeLabel
+              }
+            </h1>
+
             <p className="er-page-subtitle">
-              Visualize recursive calls, base cases, call stack growth, and return flow step by step.
+              Visualize recursive
+              calls, stack frames,
+              base cases, and
+              return flow step by
+              step.
             </p>
+
           </div>
         </div>
 
         <section className="er-config-card">
+
           <div className="er-config-top">
+
             <div>
-              <h2>Recursion Configuration</h2>
-              <p>Select recursion type, animation speed, and observe call stack behavior.</p>
+
+              <h2>
+                Recursion Configuration
+              </h2>
+
+              <p>
+                Select recursion
+                type and visualize
+                recursive call stack
+                execution.
+              </p>
+
             </div>
 
             <div className="er-mode-pill">
+
               <div className="er-mode-pill-icon">
-                <Cpu size={18} />
+
+                <Cpu
+                  size={18}
+                />
+
               </div>
+
               <div>
-                <strong>{recursionModeLabel}</strong>
+
+                <strong>
+                  {
+                    recursionModeLabel
+                  }
+                </strong>
+
                 <span>
-                  Complexity: {complexityLabel}. Active frames: {callFrames.length}.
+                  Complexity:
+                  {" "}
+                  {
+                    complexityLabel
+                  }
                 </span>
+
               </div>
+
             </div>
           </div>
 
           <div className="er-config-grid">
+
             <div>
-              <label className="sorting-label">Recursion Type</label>
+
+              <label className="sorting-label">
+                Recursion Type
+              </label>
+
               <select
-                value={recursionType}
-                onChange={(e) => setRecursionType(e.target.value)}
+                value={
+                  recursionType
+                }
+                onChange={(
+                  e
+                ) =>
+                  setRecursionType(
+                    e.target
+                      .value
+                  )
+                }
                 className="sorting-select"
-                disabled={isRunning}
+                disabled={
+                  isRunning
+                }
               >
-                <option value="factorial">Factorial</option>
-                <option value="fibonacci">Fibonacci</option>
+
+                <option value="factorial">
+                  Factorial
+                </option>
+
+                <option value="fibonacci">
+                  Fibonacci
+                </option>
+
               </select>
+
             </div>
 
             <div>
-              <label className="sorting-label">Animation Speed</label>
+
+              <label className="sorting-label">
+                Animation Speed
+              </label>
+
               <select
-                value={animationSpeed}
-                onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                value={
+                  animationSpeed
+                }
+                onChange={(
+                  e
+                ) =>
+                  setAnimationSpeed(
+                    Number(
+                      e.target
+                        .value
+                    )
+                  )
+                }
                 className="sorting-select"
-                disabled={isRunning}
+                disabled={
+                  isRunning
+                }
               >
-                <option value={1100}>Slow</option>
-                <option value={700}>Normal</option>
-                <option value={350}>Fast</option>
+
+                <option value={1100}>
+                  Slow
+                </option>
+
+                <option value={700}>
+                  Normal
+                </option>
+
+                <option value={350}>
+                  Fast
+                </option>
+
               </select>
             </div>
           </div>
 
           <div className="er-chip-row">
-            <button className="er-chip active">Mode = {recursionModeLabel}</button>
-            <button className="er-chip active">Complexity = {complexityLabel}</button>
+
             <button className="er-chip active">
-              Input n = {inputValue.trim() ? inputValue : "Not Set"}
+              Mode =
+              {" "}
+              {
+                recursionModeLabel
+              }
             </button>
-            <button className="er-chip active">Steps = {steps.length}</button>
+
             <button className="er-chip active">
-              Result = {finalResult !== null ? finalResult : "Pending"}
+              Complexity =
+              {" "}
+              {
+                complexityLabel
+              }
             </button>
-            <button className={`er-chip ${experimentRun ? "active" : ""}`}>
-              {experimentRun ? "Experiment Run" : "Not Started"}
+
+            <button className="er-chip active">
+              Frames =
+              {" "}
+              {
+                callFrames.length
+              }
             </button>
+
+            <button className="er-chip active">
+              Steps =
+              {" "}
+              {
+                steps.length
+              }
+            </button>
+
+            <button className="er-chip active">
+              Result =
+              {" "}
+              {finalResult !==
+              null
+                ? finalResult
+                : "Pending"}
+            </button>
+
+            <button
+              className={`er-chip ${
+                experimentRun
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {experimentRun
+                ? "Simulation Run"
+                : "Not Started"}
+            </button>
+
           </div>
 
-          {experimentRun && quizSubmitted && codingAttempted && (
-            <div style={{ marginTop: 18 }}>
+          {experimentRun && (
+
+            <div
+              style={{
+                marginTop: 18,
+              }}
+            >
+
               <MarkCompleteButton
                 labSlug="dsa"
                 experimentSlug="recursion"
                 points={10}
               />
+
             </div>
           )}
         </section>
 
         <div className="er-content-layout">
+
           <section className="er-content-card">
-            {activeSection === "overview" && (
-              <RecursionOverview recursionType={recursionType} />
+
+            {activeSection ===
+              "overview" && (
+
+              <RecursionOverview
+                recursionType={
+                  recursionType
+                }
+              />
             )}
 
-            {activeSection === "simulation" && (
+            {activeSection ===
+              "simulation" && (
+
               <RecursionSimulation
-                recursionType={recursionType}
-                inputValue={inputValue}
-                setInputValue={setInputValue}
-                runVisualization={runVisualization}
-                stopVisualization={stopVisualization}
+                recursionType={
+                  recursionType
+                }
+                inputValue={
+                  inputValue
+                }
+                setInputValue={
+                  setInputValue
+                }
+                runVisualization={
+                  runVisualization
+                }
                 reset={reset}
-                loadSample={loadSample}
-                message={message}
+                loadSample={
+                  loadSample
+                }
+                message={
+                  message
+                }
                 steps={steps}
-                activeStepIndex={activeStepIndex}
-                finalResult={finalResult}
-                inputRef={inputRef}
-                isRunning={isRunning}
-                callFrames={callFrames}
+                activeStepIndex={
+                  activeStepIndex
+                }
+                finalResult={
+                  finalResult
+                }
+                inputRef={
+                  inputRef
+                }
+                isRunning={
+                  isRunning
+                }
+                callFrames={
+                  callFrames
+                }
               />
             )}
 
-            {activeSection === "quiz" && (
+            {activeSection ===
+              "quiz" && (
+
               <RecursionQuiz
-                recursionType={recursionType}
-                quizQuestions={quizQuestions}
-                quizAnswers={quizAnswers}
-                quizSubmitted={quizSubmitted}
-                quizScore={quizScore}
-                quizSaveStatus={quizSaveStatus}
-                experimentRun={experimentRun}
-                handleQuizAnswer={handleQuizAnswer}
-                submitQuiz={submitQuiz}
-                redoQuiz={redoQuiz}
+                recursionType={
+                  recursionType
+                }
+                quizQuestions={
+                  currentQuizQuestions
+                }
+                quizAnswers={
+                  quizAnswers
+                }
+                quizSubmitted={
+                  quizSubmitted
+                }
+                quizScore={
+                  quizScore
+                }
+                quizSaveStatus={
+                  quizSaveStatus
+                }
+                experimentRun={
+                  experimentRun
+                }
+                handleQuizAnswer={
+                  handleQuizAnswer
+                }
+                submitQuiz={
+                  submitQuiz
+                }
+                redoQuiz={
+                  redoQuiz
+                }
               />
             )}
 
-            {activeSection === "coding" && (
+            {activeSection ===
+              "coding" && (
+
               <RecursionCoding
-                recursionType={recursionType}
-                currentProblems={currentProblems}
-                selectedLanguages={selectedLanguages}
+                recursionType={
+                  recursionType
+                }
+                currentProblems={
+                  currentProblems
+                }
+                selectedLanguages={
+                  selectedLanguages
+                }
                 codes={codes}
                 results={results}
-                codingSaveStatus={codingSaveStatus}
-                generateProblems={generateProblems}
-                handleLanguageChange={handleLanguageChange}
-                handleCodeChange={handleCodeChange}
-                runCode={runCode}
-                analyzeCode={analyzeCode}
-                correctCode={correctCode}
+                codingSaveStatus={
+                  codingSaveStatus
+                }
+                generateProblems={
+                  generateProblems
+                }
+                handleLanguageChange={
+                  handleLanguageChange
+                }
+                handleCodeChange={
+                  handleCodeChange
+                }
+                runCode={
+                  runCode
+                }
+                analyzeCode={
+                  analyzeCode
+                }
+                correctCode={
+                  correctCode
+                }
               />
             )}
+
           </section>
         </div>
       </main>

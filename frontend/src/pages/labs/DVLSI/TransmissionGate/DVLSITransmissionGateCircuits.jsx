@@ -1,21 +1,12 @@
 import React from "react";
 
-function transistorStyle(state) {
-  const active = state === "ON";
-
-  return {
-    border: active ? "2px solid #22c55e" : "2px solid #ef4444",
-    background: active ? "rgba(34,197,94,0.16)" : "rgba(239,68,68,0.12)",
-    color: "#e5e7eb",
-    borderRadius: "12px",
-    padding: "12px 14px",
-    minWidth: "120px",
-    textAlign: "center",
-    boxShadow: active
-      ? "0 0 14px rgba(34,197,94,0.25)"
-      : "0 0 10px rgba(239,68,68,0.12)"
-  };
-}
+import {
+  CircuitBoard,
+  Cpu,
+  Activity,
+  Zap,
+  Lightbulb
+} from "lucide-react";
 
 export default function DVLSITransmissionGateCircuits({
   inputSignal,
@@ -23,171 +14,613 @@ export default function DVLSITransmissionGateCircuits({
   mode,
   analysis
 }) {
-  const isTG = mode === "transmission-gate";
+  const isTG =
+    mode ===
+    "transmission-gate";
+
+  const isNMOSOn =
+    analysis.nmosState ===
+    "ON";
+
+  const isPMOSOn =
+    analysis.pmosState ===
+    "ON";
 
   return (
-    <section className="card experiment">
-      <h2>Circuits</h2>
+    <section className="comparison-shell">
+      <div
+        className="sorting-sim-title-wrap"
+        style={{
+          marginBottom: 18
+        }}
+      >
+        <div className="sorting-sim-icon">
+          <CircuitBoard
+            size={18}
+          />
+        </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        {isTG
-          ? "A transmission gate uses one nMOS and one pMOS in parallel, driven by complementary control signals."
-          : "A single pass transistor uses only one nMOS switch. It is simpler but may pass logic 1 weakly."}
+        <div>
+          <h2 className="sorting-sim-title">
+            Circuit View
+          </h2>
+
+          <p className="sorting-sim-subtitle">
+            Visualize transmission
+            gate conduction and
+            single pass transistor
+            switching paths.
+          </p>
+        </div>
+      </div>
+
+      <div
+        className="sorting-info-box"
+        style={{
+          marginBottom: 16
+        }}
+      >
+        {analysis.currentPath}
       </div>
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px",
-          marginBottom: "1rem"
+          gridTemplateColumns:
+            "minmax(0, 2.2fr) minmax(300px, 0.9fr)",
+          gap: 20
         }}
       >
-        <div className="stat-card">
-          <strong>Input</strong>
-          <div>{inputSignal}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Control</strong>
-          <div>{control}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Output</strong>
-          <div>{analysis.output}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Current Path</strong>
-          <div>{analysis.currentPath}</div>
-        </div>
-      </div>
+        <div
+          className="overview-card"
+          style={{
+            padding: 0,
+            overflow:
+              "hidden",
+            minHeight: 620
+          }}
+        >
+          <div
+            style={{
+              position:
+                "relative",
+              minHeight: 620,
+              background:
+                "radial-gradient(circle at 25% 18%, rgba(56,189,248,0.10), transparent 35%), radial-gradient(circle at 82% 78%, rgba(139,92,246,0.12), transparent 38%), linear-gradient(135deg, #020617, #08111f)"
+            }}
+          >
+            <svg
+              width="100%"
+              height="620"
+              viewBox="0 0 900 620"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <line
+                x1="120"
+                y1="310"
+                x2="760"
+                y2="310"
+                stroke="#fbbf24"
+                strokeWidth="5"
+              />
 
-      <div className="card" style={{ marginTop: "1rem", background: "#0f172a", padding: "20px" }}>
-        <h3 style={{ marginBottom: "1rem" }}>
-          {isTG ? "Transmission Gate Visual" : "Single Pass nMOS Visual"}
-        </h3>
+              <circle
+                cx="180"
+                cy="310"
+                r="10"
+                fill="#fbbf24"
+              />
+
+              <circle
+                cx="700"
+                cy="310"
+                r="10"
+                fill="#fbbf24"
+              />
+
+              <text
+                x="70"
+                y="316"
+                fill="#fcd34d"
+                fontSize="20"
+                fontWeight="900"
+              >
+                IN ={" "}
+                {inputSignal}
+              </text>
+
+              <text
+                x="730"
+                y="316"
+                fill="#fcd34d"
+                fontSize="20"
+                fontWeight="900"
+              >
+                OUT ={" "}
+                {
+                  analysis.output
+                }
+              </text>
+
+              {isTG ? (
+                <>
+                  <rect
+                    x="360"
+                    y="180"
+                    width="120"
+                    height="80"
+                    rx="14"
+                    fill={
+                      isNMOSOn
+                        ? "rgba(34,197,94,0.18)"
+                        : "rgba(239,68,68,0.12)"
+                    }
+                    stroke={
+                      isNMOSOn
+                        ? "#22c55e"
+                        : "#ef4444"
+                    }
+                    strokeWidth="3"
+                  />
+
+                  <text
+                    x="420"
+                    y="225"
+                    textAnchor="middle"
+                    fill="#e5e7eb"
+                    fontSize="22"
+                    fontWeight="900"
+                  >
+                    nMOS
+                  </text>
+
+                  <rect
+                    x="360"
+                    y="360"
+                    width="120"
+                    height="80"
+                    rx="14"
+                    fill={
+                      isPMOSOn
+                        ? "rgba(34,197,94,0.18)"
+                        : "rgba(239,68,68,0.12)"
+                    }
+                    stroke={
+                      isPMOSOn
+                        ? "#22c55e"
+                        : "#ef4444"
+                    }
+                    strokeWidth="3"
+                  />
+
+                  <text
+                    x="420"
+                    y="405"
+                    textAnchor="middle"
+                    fill="#e5e7eb"
+                    fontSize="22"
+                    fontWeight="900"
+                  >
+                    pMOS
+                  </text>
+
+                  <line
+                    x1="290"
+                    y1="310"
+                    x2="360"
+                    y2="220"
+                    stroke="#fbbf24"
+                    strokeWidth="5"
+                  />
+
+                  <line
+                    x1="480"
+                    y1="220"
+                    x2="550"
+                    y2="310"
+                    stroke="#fbbf24"
+                    strokeWidth="5"
+                  />
+
+                  <line
+                    x1="290"
+                    y1="310"
+                    x2="360"
+                    y2="400"
+                    stroke="#fbbf24"
+                    strokeWidth="5"
+                  />
+
+                  <line
+                    x1="480"
+                    y1="400"
+                    x2="550"
+                    y2="310"
+                    stroke="#fbbf24"
+                    strokeWidth="5"
+                  />
+
+                  <text
+                    x="120"
+                    y="130"
+                    fill="#d8b4fe"
+                    fontSize="20"
+                    fontWeight="900"
+                  >
+                    C ={" "}
+                    {control}
+                  </text>
+
+                  <line
+                    x1="180"
+                    y1="125"
+                    x2="360"
+                    y2="125"
+                    stroke="#c084fc"
+                    strokeWidth="5"
+                  />
+
+                  <line
+                    x1="360"
+                    y1="125"
+                    x2="360"
+                    y2="180"
+                    stroke="#c084fc"
+                    strokeWidth="5"
+                  />
+
+                  <text
+                    x="650"
+                    y="520"
+                    fill="#f9a8d4"
+                    fontSize="20"
+                    fontWeight="900"
+                  >
+                    C̅ ={" "}
+                    {
+                      analysis.controlBar
+                    }
+                  </text>
+
+                  <line
+                    x1="600"
+                    y1="510"
+                    x2="480"
+                    y2="510"
+                    stroke="#f9a8d4"
+                    strokeWidth="5"
+                  />
+
+                  <line
+                    x1="480"
+                    y1="440"
+                    x2="480"
+                    y2="510"
+                    stroke="#f9a8d4"
+                    strokeWidth="5"
+                  />
+                </>
+              ) : (
+                <>
+                  <rect
+                    x="370"
+                    y="270"
+                    width="120"
+                    height="80"
+                    rx="14"
+                    fill={
+                      isNMOSOn
+                        ? "rgba(34,197,94,0.18)"
+                        : "rgba(239,68,68,0.12)"
+                    }
+                    stroke={
+                      isNMOSOn
+                        ? "#22c55e"
+                        : "#ef4444"
+                    }
+                    strokeWidth="3"
+                  />
+
+                  <text
+                    x="430"
+                    y="316"
+                    textAnchor="middle"
+                    fill="#e5e7eb"
+                    fontSize="22"
+                    fontWeight="900"
+                  >
+                    nMOS
+                  </text>
+
+                  <text
+                    x="120"
+                    y="150"
+                    fill="#d8b4fe"
+                    fontSize="20"
+                    fontWeight="900"
+                  >
+                    C ={" "}
+                    {control}
+                  </text>
+
+                  <line
+                    x1="180"
+                    y1="145"
+                    x2="370"
+                    y2="145"
+                    stroke="#c084fc"
+                    strokeWidth="5"
+                  />
+
+                  <line
+                    x1="370"
+                    y1="145"
+                    x2="370"
+                    y2="270"
+                    stroke="#c084fc"
+                    strokeWidth="5"
+                  />
+                </>
+              )}
+            </svg>
+          </div>
+        </div>
 
         <div
           style={{
-            position: "relative",
-            height: "420px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.2)",
-            background: "linear-gradient(180deg, #111827, #0b1220)",
-            overflow: "hidden"
+            display: "flex",
+            flexDirection:
+              "column",
+            gap: 16
           }}
         >
-          <svg width="100%" height="100%" viewBox="0 0 760 420" preserveAspectRatio="xMidYMid meet">
-            {/* Input/output line */}
-            <line x1="100" y1="210" x2="660" y2="210" stroke="#fbbf24" strokeWidth="4" />
-            <circle cx="150" cy="210" r="6" fill="#fbbf24" />
-            <circle cx="610" cy="210" r="6" fill="#fbbf24" />
+          <Panel
+            title="Operating Conditions"
+            icon={
+              <Cpu size={18} />
+            }
+          >
+            <InfoLine
+              label="Mode"
+              value={
+                isTG
+                  ? "Transmission Gate"
+                  : "Single nMOS"
+              }
+            />
 
-            {/* Labels */}
-            <text x="70" y="215" fill="#fcd34d" fontSize="18" fontWeight="bold">IN = {inputSignal}</text>
-            <text x="620" y="215" fill="#fcd34d" fontSize="18" fontWeight="bold">OUT = {analysis.output}</text>
+            <InfoLine
+              label="Input"
+              value={
+                inputSignal
+              }
+              color="#fbbf24"
+            />
 
-            {isTG ? (
-              <>
-                {/* nMOS */}
-                <rect
-                  x="300"
-                  y="150"
-                  width="90"
-                  height="60"
-                  rx="10"
-                  fill={analysis.nmosState === "ON" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.12)"}
-                  stroke={analysis.nmosState === "ON" ? "#22c55e" : "#ef4444"}
-                  strokeWidth="3"
+            <InfoLine
+              label="Control"
+              value={control}
+              color="#c084fc"
+            />
+
+            <InfoLine
+              label="Output"
+              value={
+                analysis.output
+              }
+              color="#22c55e"
+            />
+
+            <InfoLine
+              label="Logic Case"
+              value={
+                analysis.logicCase
+              }
+            />
+          </Panel>
+
+          <Panel
+            title="Transistor States"
+            icon={
+              <Activity
+                size={18}
+              />
+            }
+          >
+            <StateBox
+              title="nMOS"
+              state={
+                analysis.nmosState
+              }
+              active={
+                isNMOSOn
+              }
+              text="Conducts when control = 1"
+            />
+
+            {isTG && (
+              <div
+                style={{
+                  marginTop: 14
+                }}
+              >
+                <StateBox
+                  title="pMOS"
+                  state={
+                    analysis.pmosState
+                  }
+                  active={
+                    isPMOSOn
+                  }
+                  text="Conducts when complementary control = 0"
                 />
-                <text x="345" y="186" textAnchor="middle" fill="#e5e7eb" fontSize="18" fontWeight="bold">nMOS</text>
-
-                {/* pMOS */}
-                <rect
-                  x="300"
-                  y="240"
-                  width="90"
-                  height="60"
-                  rx="10"
-                  fill={analysis.pmosState === "ON" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.12)"}
-                  stroke={analysis.pmosState === "ON" ? "#22c55e" : "#ef4444"}
-                  strokeWidth="3"
-                />
-                <text x="345" y="276" textAnchor="middle" fill="#e5e7eb" fontSize="18" fontWeight="bold">pMOS</text>
-
-                {/* parallel branches */}
-                <line x1="260" y1="210" x2="300" y2="180" stroke="#fbbf24" strokeWidth="4" />
-                <line x1="390" y1="180" x2="430" y2="210" stroke="#fbbf24" strokeWidth="4" />
-                <line x1="260" y1="210" x2="300" y2="270" stroke="#fbbf24" strokeWidth="4" />
-                <line x1="390" y1="270" x2="430" y2="210" stroke="#fbbf24" strokeWidth="4" />
-
-                {/* gate controls */}
-                <line x1="170" y1="110" x2="300" y2="110" stroke="#c084fc" strokeWidth="4" />
-                <line x1="300" y1="110" x2="300" y2="150" stroke="#c084fc" strokeWidth="4" />
-                <text x="80" y="115" fill="#d8b4fe" fontSize="18" fontWeight="bold">C = {control}</text>
-
-                <line x1="590" y1="330" x2="390" y2="330" stroke="#f9a8d4" strokeWidth="4" />
-                <line x1="390" y1="300" x2="390" y2="330" stroke="#f9a8d4" strokeWidth="4" />
-                <text x="600" y="335" fill="#fbcfe8" fontSize="18" fontWeight="bold">C̅ = {analysis.controlBar}</text>
-              </>
-            ) : (
-              <>
-                {/* single nmos */}
-                <rect
-                  x="320"
-                  y="180"
-                  width="100"
-                  height="60"
-                  rx="10"
-                  fill={analysis.nmosState === "ON" ? "rgba(34,197,94,0.18)" : "rgba(239,68,68,0.12)"}
-                  stroke={analysis.nmosState === "ON" ? "#22c55e" : "#ef4444"}
-                  strokeWidth="3"
-                />
-                <text x="370" y="216" textAnchor="middle" fill="#e5e7eb" fontSize="18" fontWeight="bold">nMOS</text>
-
-                <line x1="160" y1="120" x2="320" y2="120" stroke="#c084fc" strokeWidth="4" />
-                <line x1="320" y1="120" x2="320" y2="180" stroke="#c084fc" strokeWidth="4" />
-                <text x="70" y="125" fill="#d8b4fe" fontSize="18" fontWeight="bold">C = {control}</text>
-              </>
+              </div>
             )}
-          </svg>
+          </Panel>
+
+          <Panel
+            title="Circuit Interpretation"
+            icon={
+              <Lightbulb
+                size={18}
+              />
+            }
+          >
+            <p
+              style={{
+                margin: 0,
+                color:
+                  "#cbd5e1",
+                lineHeight: 1.7
+              }}
+            >
+              {analysis.note}
+            </p>
+          </Panel>
+
+          <Panel
+            title="Key Insight"
+            icon={
+              <Zap size={18} />
+            }
+          >
+            <p
+              style={{
+                margin: 0,
+                color:
+                  "#cbd5e1",
+                lineHeight: 1.7
+              }}
+            >
+              {isTG
+                ? "Transmission gates pass both logic levels efficiently because both transistor types conduct together."
+                : "A single nMOS pass transistor passes logic LOW strongly but suffers threshold loss while passing logic HIGH."}
+            </p>
+          </Panel>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Panel({
+  title,
+  icon,
+  children
+}) {
+  return (
+    <div
+      className="overview-card"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(15,23,42,0.92), rgba(2,6,23,0.88))"
+      }}
+    >
+      <div className="overview-card-head">
+        {icon}
+        <h4>{title}</h4>
+      </div>
+
+      {children}
+    </div>
+  );
+}
+
+function InfoLine({
+  label,
+  value,
+  color = "#e5e7eb"
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns:
+          "1fr auto",
+        gap: 12,
+        padding: "8px 0",
+        borderBottom:
+          "1px solid rgba(148,163,184,0.12)"
+      }}
+    >
+      <span
+        style={{
+          color: "#cbd5e1",
+          fontWeight: 700
+        }}
+      >
+        {label}
+      </span>
+
+      <strong
+        style={{
+          color,
+          textAlign: "right"
+        }}
+      >
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+function StateBox({
+  title,
+  state,
+  active,
+  text
+}) {
+  return (
+    <div
+      style={{
+        borderRadius: 14,
+        padding:
+          "14px 12px",
+        textAlign: "center",
+        background: active
+          ? "rgba(34,197,94,0.13)"
+          : "rgba(239,68,68,0.12)",
+        border: `1px solid ${
+          active
+            ? "#22c55e"
+            : "#ef4444"
+        }88`
+      }}
+    >
+      <div
+        style={{
+          color: active
+            ? "#22c55e"
+            : "#ef4444",
+          fontWeight: 900,
+          fontSize: 16
+        }}
+      >
+        {title}
       </div>
 
       <div
         style={{
-          marginTop: "1rem",
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "14px"
+          color: active
+            ? "#22c55e"
+            : "#ef4444",
+          fontWeight: 900,
+          fontSize: 25,
+          marginTop: 6
         }}
       >
-        <div style={transistorStyle(analysis.nmosState)}>
-          <strong>nMOS</strong>
-          <div style={{ marginTop: "8px" }}>{analysis.nmosState}</div>
-          <div style={{ marginTop: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-            ON when control = 1
-          </div>
-        </div>
-
-        {isTG && (
-          <div style={transistorStyle(analysis.pmosState)}>
-            <strong>pMOS</strong>
-            <div style={{ marginTop: "8px" }}>{analysis.pmosState}</div>
-            <div style={{ marginTop: "8px", fontSize: "13px", color: "#cbd5e1" }}>
-              ON when control̅ = 0
-            </div>
-          </div>
-        )}
+        {state}
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Comparison Insight</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          {isTG
-            ? "Because both transistor types conduct together, the transmission gate can pass both logic 0 and logic 1 more effectively."
-            : "A single nMOS pass transistor is simple, but it may not pass a strong logic 1 because of threshold voltage loss."}
-        </p>
+      <div
+        style={{
+          color: "#cbd5e1",
+          fontSize: 13,
+          marginTop: 8
+        }}
+      >
+        {text}
       </div>
-    </section>
+    </div>
   );
 }

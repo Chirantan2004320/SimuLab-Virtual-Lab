@@ -9,6 +9,7 @@ import {
   FlaskConical,
   BookOpen,
 } from "lucide-react";
+import { useRef } from "react";
 import { Button } from "../components/ui/button";
 import SimulabNavbar from "../components/SimulabNavbar";
 import { useAuth } from "../context/AuthContext";
@@ -28,11 +29,21 @@ const fadeUp = {
 const Profile = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const progressRef = useRef(null);
 
   const displayName =
     user?.name || user?.fullName || user?.username || "SimuLab User";
 
   const email = user?.email || "No email available";
+  const role = user?.role || "student";
+
+  //eslint-disable-next-line no-unused-vars
+  const roleColor =
+  role === "admin"
+    ? "from-red-500 to-orange-500"
+    : role === "faculty"
+    ? "from-violet-500 to-fuchsia-500"
+    : "from-primary to-accent";
 
   const initials = displayName
     .split(" ")
@@ -49,7 +60,7 @@ const Profile = () => {
   const profileStats = [
     {
       label: "Labs Available",
-      value: "6",
+      value: "7",
       icon: FlaskConical,
       color: "text-primary",
     },
@@ -86,7 +97,7 @@ const Profile = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass glow-border mb-6">
               <User className="w-4 h-4 text-primary" />
               <span className="text-sm font-display text-primary tracking-wide">
-                Student Profile
+                {role.charAt(0).toUpperCase() + role.slice(1)} Profile
               </span>
             </div>
 
@@ -112,7 +123,7 @@ const Profile = () => {
 
               <div className="p-8">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-3xl font-bold text-primary-foreground shadow-lg shadow-primary/10">
+                  <div className={`w-24 h-24 rounded-full bg-gradient-to-br ${roleColor} flex items-center justify-center text-3xl font-bold text-primary-foreground shadow-lg shadow-primary/10`}>
                     {initials}
                   </div>
 
@@ -128,15 +139,26 @@ const Profile = () => {
                       </div>
 
                       <div className="flex items-center gap-3 text-muted-foreground">
-                        <Shield className="w-4 h-4 text-accent" />
-                        <span>Authenticated SimuLab Account</span>
-                      </div>
+  <Shield className="w-4 h-4 text-accent" />
+
+  <span className="capitalize">
+    {role} Account
+  </span>
+</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <Link to="/dashboard">
+                  <Link
+  to={
+    role === "admin"
+      ? "/admin/dashboard"
+      : role === "faculty"
+      ? "/faculty/dashboard"
+      : "/dashboard"
+  }
+>
                     <Button
                       variant="hero-outline"
                       className="font-display gap-2"
@@ -171,7 +193,15 @@ const Profile = () => {
                 </h3>
 
                 <div className="space-y-4">
-                  <Link to="/dashboard" className="block">
+                  <Link
+  to={
+    role === "admin"
+      ? "/admin/dashboard"
+      : role === "faculty"
+      ? "/faculty/dashboard"
+      : "/dashboard"
+  }
+>
                     <div className="rounded-2xl border border-border/50 bg-secondary/35 hover:bg-secondary/60 transition-all duration-300 px-5 py-4">
                       <p className="font-semibold">Go to Dashboard</p>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -237,7 +267,7 @@ const Profile = () => {
               custom={5}
               className="space-y-6"
             >
-              <ProgressTracker />
+              <ProgressTracker ref={progressRef} />
               <Certificate />
             </motion.div>
 

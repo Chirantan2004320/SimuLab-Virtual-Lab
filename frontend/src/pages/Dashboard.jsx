@@ -73,6 +73,16 @@ const dashboardLabs = [
     color: "42 95% 58%",
     route: "/labs/dvlsi",
   },
+  {
+  id: "microcontroller",
+  title: "Microcontroller Lab",
+  subtitle: "6 experiments available",
+  description:
+    "Learn GPIO interfacing, PWM control, LED blinking, 7-segment displays, and embedded system programming through interactive simulations.",
+  icon: "🧠",
+  color: "210 90% 58%",
+  route: "/labs/microcontroller",
+},
 ];
 
 const stats = [

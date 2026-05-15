@@ -1,517 +1,1288 @@
-import React, { useMemo, useState } from "react";
-import StepHistoryPanel from "../../../../components/dbms/StepHistoryPanel.jsx";
-import InfoStatCard from "../../../../components/dbms/InfoStatCard.jsx";
-import ObservationBox from "../../../../components/dbms/ObservationBox.jsx";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-function ProcessCard({ title, state, isActive }) {
-  let border = "2px solid #38bdf8";
-  let background =
-    "linear-gradient(135deg, rgba(56,189,248,0.2), rgba(129,140,248,0.2))";
-  let boxShadow = "0 4px 12px rgba(56,189,248,0.15)";
+import {
+  Play,
+  RotateCcw,
+  Activity,
+  Gauge,
+  MemoryStick,
+  Layers,
+  Sparkles,
+  ShieldCheck,
+  Database,
+  GitBranch,
+  Pause,
+  ChevronRight,
+} from "lucide-react";
 
-  if (isActive) {
-    border = "2px solid #facc15";
-    background =
-      "linear-gradient(135deg, rgba(250,204,21,0.25), rgba(234,179,8,0.18))";
-    boxShadow = "0 0 18px rgba(250,204,21,0.25)";
-  }
+const modeMeta = {
+  critical: {
+    name:
+      "Critical Section",
+
+    type:
+      "Mutual Exclusion",
+
+    complexity:
+      "O(n)",
+
+    space:
+      "O(1)",
+
+    insight:
+      "Only one process can enter the critical section at a time to avoid race conditions.",
+  },
+
+  semaphore: {
+    name:
+      "Semaphore Synchronization",
+
+    type:
+      "Process Coordination",
+
+    complexity:
+      "O(n)",
+
+    space:
+      "O(1)",
+
+    insight:
+      "Semaphores coordinate access using wait() and signal() operations.",
+  },
+
+  producerConsumer: {
+    name:
+      "Producer Consumer",
+
+    type:
+      "Buffer Synchronization",
+
+    complexity:
+      "O(n)",
+
+    space:
+      "O(buffer size)",
+
+    insight:
+      "Producer inserts items while Consumer safely removes them from the shared buffer.",
+  },
+};
+
+function ProcessCard({
+  title,
+  state,
+  active,
+}) {
 
   return (
     <div
       style={{
-        minWidth: 220,
-        padding: "18px 16px",
-        borderRadius: 12,
-        background,
-        border,
-        color: "#ffffff",
-        boxShadow,
-        transition: "all 0.25s ease"
+        minWidth: 240,
+        padding: 24,
+        borderRadius: 20,
+
+        background: active
+          ? "linear-gradient(135deg, rgba(250,204,21,0.25), rgba(249,115,22,0.18))"
+          : "linear-gradient(135deg, rgba(15,23,42,0.92), rgba(30,41,59,0.88))",
+
+        border: active
+          ? "2px solid rgba(250,204,21,0.7)"
+          : "1px solid rgba(56,189,248,0.25)",
+
+        boxShadow: active
+          ? "0 0 30px rgba(250,204,21,0.35)"
+          : "0 10px 30px rgba(0,0,0,0.25)",
+
+        transform: active
+          ? "translateY(-10px) scale(1.04)"
+          : "translateY(0px)",
+
+        transition:
+          "all 0.45s ease",
+
+        position:
+          "relative",
+
+        overflow:
+          "hidden",
       }}
     >
-      <div style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 10 }}>
-        {title}
+
+      {active && (
+        <div
+          style={{
+            position:
+              "absolute",
+
+            inset: 0,
+
+            background:
+              "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
+
+            animation:
+              "pulseMove 2s linear infinite",
+          }}
+        />
+      )}
+
+      <div
+        style={{
+          position:
+            "relative",
+
+          zIndex: 2,
+        }}
+      >
+
+        <div
+          style={{
+            fontSize:
+              "1.15rem",
+
+            fontWeight:
+              800,
+
+            marginBottom:
+              14,
+
+            color:
+              "#ffffff",
+          }}
+        >
+          {title}
+        </div>
+
+        <div
+          style={{
+            color:
+              active
+                ? "#fde68a"
+                : "#cbd5e1",
+
+            fontWeight:
+              700,
+
+            fontSize:
+              "1rem",
+          }}
+        >
+          {state}
+        </div>
+
       </div>
 
-      <div style={{ color: "#e5e7eb" }}>
-        <strong>State:</strong> {state}
-      </div>
     </div>
   );
 }
 
-function BufferVisualization({ buffer, capacity, producerActive, consumerActive }) {
-  const slots = Array.from({ length: capacity }, (_, i) => buffer[i] || null);
-
-  return (
-    <section className="card">
-      <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Bounded Buffer</h3>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
-          justifyContent: "center",
-          marginBottom: 18
-        }}
-      >
-        {slots.map((item, index) => (
-          <div
-            key={index}
-            style={{
-              width: 80,
-              minHeight: 90,
-              borderRadius: 10,
-              border: "2px solid rgba(56,189,248,0.35)",
-              background: item
-                ? "linear-gradient(135deg, rgba(34,197,94,0.24), rgba(16,185,129,0.18))"
-                : "rgba(15,23,42,0.4)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              fontWeight: 700
-            }}
-          >
-            <div>{item || "Empty"}</div>
-            <div style={{ fontSize: "0.8rem", color: "#cbd5e1", marginTop: 6 }}>
-              slot {index}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 18,
-          justifyContent: "center",
-          flexWrap: "wrap"
-        }}
-      >
-        <div
-          style={{
-            padding: "10px 14px",
-            borderRadius: 8,
-            background: producerActive ? "rgba(250,204,21,0.18)" : "rgba(15,23,42,0.35)",
-            border: producerActive
-              ? "1px solid rgba(250,204,21,0.35)"
-              : "1px solid rgba(56,189,248,0.22)",
-            color: "#e5e7eb",
-            fontWeight: 600
-          }}
-        >
-          Producer
-        </div>
-
-        <div
-          style={{
-            padding: "10px 14px",
-            borderRadius: 8,
-            background: consumerActive ? "rgba(250,204,21,0.18)" : "rgba(15,23,42,0.35)",
-            border: consumerActive
-              ? "1px solid rgba(250,204,21,0.35)"
-              : "1px solid rgba(56,189,248,0.22)",
-            color: "#e5e7eb",
-            fontWeight: 600
-          }}
-        >
-          Consumer
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function SemaphoreVisualization({ semaphoreValue, waitingQueue, activeOperation }) {
-  return (
-    <section className="card">
-      <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Semaphore State</h3>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: 16
-        }}
-      >
-        <div
-          style={{
-            padding: "16px",
-            borderRadius: 10,
-            background: "rgba(15,23,42,0.45)",
-            border: "1px solid rgba(56,189,248,0.25)",
-            color: "#e5e7eb"
-          }}
-        >
-          <strong style={{ color: "#38bdf8" }}>Semaphore Value</strong>
-          <div style={{ marginTop: 8, fontSize: "1.4rem", fontWeight: 800 }}>
-            {semaphoreValue}
-          </div>
-        </div>
-
-        <div
-          style={{
-            padding: "16px",
-            borderRadius: 10,
-            background: "rgba(15,23,42,0.45)",
-            border: "1px solid rgba(56,189,248,0.25)",
-            color: "#e5e7eb"
-          }}
-        >
-          <strong style={{ color: "#38bdf8" }}>Active Operation</strong>
-          <div style={{ marginTop: 8 }}>{activeOperation || "None"}</div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 18 }}>
-        <strong style={{ color: "#38bdf8" }}>Waiting Queue</strong>
-
-        <div
-          style={{
-            marginTop: 10,
-            display: "flex",
-            gap: 12,
-            flexWrap: "wrap"
-          }}
-        >
-          {waitingQueue.length === 0 ? (
-            <span style={{ color: "#9ca3af" }}>No waiting processes</span>
-          ) : (
-            waitingQueue.map((process, index) => (
-              <div
-                key={`${process}-${index}`}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 8,
-                  background: "rgba(239,68,68,0.15)",
-                  border: "1px solid rgba(239,68,68,0.28)",
-                  color: "#fecaca",
-                  fontWeight: 600
-                }}
-              >
-                {process}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function ProcessSynchronizationSimulation({
-  mode = "critical",
-  setExperimentRun
+  mode =
+    "critical",
+
+  setExperimentRun,
 }) {
-  const [message, setMessage] = useState("Process Synchronization simulation initialized.");
-  const [stepHistory, setStepHistory] = useState([]);
 
-  const [process1State, setProcess1State] = useState("Ready");
-  const [process2State, setProcess2State] = useState("Ready");
-  const [activeProcess, setActiveProcess] = useState("");
+  const meta =
+    modeMeta[mode];
 
-  const [semaphoreValue, setSemaphoreValue] = useState(1);
-  const [waitingQueue, setWaitingQueue] = useState([]);
-  const [activeOperation, setActiveOperation] = useState("");
+  const [message, setMessage] =
+    useState(
+      "Simulation initialized."
+    );
 
-  const [buffer, setBuffer] = useState(["Item1"]);
-  const [bufferCapacity,] = useState(3);
-  const [, setProducerState] = useState("Ready");
-  const [, setConsumerState] = useState("Ready");
+  const [steps, setSteps] =
+    useState([]);
 
-  const addStep = (text) => {
-    setStepHistory((prev) => [...prev, text]);
-  };
+  const [stepIndex, setStepIndex] =
+    useState(0);
 
-  const resetCritical = () => {
-    setProcess1State("Ready");
-    setProcess2State("Ready");
-    setActiveProcess("");
-  };
+  const [ setRunning] =
+    useState(false);
 
-  const resetSemaphore = () => {
-    setSemaphoreValue(1);
-    setWaitingQueue([]);
-    setActiveOperation("");
-    setProcess1State("Ready");
-    setProcess2State("Ready");
-  };
+  const timerRef =
+    useRef(null);
 
-  const resetProducerConsumer = () => {
-    setBuffer(["Item1"]);
-    setProducerState("Ready");
-    setConsumerState("Ready");
-    setActiveProcess("");
-  };
-
-  const reset = () => {
-    setMessage("Simulation reset.");
-    setStepHistory([]);
-    resetCritical();
-    resetSemaphore();
-    resetProducerConsumer();
-    if (setExperimentRun) setExperimentRun(false);
-  };
-
-  const loadSample = () => {
-    reset();
-
-    if (mode === "critical") {
-      setMessage("Critical Section sample loaded.");
-      setStepHistory(["Sample loaded for Critical Section."]);
-    } else if (mode === "semaphore") {
-      setSemaphoreValue(1);
-      setMessage("Semaphore sample loaded.");
-      setStepHistory(["Sample loaded for Semaphore."]);
-    } else {
-      setBuffer(["Item1"]);
-      setMessage("Producer-Consumer sample loaded.");
-      setStepHistory(["Sample loaded for Producer-Consumer."]);
-    }
-  };
-
-  const runCriticalSection = () => {
-    resetCritical();
-    setStepHistory([]);
-
-    setProcess1State("Trying");
-    setActiveProcess("P1");
-    addStep("P1 tries to enter the critical section.");
-
-    setProcess1State("In Critical Section");
-    addStep("P1 enters the critical section successfully.");
-
-    setProcess2State("Trying");
-    addStep("P2 also tries to enter the critical section.");
-
-    setProcess2State("Waiting");
-    addStep("P2 must wait because P1 is already inside the critical section.");
-
-    setProcess1State("Exited");
-    addStep("P1 exits the critical section.");
-
-    setProcess2State("In Critical Section");
-    setActiveProcess("P2");
-    addStep("P2 now enters the critical section safely.");
-
-    setMessage("Critical Section simulation completed.");
-    if (setExperimentRun) setExperimentRun(true);
-  };
-
-  const runSemaphore = () => {
-    resetSemaphore();
-    setStepHistory([]);
-
-    let sem = 1;
-
-    setActiveOperation("P1 performs wait()");
-    addStep("P1 performs wait() on semaphore.");
-    sem -= 1;
-    setSemaphoreValue(sem);
-    setProcess1State("Using Resource");
-    addStep("Semaphore becomes 0. P1 acquires the resource.");
-
-    setActiveOperation("P2 performs wait()");
-    addStep("P2 performs wait() on semaphore.");
-    if (sem <= 0) {
-      setWaitingQueue(["P2"]);
-      setProcess2State("Blocked");
-      addStep("P2 is blocked because the resource is unavailable.");
-    }
-
-    setActiveOperation("P1 performs signal()");
-    addStep("P1 performs signal() and releases the resource.");
-    sem += 1;
-    setSemaphoreValue(sem);
-    setProcess1State("Completed");
-
-    setWaitingQueue([]);
-    setProcess2State("Using Resource");
-    setActiveOperation("P2 resumes");
-    addStep("P2 resumes and acquires the resource.");
-
-    setMessage("Semaphore simulation completed.");
-    if (setExperimentRun) setExperimentRun(true);
-  };
-
-  const runProducerConsumer = () => {
-    resetProducerConsumer();
-    setStepHistory([]);
-
-    let currentBuffer = ["Item1"];
-
-    setProducerState("Producing");
-    setActiveProcess("Producer");
-    addStep("Producer prepares a new item to insert into the buffer.");
-
-    if (currentBuffer.length < bufferCapacity) {
-      currentBuffer = [...currentBuffer, `Item${currentBuffer.length + 1}`];
-      setBuffer(currentBuffer);
-      addStep(`Producer inserts ${currentBuffer[currentBuffer.length - 1]} into the buffer.`);
-    } else {
-      setProducerState("Waiting");
-      addStep("Producer must wait because the buffer is full.");
-    }
-
-    setConsumerState("Consuming");
-    setActiveProcess("Consumer");
-    addStep("Consumer tries to remove an item from the buffer.");
-
-    if (currentBuffer.length > 0) {
-      const removed = currentBuffer[0];
-      currentBuffer = currentBuffer.slice(1);
-      setBuffer(currentBuffer);
-      addStep(`Consumer removes ${removed} from the buffer.`);
-    } else {
-      setConsumerState("Waiting");
-      addStep("Consumer must wait because the buffer is empty.");
-    }
-
-    setProducerState("Ready");
-    setConsumerState("Ready");
-    setMessage("Producer-Consumer simulation completed.");
-    if (setExperimentRun) setExperimentRun(true);
-  };
-
-  const runSimulation = () => {
-    if (mode === "critical") {
-      runCriticalSection();
-    } else if (mode === "semaphore") {
-      runSemaphore();
-    } else {
-      runProducerConsumer();
-    }
-  };
-
-  const observationText =
-    mode === "critical"
-      ? "Mutual exclusion ensures that only one process enters the critical section at a time, preventing race conditions."
-      : mode === "semaphore"
-      ? "Semaphores coordinate access to shared resources using wait() and signal() operations."
-      : "Producer-Consumer synchronization ensures that producers do not overflow the buffer and consumers do not underflow it.";
-
-  const stats = useMemo(() => {
-    if (mode === "critical") {
-      return [
-        { label: "P1 State", value: process1State },
-        { label: "P2 State", value: process2State },
-        { label: "Active Process", value: activeProcess || "None" }
-      ];
-    }
-
-    if (mode === "semaphore") {
-      return [
-        { label: "Semaphore Value", value: semaphoreValue },
-        { label: "Waiting Processes", value: waitingQueue.length },
-        { label: "Active Operation", value: activeOperation || "None" }
-      ];
-    }
-
-    return [
-      { label: "Buffer Size", value: buffer.length },
-      { label: "Buffer Capacity", value: bufferCapacity },
-      { label: "Active Side", value: activeProcess || "None" }
-    ];
-  }, [
-    mode,
+  const [
     process1State,
+    setProcess1State,
+  ] = useState("Ready");
+
+  const [
     process2State,
+    setProcess2State,
+  ] = useState("Ready");
+
+  const [
     activeProcess,
+    setActiveProcess,
+  ] = useState("");
+
+  const [
     semaphoreValue,
-    waitingQueue.length,
+    setSemaphoreValue,
+  ] = useState(1);
+
+  const [
+    waitingQueue,
+    setWaitingQueue,
+  ] = useState([]);
+
+  const [
     activeOperation,
-    buffer.length,
-    bufferCapacity
-  ]);
+    setActiveOperation,
+  ] = useState("");
+
+  const [buffer, setBuffer] =
+    useState(["Item1"]);
+
+  const [
+    bufferCapacity,
+  ] = useState(4);
+
+  const reset =
+    () => {
+
+      clearInterval(
+        timerRef.current
+      );
+
+      setRunning(false);
+
+      setMessage(
+        "Simulation reset."
+      );
+
+      setSteps([]);
+
+      setStepIndex(0);
+
+      setProcess1State(
+        "Ready"
+      );
+
+      setProcess2State(
+        "Ready"
+      );
+
+      setActiveProcess(
+        ""
+      );
+
+      setSemaphoreValue(
+        1
+      );
+
+      setWaitingQueue([]);
+
+      setActiveOperation(
+        ""
+      );
+
+      setBuffer([
+        "Item1",
+      ]);
+    };
+
+  const criticalSteps = [
+    {
+      text:
+        "P1 tries to enter Critical Section.",
+
+      action:
+        () => {
+          setProcess1State(
+            "Trying"
+          );
+
+          setActiveProcess(
+            "P1"
+          );
+        },
+    },
+
+    {
+      text:
+        "P1 enters Critical Section.",
+
+      action:
+        () => {
+          setProcess1State(
+            "Running"
+          );
+        },
+    },
+
+    {
+      text:
+        "P2 requests access.",
+
+      action:
+        () => {
+          setProcess2State(
+            "Waiting"
+          );
+        },
+    },
+
+    {
+      text:
+        "P1 exits Critical Section.",
+
+      action:
+        () => {
+          setProcess1State(
+            "Completed"
+          );
+        },
+    },
+
+    {
+      text:
+        "P2 enters Critical Section.",
+
+      action:
+        () => {
+          setProcess2State(
+            "Running"
+          );
+
+          setActiveProcess(
+            "P2"
+          );
+        },
+    },
+  ];
+
+  const semaphoreSteps = [
+    {
+      text:
+        "P1 executes wait().",
+
+      action:
+        () => {
+          setSemaphoreValue(
+            0
+          );
+
+          setActiveProcess(
+            "P1"
+          );
+
+          setActiveOperation(
+            "wait()"
+          );
+        },
+    },
+
+    {
+      text:
+        "P1 accesses resource.",
+
+      action:
+        () => {
+          setProcess1State(
+            "Using Resource"
+          );
+        },
+    },
+
+    {
+      text:
+        "P2 executes wait().",
+
+      action:
+        () => {
+          setWaitingQueue([
+            "P2",
+          ]);
+
+          setProcess2State(
+            "Blocked"
+          );
+        },
+    },
+
+    {
+      text:
+        "P1 executes signal().",
+
+      action:
+        () => {
+          setSemaphoreValue(
+            1
+          );
+
+          setProcess1State(
+            "Completed"
+          );
+        },
+    },
+
+    {
+      text:
+        "P2 acquires semaphore.",
+
+      action:
+        () => {
+          setWaitingQueue(
+            []
+          );
+
+          setProcess2State(
+            "Running"
+          );
+
+          setActiveProcess(
+            "P2"
+          );
+        },
+    },
+  ];
+
+  const producerSteps = [
+    {
+      text:
+        "Producer creates Item2.",
+
+      action:
+        () => {
+          setActiveProcess(
+            "Producer"
+          );
+        },
+    },
+
+    {
+      text:
+        "Producer inserts Item2.",
+
+      action:
+        () => {
+          setBuffer([
+            "Item1",
+            "Item2",
+          ]);
+        },
+    },
+
+    {
+      text:
+        "Producer inserts Item3.",
+
+      action:
+        () => {
+          setBuffer([
+            "Item1",
+            "Item2",
+            "Item3",
+          ]);
+        },
+    },
+
+    {
+      text:
+        "Consumer removes Item1.",
+
+      action:
+        () => {
+          setActiveProcess(
+            "Consumer"
+          );
+
+          setBuffer([
+            "Item2",
+            "Item3",
+          ]);
+        },
+    },
+  ];
+
+  const simulationSteps =
+    mode ===
+    "critical"
+      ? criticalSteps
+      : mode ===
+        "semaphore"
+      ? semaphoreSteps
+      : producerSteps;
+
+  const runSimulation =
+    () => {
+
+      reset();
+
+      setRunning(true);
+
+      let current = 0;
+
+      simulationSteps[0].action();
+
+      setMessage(
+        simulationSteps[0]
+          .text
+      );
+
+      setSteps([
+        simulationSteps[0]
+          .text,
+      ]);
+
+      timerRef.current =
+        setInterval(
+          () => {
+
+            current++;
+
+            if (
+              current >=
+              simulationSteps.length
+            ) {
+
+              clearInterval(
+                timerRef.current
+              );
+
+              setRunning(
+                false
+              );
+
+              if (
+                setExperimentRun
+              ) {
+                setExperimentRun(
+                  true
+                );
+              }
+
+              return;
+            }
+
+            simulationSteps[
+              current
+            ].action();
+
+            setMessage(
+              simulationSteps[
+                current
+              ].text
+            );
+
+            setSteps(
+              (prev) => [
+                ...prev,
+                simulationSteps[
+                  current
+                ].text,
+              ]
+            );
+
+            setStepIndex(
+              current
+            );
+
+          },
+          1800
+        );
+    };
+
+  const pauseSimulation =
+    () => {
+
+      clearInterval(
+        timerRef.current
+      );
+
+      setRunning(false);
+    };
+
+  useEffect(() => {
+
+    return () =>
+      clearInterval(
+        timerRef.current
+      );
+
+  }, []);
+
+  const stats =
+    useMemo(() => {
+
+      if (
+        mode ===
+        "critical"
+      ) {
+
+        return [
+          {
+            label:
+              "P1",
+
+            value:
+              process1State,
+          },
+
+          {
+            label:
+              "P2",
+
+            value:
+              process2State,
+          },
+
+          {
+            label:
+              "Active",
+
+            value:
+              activeProcess ||
+              "None",
+          },
+        ];
+      }
+
+      if (
+        mode ===
+        "semaphore"
+      ) {
+
+        return [
+          {
+            label:
+              "Semaphore",
+
+            value:
+              semaphoreValue,
+          },
+
+          {
+            label:
+              "Waiting",
+
+            value:
+              waitingQueue.length,
+          },
+
+          {
+            label:
+              "Operation",
+
+            value:
+              activeOperation ||
+              "None",
+          },
+        ];
+      }
+
+      return [
+        {
+          label:
+            "Buffer",
+
+          value:
+            `${buffer.length}/${bufferCapacity}`,
+        },
+
+        {
+          label:
+            "Active",
+
+          value:
+            activeProcess ||
+            "None",
+        },
+
+        {
+          label:
+            "Items",
+
+          value:
+            buffer.length,
+        },
+      ];
+
+    }, [
+      mode,
+      process1State,
+      process2State,
+      activeProcess,
+      semaphoreValue,
+      waitingQueue,
+      activeOperation,
+      buffer,
+      bufferCapacity,
+    ]);
 
   return (
-    <>
-      <section className="card experiment">
-        <h2>
-          Simulation <span style={{ color: "#38bdf8" }}>({mode.toUpperCase()})</span>
-        </h2>
+    <section className="sorting-sim-card">
 
-        <div className="buttons" style={{ marginBottom: 14 }}>
-          <button className="btn primary" onClick={runSimulation}>
-            Run Simulation
-          </button>
+      <style>
+        {`
+          @keyframes pulseMove {
+            0% {
+              transform: translateX(-100%);
+            }
 
-          <button className="btn info" onClick={loadSample}>
-            Load Sample
-          </button>
+            100% {
+              transform: translateX(100%);
+            }
+          }
 
-          <button className="btn secondary" onClick={reset}>
-            Reset
-          </button>
+          @keyframes glowPulse {
+            0% {
+              box-shadow: 0 0 0px rgba(59,130,246,0.2);
+            }
+
+            50% {
+              box-shadow: 0 0 24px rgba(59,130,246,0.6);
+            }
+
+            100% {
+              box-shadow: 0 0 0px rgba(59,130,246,0.2);
+            }
+          }
+        `}
+      </style>
+
+      <div className="sorting-sim-header">
+
+        <div className="sorting-sim-title-wrap">
+
+          <div className="sorting-sim-icon">
+
+            <Activity size={18} />
+
+          </div>
+
+          <div>
+
+            <h2 className="sorting-sim-title">
+              Simulation
+            </h2>
+
+            <p className="sorting-sim-subtitle">
+              Advanced animated visualization for Process Synchronization concepts.
+            </p>
+
+          </div>
+
         </div>
 
-        <div className="info-box">
-          {message || "Run the Process Synchronization simulation to begin."}
+      </div>
+
+      <div
+        className="overview-grid"
+        style={{
+          marginBottom: 20,
+        }}
+      >
+
+        <div className="overview-card">
+
+          <div className="overview-card-head">
+
+            <Gauge size={18} />
+
+            <h4>Complexity</h4>
+
+          </div>
+
+          <p>
+            {
+              meta.complexity
+            }
+          </p>
+
         </div>
+
+        <div className="overview-card">
+
+          <div className="overview-card-head">
+
+            <MemoryStick
+              size={18}
+            />
+
+            <h4>Space</h4>
+
+          </div>
+
+          <p>
+            {meta.space}
+          </p>
+
+        </div>
+
+        <div className="overview-card">
+
+          <div className="overview-card-head">
+
+            <ShieldCheck
+              size={18}
+            />
+
+            <h4>Type</h4>
+
+          </div>
+
+          <p>
+            {meta.type}
+          </p>
+
+        </div>
+
+      </div>
+
+      <div
+        className="sorting-info-box"
+        style={{
+          marginBottom: 20,
+        }}
+      >
+
+        <Sparkles
+          size={16}
+          style={{
+            marginRight: 10,
+          }}
+        />
+
+        {meta.insight}
+
+      </div>
+
+      <div
+        className="sorting-btn-group"
+        style={{
+          marginBottom: 24,
+        }}
+      >
+
+        <button
+          className="sim-btn sim-btn-primary"
+          onClick={
+            runSimulation
+          }
+        >
+
+          <Play size={16} />
+
+          Start
+
+        </button>
+
+        <button
+          className="sim-btn sim-btn-muted"
+          onClick={
+            pauseSimulation
+          }
+        >
+
+          <Pause size={16} />
+
+          Pause
+
+        </button>
+
+        <button
+          className="sim-btn sim-btn-danger"
+          onClick={
+            reset
+          }
+        >
+
+          <RotateCcw
+            size={16}
+          />
+
+          Reset
+
+        </button>
+
+      </div>
+
+      <div
+        className="sorting-info-box"
+        style={{
+          animation:
+            "glowPulse 2.5s infinite",
+        }}
+      >
+
+        <ChevronRight
+          size={16}
+          style={{
+            marginRight: 10,
+          }}
+        />
+
+        {message}
+
+      </div>
+
+      <div
+        className="sorting-stats-grid"
+        style={{
+          marginTop: 24,
+        }}
+      >
+
+        {stats.map(
+          (
+            stat
+          ) => (
+
+            <div
+              key={
+                stat.label
+              }
+              className="sorting-stat-box"
+            >
+
+              <span className="sorting-stat-label">
+                {
+                  stat.label
+                }
+              </span>
+
+              <span className="sorting-stat-value">
+                {
+                  stat.value
+                }
+              </span>
+
+            </div>
+          )
+        )}
+
+      </div>
+
+      {mode ===
+        "critical" && (
 
         <div
           style={{
-            marginTop: 16,
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16
+            display:
+              "flex",
+
+            gap: 24,
+
+            justifyContent:
+              "center",
+
+            marginTop: 34,
+
+            flexWrap:
+              "wrap",
           }}
         >
-          {stats.map((stat) => (
-            <InfoStatCard key={stat.label} label={stat.label} value={stat.value} />
-          ))}
+
+          <ProcessCard
+            title="Process P1"
+            state={
+              process1State
+            }
+            active={
+              activeProcess ===
+              "P1"
+            }
+          />
+
+          <ProcessCard
+            title="Process P2"
+            state={
+              process2State
+            }
+            active={
+              activeProcess ===
+              "P2"
+            }
+          />
+
         </div>
+      )}
 
-        <ObservationBox text={observationText} />
-      </section>
+      {mode ===
+        "semaphore" && (
 
-      {mode === "critical" && (
-        <section className="card">
-          <h3 style={{ marginBottom: 14, color: "#e5e7eb" }}>Critical Section State</h3>
+        <div
+          className="overview-grid"
+          style={{
+            marginTop: 30,
+          }}
+        >
 
           <div
+            className="overview-card"
             style={{
-              display: "flex",
-              gap: 18,
-              flexWrap: "wrap",
-              justifyContent: "center"
+              transform:
+                "scale(1.02)",
             }}
           >
-            <ProcessCard
-              title="Process P1"
-              state={process1State}
-              isActive={activeProcess === "P1"}
-            />
-            <ProcessCard
-              title="Process P2"
-              state={process2State}
-              isActive={activeProcess === "P2"}
-            />
+
+            <div className="overview-card-head">
+
+              <Database
+                size={18}
+              />
+
+              <h4>
+                Semaphore
+              </h4>
+
+            </div>
+
+            <h2
+              style={{
+                color:
+                  "#38bdf8",
+              }}
+            >
+              {
+                semaphoreValue
+              }
+            </h2>
+
           </div>
-        </section>
+
+          <div
+            className="overview-card"
+            style={{
+              transform:
+                "scale(1.02)",
+            }}
+          >
+
+            <div className="overview-card-head">
+
+              <GitBranch
+                size={18}
+              />
+
+              <h4>
+                Waiting Queue
+              </h4>
+
+            </div>
+
+            <p>
+              {waitingQueue
+                .length ===
+              0
+                ? "Empty"
+                : waitingQueue.join(
+                    ", "
+                  )}
+            </p>
+
+          </div>
+
+        </div>
       )}
 
-      {mode === "semaphore" && (
-        <SemaphoreVisualization
-          semaphoreValue={semaphoreValue}
-          waitingQueue={waitingQueue}
-          activeOperation={activeOperation}
-        />
+      {mode ===
+        "producerConsumer" && (
+
+        <div
+          style={{
+            display:
+              "flex",
+
+            gap: 20,
+
+            justifyContent:
+              "center",
+
+            marginTop: 36,
+
+            flexWrap:
+              "wrap",
+          }}
+        >
+
+          {Array.from({
+            length:
+              bufferCapacity,
+          }).map(
+            (
+              _,
+              index
+            ) => {
+
+              const item =
+                buffer[
+                  index
+                ];
+
+              return (
+
+                <div
+                  key={
+                    index
+                  }
+                  style={{
+                    width: 120,
+
+                    height: item
+                      ? 170
+                      : 120,
+
+                    borderRadius: 18,
+
+                    background:
+                      item
+                        ? "linear-gradient(135deg, rgba(34,197,94,0.28), rgba(16,185,129,0.2))"
+                        : "rgba(15,23,42,0.55)",
+
+                    border:
+                      item
+                        ? "2px solid rgba(34,197,94,0.6)"
+                        : "1px solid rgba(56,189,248,0.2)",
+
+                    display:
+                      "flex",
+
+                    flexDirection:
+                      "column",
+
+                    justifyContent:
+                      "center",
+
+                    alignItems:
+                      "center",
+
+                    transition:
+                      "all 0.45s ease",
+
+                    transform:
+                      item
+                        ? "translateY(-10px)"
+                        : "translateY(0px)",
+
+                    boxShadow:
+                      item
+                        ? "0 0 24px rgba(34,197,94,0.35)"
+                        : "none",
+                  }}
+                >
+
+                  <div
+                    style={{
+                      fontWeight:
+                        800,
+
+                      color:
+                        "#ffffff",
+
+                      marginBottom:
+                        12,
+                    }}
+                  >
+                    {item ||
+                      "Empty"}
+                  </div>
+
+                  <div
+                    style={{
+                      color:
+                        "#cbd5e1",
+                    }}
+                  >
+                    Slot{" "}
+                    {index}
+                  </div>
+
+                </div>
+              );
+            }
+          )}
+
+        </div>
       )}
 
-      {mode === "producerConsumer" && (
-        <BufferVisualization
-          buffer={buffer}
-          capacity={bufferCapacity}
-          producerActive={activeProcess === "Producer"}
-          consumerActive={activeProcess === "Consumer"}
-        />
-      )}
+      <div
+        className="overview-card overview-steps-card"
+        style={{
+          marginTop: 40,
+        }}
+      >
 
-      <StepHistoryPanel steps={stepHistory} />
-    </>
+        <div className="overview-card-head">
+
+          <Layers size={18} />
+
+          <h4>
+            Execution Steps
+          </h4>
+
+        </div>
+
+        <ol className="overview-steps-list">
+
+          {steps.length ===
+          0 ? (
+
+            <li>
+              <span>
+                Start the
+                simulation to
+                visualize
+                synchronization
+                flow.
+              </span>
+            </li>
+
+          ) : (
+
+            steps.map(
+              (
+                step,
+                index
+              ) => (
+
+                <li
+                  key={
+                    index
+                  }
+                  style={{
+                    opacity:
+                      index <=
+                      stepIndex
+                        ? 1
+                        : 0.4,
+
+                    transform:
+                      index ===
+                      stepIndex
+                        ? "translateX(8px)"
+                        : "translateX(0px)",
+
+                    transition:
+                      "all 0.35s ease",
+                  }}
+                >
+
+                  <span className="overview-step-index">
+                    {index + 1}
+                  </span>
+
+                  <span>
+                    {step}
+                  </span>
+
+                </li>
+              )
+            )
+          )}
+
+        </ol>
+
+      </div>
+
+    </section>
   );
 }

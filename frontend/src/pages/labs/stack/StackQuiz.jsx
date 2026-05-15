@@ -1,5 +1,12 @@
 import React from "react";
-import { Brain, Lock, CheckCircle2, RotateCcw } from "lucide-react";
+
+import {
+  Brain,
+  Lock,
+  CheckCircle2,
+  RotateCcw,
+  XCircle,
+} from "lucide-react";
 
 export default function StackQuiz({
   quizQuestions,
@@ -10,29 +17,54 @@ export default function StackQuiz({
   experimentRun,
   handleQuizAnswer,
   submitQuiz,
-  redoQuiz
+  redoQuiz,
 }) {
-  const total = quizQuestions.length;
-  const percentage = total ? Math.round((quizScore / total) * 100) : 0;
+  const total =
+    quizQuestions.length;
+
+  const percentage = total
+    ? Math.round(
+        (quizScore / total) *
+          100
+      )
+    : 0;
 
   if (!experimentRun) {
     return (
       <section className="quiz-shell">
-        <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+        <div
+          className="sorting-sim-title-wrap"
+          style={{
+            marginBottom: 18,
+          }}
+        >
           <div className="sorting-sim-icon">
             <Brain size={18} />
           </div>
+
           <div>
-            <h2 className="sorting-sim-title">Quiz</h2>
+            <h2 className="sorting-sim-title">
+              Quiz
+            </h2>
+
             <p className="sorting-sim-subtitle">
-              Test your understanding after using the stack simulation.
+              Test your
+              understanding after
+              using the stack
+              simulation.
             </p>
           </div>
         </div>
 
         <div className="quiz-locked-box">
           <Lock size={18} />
-          <span>Please run the simulation at least once before attempting the quiz.</span>
+
+          <span>
+            Please run the
+            simulation at least
+            once before attempting
+            the quiz.
+          </span>
         </div>
       </section>
     );
@@ -40,47 +72,87 @@ export default function StackQuiz({
 
   return (
     <section className="quiz-shell">
-      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+      <div
+        className="sorting-sim-title-wrap"
+        style={{
+          marginBottom: 18,
+        }}
+      >
         <div className="sorting-sim-icon">
           <Brain size={18} />
         </div>
+
         <div>
-          <h2 className="sorting-sim-title">Quiz</h2>
+          <h2 className="sorting-sim-title">
+            Quiz
+          </h2>
+
           <p className="sorting-sim-subtitle">
-            Answer the questions below to verify your stack concepts.
+            Answer the questions
+            below to verify your
+            stack concepts.
           </p>
         </div>
       </div>
 
       {!quizSubmitted ? (
         <div className="quiz-list">
-          {quizQuestions.map((q, i) => (
-            <div key={i} className="quiz-card-upgraded">
-              <div className="quiz-question-title">
-                {i + 1}. {q.question}
-              </div>
+          {quizQuestions.map(
+            (q, i) => (
+              <div
+                key={q.id || i}
+                className="quiz-card-upgraded"
+              >
+                <div className="quiz-question-title">
+                  {i + 1}.{" "}
+                  {q.question}
+                </div>
 
-              <div className="quiz-options-grid">
-                {q.options.map((opt, j) => (
-                  <label key={j} className="quiz-option-card">
-                    <input
-                      type="radio"
-                      name={`q${i}`}
-                      value={j}
-                      checked={quizAnswers[i] === j}
-                      onChange={() => handleQuizAnswer(i, j)}
-                    />
-                    <span>{opt}</span>
-                  </label>
-                ))}
+                <div className="quiz-options-grid">
+                  {q.options.map(
+                    (opt, j) => (
+                      <label
+                        key={j}
+                        className="quiz-option-card"
+                      >
+                        <input
+                          type="radio"
+                          name={`q${i}`}
+                          value={j}
+                          checked={
+                            quizAnswers[
+                              i
+                            ] === j
+                          }
+                          onChange={() =>
+                            handleQuizAnswer(
+                              i,
+                              j
+                            )
+                          }
+                        />
+
+                        <span>
+                          {opt}
+                        </span>
+                      </label>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
 
           <button
             className="sim-btn sim-btn-primary"
             onClick={submitQuiz}
-            disabled={quizAnswers.includes(null)}
+            disabled={
+              quizAnswers.includes(
+                null
+              ) ||
+              quizQuestions.length ===
+                0
+            }
           >
             Submit Quiz
           </button>
@@ -88,52 +160,114 @@ export default function StackQuiz({
       ) : (
         <div className="quiz-result-shell">
           <div className="quiz-score-box">
-            <CheckCircle2 size={22} />
+            {percentage >=
+            60 ? (
+              <CheckCircle2
+                size={22}
+              />
+            ) : (
+              <XCircle
+                size={22}
+              />
+            )}
+
             <div>
-              <h3>Quiz Submitted</h3>
+              <h3>
+                Quiz Submitted
+              </h3>
+
               <p>
-                Score: <b>{quizScore}</b> / {total} ({percentage}%)
+                Score:{" "}
+                <b>
+                  {quizScore}
+                </b>{" "}
+                / {total} (
+                {percentage}%)
               </p>
             </div>
           </div>
 
           {quizSaveStatus && (
-            <p className="text-sm text-muted-foreground" style={{ marginTop: 8 }}>
-              {quizSaveStatus}
+            <p
+              className="text-sm text-muted-foreground"
+              style={{
+                marginTop: 8,
+              }}
+            >
+              {
+                quizSaveStatus
+              }
             </p>
           )}
 
           <div className="quiz-list">
-            {quizQuestions.map((q, i) => (
-              <div key={i} className="quiz-card-upgraded">
-                <div className="quiz-question-title">
-                  {i + 1}. {q.question}
-                </div>
+            {quizQuestions.map(
+              (q, i) => (
+                <div
+                  key={q.id || i}
+                  className="quiz-card-upgraded"
+                >
+                  <div className="quiz-question-title">
+                    {i + 1}.{" "}
+                    {
+                      q.question
+                    }
+                  </div>
 
-                <div className="quiz-options-grid">
-                  {q.options.map((opt, j) => {
-                    const isCorrect = j === q.correct;
-                    const isChosen = quizAnswers[i] === j;
+                  <div className="quiz-options-grid">
+                    {q.options.map(
+                      (
+                        opt,
+                        j
+                      ) => {
+                        const isCorrect =
+                          opt ===
+                          q.correct_answer;
 
-                    return (
-                      <div
-                        key={j}
-                        className={`quiz-option-card result-mode ${
-                          isCorrect ? "correct" : isChosen ? "wrong" : ""
-                        }`}
-                      >
-                        <span>{opt}</span>
-                      </div>
-                    );
-                  })}
+                        const isChosen =
+                          quizAnswers[
+                            i
+                          ] === j;
+
+                        return (
+                          <div
+                            key={
+                              j
+                            }
+                            className={`quiz-option-card result-mode ${
+                              isCorrect
+                                ? "correct"
+                                : isChosen
+                                ? "wrong"
+                                : ""
+                            }`}
+                          >
+                            <span>
+                              {
+                                opt
+                              }
+                            </span>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
 
           <div className="quiz-actions-row">
-            <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
-              <RotateCcw size={16} />
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={
+                redoQuiz
+              }
+            >
+              <RotateCcw
+                size={16}
+              />
+
               Redo Quiz
             </button>
           </div>

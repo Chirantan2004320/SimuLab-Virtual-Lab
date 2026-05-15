@@ -1,60 +1,168 @@
 import React from "react";
 
+import {
+  Target,
+  BookOpen,
+  Activity,
+  Zap,
+  Cpu,
+  ShieldCheck
+} from "lucide-react";
+
 export default function DVLSITransmissionGateOverview() {
   return (
-    <div>
-      <section className="card">
-        <h2>Aim</h2>
-        <p>
-          To study the operation of a transmission gate and compare it with single
-          pass transistor logic for signal transmission in digital VLSI circuits.
-        </p>
-      </section>
+    <section className="overview-shell">
+      <div
+        className="sorting-sim-title-wrap"
+        style={{ marginBottom: 20 }}
+      >
+        <div className="sorting-sim-icon">
+          <BookOpen size={18} />
+        </div>
 
-      <section className="card">
-        <h2>Theory</h2>
-        <p>
-          A transmission gate is formed by connecting one nMOS transistor and one pMOS
-          transistor in parallel. Their control signals are complementary.
-        </p>
-        <p>
-          When the control input is active, both transistors turn ON and the gate behaves
-          like a bidirectional switch. When the control input is inactive, both transistors
-          turn OFF and the signal path is isolated.
-        </p>
-        <p>
-          A single pass transistor can also transmit signals, but it may not pass both logic
-          levels equally well. An nMOS passes logic 0 strongly but logic 1 weakly, while a
-          pMOS behaves oppositely. A transmission gate solves this issue by combining both.
-        </p>
-      </section>
+        <div>
+          <h2 className="sorting-sim-title">
+            Overview
+          </h2>
 
-      <section className="card">
-        <h2>Why Transmission Gates Matter</h2>
-        <p>
-          Transmission gates are widely used in multiplexers, latches, flip-flops, clock
-          gating circuits, and switch-based logic design.
-        </p>
-      </section>
+          <p className="sorting-sim-subtitle">
+            Understand transmission
+            gate switching,
+            complementary control,
+            and pass transistor
+            behavior in CMOS VLSI
+            circuits.
+          </p>
+        </div>
+      </div>
 
-      <section className="card">
-        <h2>Procedure</h2>
-        <ol>
-          <li>Select the operating mode: Transmission Gate or Single Pass nMOS.</li>
-          <li>Choose the input signal value.</li>
-          <li>Change the control signal.</li>
-          <li>Observe whether the output is passed or isolated.</li>
-          <li>Compare the conduction behavior of the two approaches.</li>
+      <div className="overview-hero-card">
+        <div className="overview-hero-header">
+          <h3>
+            Transmission Gate
+          </h3>
+
+          <span className="overview-badge">
+            DVLSI Experiment
+          </span>
+        </div>
+
+        <p className="overview-hero-text">
+          A transmission gate is
+          formed using one nMOS and
+          one pMOS transistor in
+          parallel with complementary
+          control signals. It acts
+          like a bidirectional CMOS
+          switch and can pass both
+          logic HIGH and logic LOW
+          effectively.
+        </p>
+      </div>
+
+      <div className="overview-grid">
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Target size={18} />
+            <h4>Aim</h4>
+          </div>
+
+          <p>
+            To study transmission
+            gate operation and
+            compare it with single
+            pass transistor logic
+            behavior.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Activity size={18} />
+            <h4>Switching Action</h4>
+          </div>
+
+          <p>
+            When the control signal
+            is active, both
+            transistors conduct and
+            the signal propagates to
+            the output.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Cpu size={18} />
+            <h4>Complementary Control</h4>
+          </div>
+
+          <p>
+            The nMOS gate receives
+            the control signal while
+            the pMOS gate receives
+            the inverted control
+            signal.
+          </p>
+        </div>
+
+        <div className="overview-card">
+          <div className="overview-card-head">
+            <Zap size={18} />
+            <h4>Pass Logic</h4>
+          </div>
+
+          <p>
+            A transmission gate
+            passes both logic levels
+            more efficiently than a
+            single nMOS pass
+            transistor.
+          </p>
+        </div>
+      </div>
+
+      <div className="overview-card overview-steps-card">
+        <div className="overview-card-head">
+          <BookOpen size={18} />
+          <h4>Procedure</h4>
+        </div>
+
+        <ol className="overview-steps-list">
+          {[
+            "Select the operating mode.",
+            "Choose the input signal value.",
+            "Apply the control signal.",
+            "Observe transistor conduction states.",
+            "Study the current conduction path.",
+            "Compare transmission gate and single pass nMOS behavior."
+          ].map((step, index) => (
+            <li key={index}>
+              <span className="overview-step-index">
+                {index + 1}
+              </span>
+
+              <span>{step}</span>
+            </li>
+          ))}
         </ol>
-      </section>
+      </div>
 
-      <section className="card">
-        <h2>Practical Insight</h2>
+      <div className="overview-card">
+        <div className="overview-card-head">
+          <ShieldCheck size={18} />
+          <h4>Practical Insight</h4>
+        </div>
+
         <p>
-          Transmission gates provide better signal integrity than a single pass transistor
-          because they can pass both logic 0 and logic 1 more effectively.
+          Transmission gates are
+          widely used in
+          multiplexers, latches,
+          flip-flops, clock gating,
+          and switch-based CMOS logic
+          circuits.
         </p>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

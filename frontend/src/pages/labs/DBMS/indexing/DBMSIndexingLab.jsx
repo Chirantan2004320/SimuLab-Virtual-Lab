@@ -1,7 +1,19 @@
-import React, { useEffect, useMemo, useState } from "react";
+/* eslint-disable no-new-func */
+
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
+
+import axios from "axios";
+
 import "../../../SortingLab.css";
+
 import { useNavigate } from "react-router-dom";
-import {useAuth} from "../../../../context/AuthContext.js";
+
+import { useAuth } from "../../../../context/AuthContext.js";
+
 import {
   BookOpen,
   PlayCircle,
@@ -10,11 +22,16 @@ import {
   FileCode2,
   ChevronsLeft,
   Search,
-  Zap
+  Zap,
 } from "lucide-react";
 
+import SimuLabLogo from "../../../../components/SimuLabLogo";
+
 import MarkCompleteButton from "../../../../components/MarkCompleteButton";
-import {saveQuizResult,saveCodingSubmission} from "../../../../API/progressApi";
+
+import {
+  saveCodingSubmission,
+} from "../../../../API/progressApi";
 
 import DBMSIndexingOverview from "./DBMSIndexingOverview";
 import DBMSIndexingSimulation from "./DBMSIndexingSimulation";
@@ -22,453 +39,1253 @@ import DBMSIndexingComparison from "./DBMSIndexingComparison";
 import DBMSIndexingQuiz from "./DBMSIndexingQuiz";
 import DBMSIndexingCoding from "./DBMSIndexingCoding";
 
-const simulabLogo = "/assets/logo.png";
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL ||
+  "http://localhost:5000";
 
 const sidebarItems = [
-  { key: "overview", label: "Overview", icon: BookOpen },
-  { key: "simulation", label: "Simulation", icon: PlayCircle },
-  { key: "comparison", label: "Comparison", icon: GitCompare },
-  { key: "quiz", label: "Quiz", icon: Brain },
-  { key: "coding", label: "Coding Practice", icon: FileCode2 }
-];
+  {
+    key: "overview",
+    label: "Overview",
+    icon: BookOpen,
+  },
 
-const indexingQuizQuestionsByType = {
-  linear: [
-    {
-      question: "Without an index, searching a table often uses:",
-      options: ["Hashing only", "Linear scan", "Binary tree always", "Rollback"],
-      correct: 1
-    },
-    {
-      question: "A linear scan checks rows:",
-      options: ["One by one", "Only middle row", "Only indexed rows", "In random order only"],
-      correct: 0
-    },
-    {
-      question: "Searching without an index is usually slower because:",
-      options: ["It may inspect many rows", "It deletes rows", "It changes the schema", "It creates duplicates"],
-      correct: 0
-    }
-  ],
-  indexed: [
-    {
-      question: "What is the main purpose of an index?",
-      options: ["To make searching faster", "To delete records", "To normalize data", "To roll back transactions"],
-      correct: 0
-    },
-    {
-      question: "An index helps by:",
-      options: ["Reducing the number of rows checked", "Sorting all tables permanently", "Removing primary keys", "Changing the DBMS engine"],
-      correct: 0
-    },
-    {
-      question: "Indexed search is generally faster than linear scan because:",
-      options: ["It jumps using lookup structure", "It checks every row twice", "It always uses rollback", "It disables constraints"],
-      correct: 0
-    }
-  ]
-};
+  {
+    key: "simulation",
+    label: "Simulation",
+    icon: PlayCircle,
+  },
+
+  {
+    key: "comparison",
+    label: "Comparison",
+    icon: GitCompare,
+  },
+
+  {
+    key: "quiz",
+    label: "Quiz",
+    icon: Brain,
+  },
+
+  {
+    key: "coding",
+    label: "Coding Practice",
+    icon: FileCode2,
+  },
+];
 
 const indexingProblemBank = {
   linear: [
     {
       id: 1,
-      title: "Find a student without using an index",
-      description: "Write logic to search for roll number 105 by scanning the student records one by one. Explain or write the steps clearly.",
-      expectedKeywords: ["scan", "row", "one by one", "105", "match"]
+
+      title:
+        "Full Table Sequential Search",
+
+      description:
+        "Write logic to search for roll number 105 using sequential row-by-row scanning. Explain the comparison flow.",
+
+      expectedKeywords: [
+        "scan",
+        "row",
+        "comparison",
+        "one by one",
+        "105",
+      ],
     },
+
     {
       id: 2,
-      title: "Count comparisons in linear scan",
-      description: "Suppose roll number 108 is searched in the given table without an index. Write how many comparisons are needed and explain why.",
-      expectedKeywords: ["comparison", "8", "linear", "scan"]
+
+      title:
+        "Worst Case Linear Search",
+
+      description:
+        "Explain why linear scan becomes slower when the target exists near the end of the table.",
+
+      expectedKeywords: [
+        "many rows",
+        "comparisons",
+        "slow",
+        "end",
+      ],
     },
+
     {
       id: 3,
-      title: "Why is linear scan slower?",
-      description: "Write a short explanation of why searching without an index becomes slower when the table size increases.",
-      expectedKeywords: ["many rows", "one by one", "slow", "table size"]
-    }
+
+      title:
+        "Linear Scan Complexity",
+
+      description:
+        "Write the time complexity of linear scanning and explain why it scales poorly.",
+
+      expectedKeywords: [
+        "O(n)",
+        "scan",
+        "rows",
+        "slow",
+      ],
+    },
   ],
+
   indexed: [
     {
       id: 4,
-      title: "Find a student using an index",
-      description: "Write logic to search for roll number 105 using an index map. Explain how the DBMS jumps directly to the row.",
-      expectedKeywords: ["index", "105", "row position", "direct", "jump"]
+
+      title:
+        "Indexed Search Flow",
+
+      description:
+        "Write how indexed lookup jumps directly to a row using roll number indexing.",
+
+      expectedKeywords: [
+        "index",
+        "direct",
+        "lookup",
+        "jump",
+        "row position",
+      ],
     },
+
     {
       id: 5,
-      title: "How does index reduce comparisons?",
-      description: "Write a short explanation of how an index reduces the number of comparisons during search.",
-      expectedKeywords: ["fewer comparisons", "lookup", "direct", "faster"]
+
+      title:
+        "Index Performance Analysis",
+
+      description:
+        "Explain how indexing reduces comparisons during searching.",
+
+      expectedKeywords: [
+        "fewer comparisons",
+        "faster",
+        "lookup",
+        "direct access",
+      ],
     },
+
     {
       id: 6,
-      title: "Create a roll_no index map",
-      description: "Write the idea or syntax to create a lookup map from roll number to row position for the student table.",
-      expectedKeywords: ["roll_no", "map", "row position", "index"]
-    }
-  ]
+
+      title:
+        "Create Roll Number Index",
+
+      description:
+        "Write the syntax or idea behind creating an index on roll_no column.",
+
+      expectedKeywords: [
+        "CREATE INDEX",
+        "roll_no",
+        "lookup",
+        "index",
+      ],
+    },
+  ],
 };
 
 const studentRecords = [
-  { roll_no: 101, name: "Aarav", department: "CSE", cgpa: 8.4 },
-  { roll_no: 102, name: "Diya", department: "ECE", cgpa: 8.9 },
-  { roll_no: 103, name: "Kabir", department: "ME", cgpa: 7.8 },
-  { roll_no: 104, name: "Meera", department: "Civil", cgpa: 8.2 },
-  { roll_no: 105, name: "Rohan", department: "CSE", cgpa: 9.1 },
-  { roll_no: 106, name: "Ishita", department: "ECE", cgpa: 8.5 },
-  { roll_no: 107, name: "Vivaan", department: "IT", cgpa: 7.9 },
-  { roll_no: 108, name: "Anaya", department: "CSE", cgpa: 9.3 }
+  {
+    roll_no: 101,
+    name: "Aarav",
+    department: "CSE",
+    cgpa: 8.4,
+  },
+
+  {
+    roll_no: 102,
+    name: "Diya",
+    department: "ECE",
+    cgpa: 8.9,
+  },
+
+  {
+    roll_no: 103,
+    name: "Kabir",
+    department: "ME",
+    cgpa: 7.8,
+  },
+
+  {
+    roll_no: 104,
+    name: "Meera",
+    department: "Civil",
+    cgpa: 8.2,
+  },
+
+  {
+    roll_no: 105,
+    name: "Rohan",
+    department: "CSE",
+    cgpa: 9.1,
+  },
+
+  {
+    roll_no: 106,
+    name: "Ishita",
+    department: "ECE",
+    cgpa: 8.5,
+  },
+
+  {
+    roll_no: 107,
+    name: "Vivaan",
+    department: "IT",
+    cgpa: 7.9,
+  },
+
+  {
+    roll_no: 108,
+    name: "Anaya",
+    department: "CSE",
+    cgpa: 9.3,
+  },
 ];
 
-const buildIndexMap = (records) => {
-  const map = {};
-  records.forEach((record, index) => {
-    map[record.roll_no] = index;
-  });
-  return map;
-};
+const buildIndexMap =
+  (records) => {
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const map = {};
+
+    records.forEach(
+      (
+        record,
+        index
+      ) => {
+
+        map[
+          record.roll_no
+        ] = index;
+      }
+    );
+
+    return map;
+  };
+
+const sleep = (ms) =>
+  new Promise((resolve) =>
+    setTimeout(resolve, ms)
+  );
 
 export default function DBMSIndexingLab() {
-  const { user, loading } = useAuth();
-  const navigate = useNavigate();
 
-  const [searchMode, setSearchMode] = useState("linear");
-  const [activeSection, setActiveSection] = useState("overview");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const {
+    user,
+    loading,
+  } = useAuth();
 
-  const [message, setMessage] = useState("Indexing lab initialized.");
-  const [experimentRun, setExperimentRun] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useState(700);
-  const [stepHistory, setStepHistory] = useState([]);
+  const navigate =
+    useNavigate();
 
-  const [targetRollNo, setTargetRollNo] = useState("105");
-  const [records, setRecords] = useState(studentRecords);
-  const [currentIndex, setCurrentIndex] = useState(null);
-  const [foundIndex, setFoundIndex] = useState(null);
-  const [currentStage, setCurrentStage] = useState("");
-  const [comparisons, setComparisons] = useState(0);
-  const [indexMap, setIndexMap] = useState(buildIndexMap(studentRecords));
-  const [selectedIndexKey, setSelectedIndexKey] = useState(null);
-  const [foundRecord, setFoundRecord] = useState(null);
+  const [
+    searchMode,
+    setSearchMode,
+  ] = useState("linear");
 
-  const quizQuestions = useMemo(() => indexingQuizQuestionsByType[searchMode], [searchMode]);
-  const [quizAnswers, setQuizAnswers] = useState(Array(3).fill(null));
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizSaveStatus, setQuizSaveStatus] = useState("");
-  const [codingSaveStatus, setCodingSaveStatus] = useState({});
+  const [
+    activeSection,
+    setActiveSection,
+  ] = useState("overview");
 
-  const [currentProblems, setCurrentProblems] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [results, setResults] = useState({});
+  const [
+    sidebarCollapsed,
+    setSidebarCollapsed,
+  ] = useState(false);
+
+  const [
+    message,
+    setMessage,
+  ] = useState(
+    "Indexing lab initialized."
+  );
+
+  const [
+    experimentRun,
+    setExperimentRun,
+  ] = useState(false);
+
+  const [
+    isRunning,
+    setIsRunning,
+  ] = useState(false);
+
+  const [
+    animationSpeed,
+    setAnimationSpeed,
+  ] = useState(700);
+
+  const [
+    stepHistory,
+    setStepHistory,
+  ] = useState([]);
+
+  const [
+    targetRollNo,
+    setTargetRollNo,
+  ] = useState("105");
+
+  const [
+    records,
+    setRecords,
+  ] = useState(
+    studentRecords
+  );
+
+  const [
+    currentIndex,
+    setCurrentIndex,
+  ] = useState(null);
+
+  const [
+    foundIndex,
+    setFoundIndex,
+  ] = useState(null);
+
+  const [
+    currentStage,
+    setCurrentStage,
+  ] = useState("");
+
+  const [
+    comparisons,
+    setComparisons,
+  ] = useState(0);
+
+  const [
+    indexMap,
+    setIndexMap,
+  ] = useState(
+    buildIndexMap(
+      studentRecords
+    )
+  );
+
+  const [
+    selectedIndexKey,
+    setSelectedIndexKey,
+  ] = useState(null);
+
+  const [
+    foundRecord,
+    setFoundRecord,
+  ] = useState(null);
+
+  // =========================
+  // QUIZ STATES
+  // =========================
+
+  const [
+    quizQuestions,
+    setQuizQuestions,
+  ] = useState([]);
+
+  const [
+    quizAnswers,
+    setQuizAnswers,
+  ] = useState([]);
+
+  const [
+    quizSubmitted,
+    setQuizSubmitted,
+  ] = useState(false);
+
+  const [quizScore, setQuizScore] =
+    useState(0);
+
+  const [
+    quizSaveStatus,
+    setQuizSaveStatus,
+  ] = useState("");
+
+  const [
+    codingSaveStatus,
+    setCodingSaveStatus,
+  ] = useState({});
+
+  const [
+    currentProblems,
+    setCurrentProblems,
+  ] = useState([]);
+
+  const [
+    answers,
+    setAnswers,
+  ] = useState({});
+
+  const [
+    results,
+    setResults,
+  ] = useState({});
+
+  // =========================
+  // FETCH QUIZ QUESTIONS
+  // =========================
+
+  const fetchQuizQuestions =
+    useCallback(async () => {
+
+      try {
+
+        const token =
+          localStorage.getItem(
+            "token"
+          );
+
+        const res =
+          await axios.get(
+            `${API_BASE_URL}/api/student/quizzes`,
+            {
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+            }
+          );
+
+        const filtered =
+          res.data.questions.filter(
+            (q) =>
+              q.lab ===
+                "DBMS" &&
+              q.experiment ===
+                "Indexing"
+          );
+
+        const modeQuestions =
+          filtered.filter(
+            (q) =>
+              (
+                q.topic ||
+                "linear"
+              ).toLowerCase() ===
+              searchMode
+          );
+
+        setQuizQuestions(
+          modeQuestions
+        );
+
+        setQuizAnswers(
+          Array(
+            modeQuestions.length
+          ).fill(null)
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        setQuizQuestions([]);
+      }
+    }, [searchMode]);
 
   useEffect(() => {
-    if (!loading && !user) navigate("/login");
-  }, [user, loading, navigate]);
+
+    fetchQuizQuestions();
+
+  }, [fetchQuizQuestions]);
 
   useEffect(() => {
-    setStepHistory([]);
-    setRecords(studentRecords);
-    setCurrentIndex(null);
-    setFoundIndex(null);
-    setCurrentStage("");
-    setComparisons(0);
-    setIndexMap(buildIndexMap(studentRecords));
-    setSelectedIndexKey(null);
-    setFoundRecord(null);
-    setMessage("Indexing lab initialized.");
-    setExperimentRun(false);
-    setIsRunning(false);
-    setQuizAnswers(Array(indexingQuizQuestionsByType[searchMode].length).fill(null));
-    setQuizSubmitted(false);
-    setQuizScore(0);
-    setCurrentProblems([]);
-    setAnswers({});
-    setResults({});
-  }, [searchMode]);
 
-  const addStep = (text) => setStepHistory((prev) => [...prev, text]);
+    if (
+      !loading &&
+      !user
+    ) {
 
-  const runSimulation = async () => {
-    if (isRunning) return;
-
-    const target = Number(targetRollNo);
-
-    if (Number.isNaN(target)) {
-      setMessage("Please enter a valid roll number.");
-      return;
+      navigate(
+        "/login"
+      );
     }
 
-    setIsRunning(true);
-    setExperimentRun(true);
+  }, [
+    user,
+    loading,
+    navigate,
+  ]);
+
+  useEffect(() => {
+
     setStepHistory([]);
-    setCurrentIndex(null);
-    setFoundIndex(null);
-    setCurrentStage("Search Start");
+
+    setRecords(
+      studentRecords
+    );
+
+    setCurrentIndex(
+      null
+    );
+
+    setFoundIndex(
+      null
+    );
+
+    setCurrentStage("");
+
     setComparisons(0);
-    setSelectedIndexKey(null);
-    setFoundRecord(null);
 
-    try {
-      if (searchMode === "linear") {
-        setMessage(`Starting linear scan for roll number ${target}...`);
-        addStep(`Started linear scan for roll number ${target}.`);
-        await sleep(animationSpeed);
+    setIndexMap(
+      buildIndexMap(
+        studentRecords
+      )
+    );
 
-        let found = -1;
+    setSelectedIndexKey(
+      null
+    );
 
-        for (let i = 0; i < records.length; i++) {
-          setCurrentIndex(i);
-          setCurrentStage("Scanning Row");
-          setComparisons((prev) => prev + 1);
-          setMessage(`Checking row ${i + 1}: roll_no = ${records[i].roll_no}`);
-          addStep(`Checked row ${i + 1} with roll number ${records[i].roll_no}.`);
-          await sleep(animationSpeed);
+    setFoundRecord(
+      null
+    );
 
-          if (records[i].roll_no === target) {
-            found = i;
-            setFoundIndex(i);
-            setFoundRecord(records[i]);
-            setCurrentStage("Record Found");
-            setMessage(`Record found at row ${i + 1}.`);
-            addStep(`Match found at row ${i + 1}. Linear scan stops here.`);
-            break;
+    setMessage(
+      "Indexing lab initialized."
+    );
+
+    setExperimentRun(
+      false
+    );
+
+    setIsRunning(false);
+
+    setQuizSubmitted(
+      false
+    );
+
+    setQuizScore(0);
+
+    setCurrentProblems(
+      []
+    );
+
+    setAnswers({});
+
+    setResults({});
+
+  }, [searchMode]);
+
+  const addStep =
+    useCallback(
+      (text) => {
+
+        setStepHistory(
+          (prev) => [
+            ...prev,
+            text,
+          ]
+        );
+      },
+      []
+    );
+
+  const runSimulation =
+    async () => {
+
+      if (isRunning) {
+        return;
+      }
+
+      const target =
+        Number(
+          targetRollNo
+        );
+
+      if (
+        Number.isNaN(
+          target
+        )
+      ) {
+
+        setMessage(
+          "Please enter a valid roll number."
+        );
+
+        return;
+      }
+
+      setIsRunning(true);
+
+      setExperimentRun(
+        true
+      );
+
+      setStepHistory([]);
+
+      setCurrentIndex(
+        null
+      );
+
+      setFoundIndex(
+        null
+      );
+
+      setCurrentStage(
+        "Search Start"
+      );
+
+      setComparisons(0);
+
+      setSelectedIndexKey(
+        null
+      );
+
+      setFoundRecord(
+        null
+      );
+
+      try {
+
+        if (
+          searchMode ===
+          "linear"
+        ) {
+
+          setMessage(
+            `Starting linear scan for roll number ${target}...`
+          );
+
+          addStep(
+            `Started linear scan for roll number ${target}.`
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          let found = -1;
+
+          for (
+            let i = 0;
+            i <
+            records.length;
+            i++
+          ) {
+
+            setCurrentIndex(
+              i
+            );
+
+            setCurrentStage(
+              "Scanning Row"
+            );
+
+            setComparisons(
+              (prev) =>
+                prev + 1
+            );
+
+            setMessage(
+              `Checking row ${i + 1}: roll_no = ${records[i].roll_no}`
+            );
+
+            addStep(
+              `Checked row ${i + 1} with roll number ${records[i].roll_no}.`
+            );
+
+            await sleep(
+              animationSpeed
+            );
+
+            if (
+              records[i]
+                .roll_no ===
+              target
+            ) {
+
+              found = i;
+
+              setFoundIndex(
+                i
+              );
+
+              setFoundRecord(
+                records[i]
+              );
+
+              setCurrentStage(
+                "Record Found"
+              );
+
+              setMessage(
+                `Record found at row ${i + 1}.`
+              );
+
+              addStep(
+                `Match found at row ${i + 1}.`
+              );
+
+              break;
+            }
+          }
+
+          if (
+            found === -1
+          ) {
+
+            setCurrentStage(
+              "Not Found"
+            );
+
+            setMessage(
+              `Roll number ${target} not found.`
+            );
+
+            addStep(
+              `Target roll number ${target} was not found.`
+            );
           }
         }
 
-        if (found === -1) {
-          setCurrentIndex(null);
-          setCurrentStage("Not Found");
-          setMessage(`Roll number ${target} not found in table.`);
-          addStep(`Target roll number ${target} was not found after scanning all rows.`);
+        else {
+
+          setMessage(
+            `Using index to search roll number ${target}...`
+          );
+
+          addStep(
+            `Started indexed lookup for roll number ${target}.`
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          setCurrentStage(
+            "Using Index"
+          );
+
+          setSelectedIndexKey(
+            target
+          );
+
+          setComparisons(
+            1
+          );
+
+          addStep(
+            "Used roll_no index for direct lookup."
+          );
+
+          await sleep(
+            animationSpeed
+          );
+
+          if (
+            Object.prototype.hasOwnProperty.call(
+              indexMap,
+              target
+            )
+          ) {
+
+            const rowPosition =
+              indexMap[
+                target
+              ];
+
+            setCurrentStage(
+              "Jump To Row"
+            );
+
+            setCurrentIndex(
+              rowPosition
+            );
+
+            setFoundIndex(
+              rowPosition
+            );
+
+            setFoundRecord(
+              records[
+                rowPosition
+              ]
+            );
+
+            setMessage(
+              `Index pointed directly to row ${rowPosition + 1}.`
+            );
+
+            addStep(
+              `Index lookup returned row position ${rowPosition + 1}.`
+            );
+
+            await sleep(
+              animationSpeed
+            );
+
+            setCurrentStage(
+              "Record Found"
+            );
+
+            setMessage(
+              "Record found quickly using index."
+            );
+
+            addStep(
+              "Indexed search completed with minimal comparisons."
+            );
+          }
+
+          else {
+
+            setCurrentStage(
+              "Not Found"
+            );
+
+            setMessage(
+              `Roll number ${target} not found in index.`
+            );
+
+            addStep(
+              `Index lookup failed for roll number ${target}.`
+            );
+          }
         }
-      } else {
-        setMessage(`Using index to search roll number ${target}...`);
-        addStep(`Started indexed lookup for roll number ${target}.`);
-        await sleep(animationSpeed);
 
-        setCurrentStage("Using Index");
-        addStep("Used the roll_no index to avoid scanning every row.");
-        setSelectedIndexKey(target);
-        setComparisons(1);
-        await sleep(animationSpeed);
+        setCurrentStage(
+          "Complete"
+        );
 
-        if (Object.prototype.hasOwnProperty.call(indexMap, target)) {
-          const rowPosition = indexMap[target];
-          setCurrentStage("Jump To Row");
-          setCurrentIndex(rowPosition);
-          setFoundIndex(rowPosition);
-          setFoundRecord(records[rowPosition]);
-          setMessage(`Index pointed directly to row ${rowPosition + 1}.`);
-          addStep(`Index lookup returned row position ${rowPosition + 1}.`);
-          await sleep(animationSpeed);
+        addStep(
+          `${
+            searchMode ===
+            "linear"
+              ? "Without Index"
+              : "With Index"
+          } simulation completed.`
+        );
 
-          setCurrentStage("Record Found");
-          setMessage("Record found quickly using index.");
-          addStep("Record found using indexed search with very few comparisons.");
-        } else {
-          setCurrentStage("Not Found");
-          setCurrentIndex(null);
-          setMessage(`Roll number ${target} not found in index.`);
-          addStep(`Index lookup failed. No record exists for roll number ${target}.`);
-        }
+      } finally {
+
+        setIsRunning(
+          false
+        );
+      }
+    };
+
+  const loadSample =
+    () => {
+
+      if (isRunning) {
+        return;
       }
 
-      setCurrentStage("Complete");
-      addStep(`${searchMode === "linear" ? "Without Index" : "With Index"} simulation completed.`);
-
-      localStorage.setItem(
-        "vlab_last_experiment",
-        JSON.stringify({ name: `dbms-${searchMode}-indexing`, time: Date.now() })
+      setTargetRollNo(
+        searchMode ===
+          "linear"
+          ? "108"
+          : "105"
       );
-    } finally {
-      setIsRunning(false);
-    }
-  };
 
-  const loadSample = () => {
-    if (isRunning) return;
+      setRecords(
+        studentRecords
+      );
 
-    setTargetRollNo(searchMode === "linear" ? "108" : "105");
-    setRecords(studentRecords);
-    setCurrentIndex(null);
-    setFoundIndex(null);
-    setCurrentStage("Sample Ready");
-    setComparisons(0);
-    setSelectedIndexKey(null);
-    setFoundRecord(null);
-    setStepHistory([
-      `Sample loaded for ${searchMode === "linear" ? "search without index" : "search with index"}.`
-    ]);
-    setMessage(`Sample loaded for ${searchMode === "linear" ? "linear scan" : "indexed search"}.`);
-  };
+      setCurrentIndex(
+        null
+      );
+
+      setFoundIndex(
+        null
+      );
+
+      setCurrentStage(
+        "Sample Ready"
+      );
+
+      setComparisons(0);
+
+      setSelectedIndexKey(
+        null
+      );
+
+      setFoundRecord(
+        null
+      );
+
+      setStepHistory([
+        `Sample loaded for ${
+          searchMode ===
+          "linear"
+            ? "linear scan"
+            : "indexed search"
+        }.`,
+      ]);
+
+      setMessage(
+        `Sample loaded for ${
+          searchMode ===
+          "linear"
+            ? "linear scan"
+            : "indexed search"
+        }.`
+      );
+    };
 
   const reset = () => {
-    if (isRunning) return;
 
-    setRecords(studentRecords);
-    setCurrentIndex(null);
-    setFoundIndex(null);
-    setCurrentStage("");
-    setComparisons(0);
-    setSelectedIndexKey(null);
-    setFoundRecord(null);
-    setStepHistory([]);
-    setTargetRollNo("105");
-    setMessage("Indexing lab reset.");
-    setExperimentRun(false);
-  };
-
-  const handleQuizAnswer = (i, v) => {
-    const updated = [...quizAnswers];
-    updated[i] = v;
-    setQuizAnswers(updated);
-  };
-
- const submitQuiz = async () => {
-  let score = 0;
-
-  quizQuestions.forEach((q, i) => {
-    if (quizAnswers[i] === q.correct) score++;
-  });
-
-  setQuizScore(score);
-  setQuizSubmitted(true);
-  setQuizSaveStatus("Saving quiz result...");
-
-  try {
-    await saveQuizResult({
-      labSlug: "dbms",
-      experimentSlug: "indexing",
-      correctAnswers: score,
-      totalQuestions: quizQuestions.length
-    });
-
-    setQuizSaveStatus("Quiz result saved to dashboard.");
-  } catch (error) {
-    console.error("Quiz save failed:", error);
-    setQuizSaveStatus("Quiz submitted, but backend save failed.");
-  }
-
-  const scores = JSON.parse(localStorage.getItem("vlab_scores") || "[]");
-  scores.push({
-    subject: "DBMS",
-    experiment: "indexing",
-    mode: searchMode,
-    correct: score,
-    total: quizQuestions.length,
-    time: Date.now()
-  });
-  localStorage.setItem("vlab_scores", JSON.stringify(scores));
-};
-
-const redoQuiz = () => {
-  setQuizAnswers(Array(quizQuestions.length).fill(null));
-  setQuizSubmitted(false);
-  setQuizScore(0);
-  setQuizSaveStatus("");
-};
-
-  const generateProblems = () => {
-    const shuffled = [...indexingProblemBank[searchMode]].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 3);
-
-    const initialAnswers = {};
-    selected.forEach((problem) => {
-      initialAnswers[problem.id] = "";
-    });
-
-    setCurrentProblems(selected);
-    setAnswers(initialAnswers);
-    setResults({});
-  };
-
-  const handleAnswerChange = (problemId, value) => {
-    setAnswers((prev) => ({ ...prev, [problemId]: value }));
-  };
-
-  const runAnswer = (problemId) => {
-    const problem = currentProblems.find((p) => p.id === problemId);
-    const answer = (answers[problemId] || "").toLowerCase().trim();
-
-    if (!answer) {
-      setResults((prev) => ({ ...prev, [problemId]: "Please write your answer first." }));
+    if (isRunning) {
       return;
     }
 
-    const matchedKeywords = problem.expectedKeywords.filter((keyword) =>
-      answer.includes(keyword.toLowerCase())
+    setRecords(
+      studentRecords
     );
 
-    const isGood = matchedKeywords.length >= Math.ceil(problem.expectedKeywords.length / 2);
+    setCurrentIndex(
+      null
+    );
 
-    setResults((prev) => ({
-      ...prev,
-      [problemId]: isGood
-        ? `Good answer. Matched concepts: ${matchedKeywords.join(", ")}`
-        : `Your answer is partially correct. Try including ideas like: ${problem.expectedKeywords.join(", ")}`
-    }));
+    setFoundIndex(
+      null
+    );
+
+    setCurrentStage("");
+
+    setComparisons(0);
+
+    setSelectedIndexKey(
+      null
+    );
+
+    setFoundRecord(
+      null
+    );
+
+    setStepHistory([]);
+
+    setTargetRollNo(
+      "105"
+    );
+
+    setMessage(
+      "Indexing lab reset."
+    );
+
+    setExperimentRun(
+      false
+    );
   };
 
-  const analyzeAnswer = (problemId) => {
-    const answer = (answers[problemId] || "").trim();
+  const handleQuizAnswer =
+    (i, v) => {
+
+      const updated = [
+        ...quizAnswers,
+      ];
+
+      updated[i] = v;
+
+      setQuizAnswers(
+        updated
+      );
+    };
+
+  const submitQuiz =
+    async () => {
+
+      let score = 0;
+
+      quizQuestions.forEach(
+        (q, i) => {
+
+          const selectedOption =
+            q.options?.[
+              quizAnswers[i]
+            ];
+
+          if (
+            selectedOption ===
+            q.correct_answer
+          ) {
+
+            score++;
+          }
+        }
+      );
+
+      setQuizScore(score);
+
+      setQuizSubmitted(
+        true
+      );
+
+      try {
+
+        await axios.post(
+          `${API_BASE_URL}/api/progress/update`,
+          {
+            experimentSlug:
+              "indexing",
+
+            status:
+              "completed",
+
+            points:
+              score * 10,
+          }
+        );
+
+        setQuizSaveStatus(
+          "Quiz submitted successfully."
+        );
+
+      } catch (error) {
+
+        setQuizSaveStatus(
+          "Failed to save quiz progress."
+        );
+      }
+    };
+
+  const redoQuiz =
+    () => {
+
+      setQuizAnswers(
+        Array(
+          quizQuestions.length
+        ).fill(null)
+      );
+
+      setQuizSubmitted(
+        false
+      );
+
+      setQuizScore(0);
+
+      setQuizSaveStatus(
+        ""
+      );
+    };
+
+  const generateProblems =
+    () => {
+
+      const shuffled = [
+        ...indexingProblemBank[
+          searchMode
+        ],
+      ].sort(
+        () =>
+          0.5 -
+          Math.random()
+      );
+
+      const selected =
+        shuffled.slice(
+          0,
+          3
+        );
+
+      const initialAnswers =
+        {};
+
+      selected.forEach(
+        (problem) => {
+
+          initialAnswers[
+            problem.id
+          ] = "";
+        }
+      );
+
+      setCurrentProblems(
+        selected
+      );
+
+      setAnswers(
+        initialAnswers
+      );
+
+      setResults({});
+    };
+
+  const handleAnswerChange =
+    (
+      problemId,
+      value
+    ) => {
+
+      setAnswers(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            value,
+        })
+      );
+    };
+
+    const runAnswer =
+  (problemId) => {
+
+    const problem =
+      currentProblems.find(
+        (p) =>
+          p.id ===
+          problemId
+      );
+
+    const answer =
+      (
+        answers[
+          problemId
+        ] || ""
+      )
+        .toLowerCase()
+        .trim();
 
     if (!answer) {
-      setResults((prev) => ({ ...prev, [problemId]: "Please write an answer before analysis." }));
+
+      setResults(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            "Please write your answer first.",
+        })
+      );
+
       return;
     }
 
-    setResults((prev) => ({
-      ...prev,
-      [problemId]:
-        "Analysis: Your answer should clearly explain search flow, comparisons, lookup behavior, and why indexing improves query performance."
-    }));
+    const matchedKeywords =
+      problem.expectedKeywords.filter(
+        (keyword) =>
+          answer.includes(
+            keyword.toLowerCase()
+          )
+      );
+
+    const isGood =
+      matchedKeywords.length >=
+      Math.ceil(
+        problem
+          .expectedKeywords
+          .length / 2
+      );
+
+    setResults(
+      (prev) => ({
+        ...prev,
+
+        [problemId]:
+          isGood
+            ? `Good answer. Matched concepts: ${matchedKeywords.join(", ")}`
+            : `Your answer is partially correct. Try including ideas like: ${problem.expectedKeywords.join(", ")}`,
+      })
+    );
   };
 
-  const correctAnswer = (problemId) => {
-    const problem = currentProblems.find((p) => p.id === problemId);
+const analyzeAnswer =
+  (problemId) => {
+
+    const answer =
+      (
+        answers[
+          problemId
+        ] || ""
+      ).trim();
+
+    if (!answer) {
+
+      setResults(
+        (prev) => ({
+          ...prev,
+          [problemId]:
+            "Please write an answer before analysis.",
+        })
+      );
+
+      return;
+    }
+
+    setResults(
+      (prev) => ({
+        ...prev,
+
+        [problemId]:
+          "Analysis: Your answer should clearly explain indexing structure, lookup efficiency, search optimization, and reduced comparisons.",
+      })
+    );
+  };
+
+const correctAnswer =
+  (problemId) => {
+
+    const problem =
+      currentProblems.find(
+        (p) =>
+          p.id ===
+          problemId
+      );
 
     const corrected =
-      searchMode === "linear"
-        ? `Correct answer:\n${problem.description}\n\nA linear scan checks each row one by one until the target roll number is found. If the target is near the end, more comparisons are needed. This makes searching without an index slower for large tables.`
-        : `Correct answer:\n${problem.description}\n\nAn index stores the search key with its row position. The DBMS first checks the index and then jumps directly to the matching row. This reduces comparisons and makes search faster.`;
+      searchMode ===
+      "linear"
+        ? `Correct answer:\n${problem.description}\n\nA linear scan checks each row one by one until the target record is found. More rows mean more comparisons, making searching slower for large tables.`
+        : `Correct answer:\n${problem.description}\n\nAn index stores search keys with row locations. The DBMS uses the index to directly jump to matching rows, reducing comparisons and improving performance.`;
 
-    setAnswers((prev) => ({ ...prev, [problemId]: corrected }));
-    setResults((prev) => ({ ...prev, [problemId]: "Correct answer inserted." }));
+    setAnswers(
+      (prev) => ({
+        ...prev,
+        [problemId]:
+          corrected,
+      })
+    );
+
+    setResults(
+      (prev) => ({
+        ...prev,
+        [problemId]:
+          "Correct answer inserted.",
+      })
+    );
   };
 
   const progressPercent =
-    activeSection === "overview"
+    activeSection ===
+    "overview"
       ? 20
-      : activeSection === "simulation"
+      : activeSection ===
+        "simulation"
       ? 50
-      : activeSection === "comparison"
+      : activeSection ===
+        "comparison"
       ? 68
-      : activeSection === "quiz"
+      : activeSection ===
+        "quiz"
       ? 84
       : 95;
 
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Loading...</div>;
+
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {
-    return <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">Please log in to access the lab.</div>;
+
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
+        Please log in to access the lab.
+      </div>
+    );
   }
 
   return (
-    <div className="er-shell">
+   <div className="er-shell">
       <aside className={`er-left-rail ${sidebarCollapsed ? "collapsed" : ""}`}>
         <div className="er-brand">
-          <div className="er-brand-logo">
-            <img src={simulabLogo} alt="SimuLab" onError={(e) => (e.currentTarget.style.display = "none")} />
-          </div>
+          <div className="er-brand-logo simulab-sidebar-logo">
+
+  <SimuLabLogo
+    size={58}
+    showText={false}
+    variant="default"
+  />
+
+</div>
 
           {!sidebarCollapsed && (
             <div>

@@ -1,81 +1,114 @@
-import React, { useState } from "react";
-import { Brain, Lock, Trophy, RotateCcw } from "lucide-react";
+import React from "react";
+
+import {
+  Brain,
+  Lock,
+  Trophy,
+  RotateCcw
+} from "lucide-react";
 
 const questions = [
   {
     q: "GPIO stands for:",
+
     options: [
       "General Purpose Input Output",
       "Global Port IO",
       "General Processing Unit",
       "None"
     ],
+
     correct: 0
   },
+
   {
     q: "LED turns ON when the GPIO output is:",
-    options: ["LOW", "HIGH", "FLOAT", "NONE"],
+
+    options: [
+      "LOW",
+      "HIGH",
+      "FLOAT",
+      "NONE"
+    ],
+
     correct: 1
   },
+
   {
     q: "Why is a resistor connected in series with the LED?",
+
     options: [
       "To increase voltage",
       "To limit current and protect the LED",
       "To store data",
       "To convert AC to DC"
     ],
+
     correct: 1
   },
+
   {
     q: "If GPIO D13 is LOW, the LED will be:",
-    options: ["ON", "OFF", "Blinking always", "Damaged immediately"],
+
+    options: [
+      "ON",
+      "OFF",
+      "Blinking always",
+      "Damaged immediately"
+    ],
+
     correct: 1
   },
+
   {
     q: "For controlling an LED, the GPIO pin should be configured as:",
-    options: ["INPUT", "OUTPUT", "ANALOG ONLY", "RESET"],
+
+    options: [
+      "INPUT",
+      "OUTPUT",
+      "ANALOG ONLY",
+      "RESET"
+    ],
+
     correct: 1
   }
 ];
 
-export default function GPIOLEDQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
+export default function GPIOLEDQuiz({
+  experimentRun,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total = questions.length;
 
-  const handleAnswer = (index, value) => {
-    if (submitted) return;
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+  const percentage = total
+    ? Math.round((score / total) * 100)
+    : 0;
 
   return (
     <section className="quiz-shell">
-      <div className="sorting-sim-title-wrap" style={{ marginBottom: 18 }}>
+      <div
+        className="sorting-sim-title-wrap"
+        style={{ marginBottom: 18 }}
+      >
         <div className="sorting-sim-icon">
           <Brain size={18} />
         </div>
+
         <div>
-          <h2 className="sorting-sim-title">Quiz</h2>
+          <h2 className="sorting-sim-title">
+            Quiz
+          </h2>
+
           <p className="sorting-sim-subtitle">
-            Check your understanding of GPIO output, LED control, and current-limiting resistors.
+            Test your understanding of GPIO pins,
+            LED control logic, HIGH/LOW states,
+            and current-limiting resistors.
           </p>
         </div>
       </div>
@@ -83,12 +116,19 @@ export default function GPIOLEDQuiz({ experimentRun }) {
       {!experimentRun ? (
         <div className="quiz-locked-box">
           <Lock size={18} />
-          <span>Please interact with the GPIO LED simulation before attempting the quiz.</span>
+
+          <span>
+            Please interact with the GPIO LED
+            simulation before attempting the quiz.
+          </span>
         </div>
       ) : !submitted ? (
         <div className="quiz-list">
           {questions.map((q, i) => (
-            <div key={i} className="quiz-card-upgraded">
+            <div
+              key={i}
+              className="quiz-card-upgraded"
+            >
               <div className="quiz-question-title">
                 {i + 1}. {q.q}
               </div>
@@ -97,14 +137,21 @@ export default function GPIOLEDQuiz({ experimentRun }) {
                 {q.options.map((opt, j) => (
                   <label
                     key={j}
-                    className={`quiz-option-card ${answers[i] === j ? "selected" : ""}`}
+                    className={`quiz-option-card ${
+                      answers[i] === j
+                        ? "selected"
+                        : ""
+                    }`}
                   >
                     <input
                       type="radio"
                       name={`q${i}`}
                       checked={answers[i] === j}
-                      onChange={() => handleAnswer(i, j)}
+                      onChange={() =>
+                        handleAnswer(i, j)
+                      }
                     />
+
                     <span>{opt}</span>
                   </label>
                 ))}
@@ -126,31 +173,54 @@ export default function GPIOLEDQuiz({ experimentRun }) {
         <div className="quiz-result-shell">
           <div className="quiz-score-box">
             <Trophy size={22} />
+
             <div>
               <h3>Quiz Completed</h3>
+
               <p>
-                Your score: <strong>{score} / {questions.length}</strong>
+                Score:{" "}
+                <strong>
+                  {score} / {total}
+                </strong>{" "}
+                ({percentage}%)
               </p>
             </div>
           </div>
 
-          <div className="quiz-list" style={{ marginTop: 18 }}>
+          {quizSaveStatus && (
+            <p style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
+          )}
+
+          <div className="quiz-list">
             {questions.map((q, i) => (
-              <div key={i} className="quiz-card-upgraded">
+              <div
+                key={i}
+                className="quiz-card-upgraded"
+              >
                 <div className="quiz-question-title">
                   {i + 1}. {q.q}
                 </div>
 
                 <div className="quiz-options-grid">
                   {q.options.map((opt, j) => {
-                    const isCorrect = j === q.correct;
-                    const isWrong = answers[i] === j && !isCorrect;
+                    const isCorrect =
+                      j === q.correct;
+
+                    const isWrong =
+                      answers[i] === j &&
+                      j !== q.correct;
 
                     return (
                       <div
                         key={j}
-                        className={`quiz-option-card ${
-                          isCorrect ? "correct" : isWrong ? "wrong" : ""
+                        className={`quiz-option-card result-mode ${
+                          isCorrect
+                            ? "correct"
+                            : isWrong
+                            ? "wrong"
+                            : ""
                         }`}
                       >
                         <span>{opt}</span>
@@ -163,7 +233,10 @@ export default function GPIOLEDQuiz({ experimentRun }) {
           </div>
 
           <div className="quiz-actions-row">
-            <button className="sim-btn sim-btn-muted" onClick={redoQuiz}>
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={redoQuiz}
+            >
               <RotateCcw size={16} />
               Retry Quiz
             </button>

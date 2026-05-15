@@ -109,7 +109,7 @@ export const saveQuizResult = async (req, res) => {
       VALUES (?, ?, 'completed', ?, NOW())
       ON DUPLICATE KEY UPDATE
       status = 'completed',
-      points = points + VALUES(points),
+      points = GREATEST(points, VALUES(points)),
       completed_at = NOW()
       `,
       [userId, experimentId, points]

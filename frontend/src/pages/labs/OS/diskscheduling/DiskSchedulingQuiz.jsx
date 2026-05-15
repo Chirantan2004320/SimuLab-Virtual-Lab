@@ -1,90 +1,415 @@
 import React from "react";
 
+import {
+  Brain,
+  Lock,
+  CheckCircle2,
+  RotateCcw,
+  XCircle,
+  Download,
+  HardDrive,
+} from "lucide-react";
+
 export default function DiskSchedulingQuiz({
   mode,
   quizQuestions,
   quizAnswers,
   quizSubmitted,
   quizScore,
+  quizSaveStatus,
   experimentRun,
   handleQuizAnswer,
-  submitQuiz
+  submitQuiz,
+  redoQuiz,
+  exportQuiz,
 }) {
+
+  const modeNames = {
+    fcfs:
+      "FCFS Disk Scheduling",
+
+    sstf:
+      "Shortest Seek Time First",
+
+    scan:
+      "SCAN Disk Scheduling",
+
+    cscan:
+      "C-SCAN Disk Scheduling",
+  };
+
+  const total =
+    quizQuestions.length;
+
+  const percentage = total
+    ? Math.round(
+        (quizScore / total) *
+          100
+      )
+    : 0;
+
+  if (!experimentRun) {
+
+    return (
+      <section className="quiz-shell">
+
+        <div
+          className="sorting-sim-title-wrap"
+          style={{
+            marginBottom: 18,
+          }}
+        >
+
+          <div className="sorting-sim-icon">
+
+            <Brain size={18} />
+
+          </div>
+
+          <div>
+
+            <h2 className="sorting-sim-title">
+              Quiz
+            </h2>
+
+            <p className="sorting-sim-subtitle">
+
+              Test your understanding
+              after running the
+              Disk Scheduling
+              simulation.
+
+            </p>
+
+          </div>
+
+        </div>
+
+        <div className="quiz-locked-box">
+
+          <Lock size={18} />
+
+          <span>
+
+            Please run the
+            simulation at least
+            once before attempting
+            the quiz.
+
+          </span>
+
+        </div>
+
+      </section>
+    );
+  }
+
   return (
-    <section className="card">
-      <h2>
-        Quiz <span style={{ color: "#38bdf8" }}>({mode.toUpperCase()})</span>
-      </h2>
+    <section className="quiz-shell">
 
-      {!experimentRun ? (
-        <p style={{ color: "#d1d5db" }}>
-          Please run the experiment at least once before attempting the quiz.
-        </p>
-      ) : (
+      <div
+        className="sorting-sim-title-wrap"
+        style={{
+          marginBottom: 18,
+        }}
+      >
+
+        <div className="sorting-sim-icon">
+
+          <HardDrive size={18} />
+
+        </div>
+
         <div>
-          {quizQuestions.map((q, i) => (
-            <div
-              key={i}
-              style={{
-                marginBottom: 20,
-                paddingBottom: 16,
-                borderBottom: "1px solid var(--border)"
-              }}
-            >
-              <div style={{ marginBottom: 10 }}>
-                <strong style={{ color: "#e5e7eb", fontSize: "1.05rem" }}>
-                  {i + 1}. {q.question}
-                </strong>
-              </div>
 
-              <div style={{ marginLeft: 20 }}>
-                {q.options.map((opt, j) => (
-                  <label
-                    key={j}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      marginBottom: 8,
-                      cursor: "pointer",
-                      color: "#d1d5db"
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name={`q${i}`}
-                      checked={quizAnswers[i] === j}
-                      onChange={() => handleQuizAnswer(i, j)}
-                      disabled={quizSubmitted}
-                    />
-                    {opt}
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
+          <h2 className="sorting-sim-title">
+            Quiz
+          </h2>
 
-          {!quizSubmitted ? (
-            <button className="btn primary" onClick={submitQuiz}>
-              Submit Quiz
-            </button>
-          ) : (
-            <div
-              style={{
-                marginTop: 16,
-                padding: "1rem",
-                background: "rgba(56,189,248,0.1)",
-                borderRadius: 8,
-                borderLeft: "4px solid #38bdf8"
-              }}
-            >
-              <strong style={{ color: "#38bdf8", fontSize: "1.1rem" }}>
-                Quiz Score: {quizScore} / {quizQuestions.length}
-              </strong>
-            </div>
+          <p className="sorting-sim-subtitle">
+
+            Answer the questions
+            below for{" "}
+
+            {
+              modeNames[
+                mode
+              ]
+            }.
+
+          </p>
+
+        </div>
+
+      </div>
+
+      {quizQuestions.length ===
+      0 ? (
+
+        <div className="quiz-locked-box">
+
+          <Lock size={18} />
+
+          <span>
+
+            No quiz questions have
+            been assigned by the
+            faculty yet.
+
+          </span>
+
+        </div>
+
+      ) : !quizSubmitted ? (
+
+        <div className="quiz-list">
+
+          {quizQuestions.map(
+            (q, i) => (
+
+              <div
+                key={q.id || i}
+                className="quiz-card-upgraded"
+              >
+
+                <div className="quiz-question-title">
+
+                  {i + 1}.{" "}
+
+                  {q.question}
+
+                </div>
+
+                <div className="quiz-options-grid">
+
+                  {q.options.map(
+                    (opt, j) => (
+
+                      <label
+                        key={j}
+                        className="quiz-option-card"
+                      >
+
+                        <input
+                          type="radio"
+                          name={`q${i}`}
+                          value={j}
+                          checked={
+                            quizAnswers[
+                              i
+                            ] === j
+                          }
+                          onChange={() =>
+                            handleQuizAnswer(
+                              i,
+                              j
+                            )
+                          }
+                        />
+
+                        <span>
+                          {opt}
+                        </span>
+
+                      </label>
+                    )
+                  )}
+
+                </div>
+
+              </div>
+            )
           )}
+
+          <button
+            className="sim-btn sim-btn-primary"
+            onClick={submitQuiz}
+            disabled={
+              quizAnswers.includes(
+                null
+              ) ||
+              quizQuestions.length ===
+                0
+            }
+          >
+
+            Submit Quiz
+
+          </button>
+
+        </div>
+
+      ) : (
+
+        <div className="quiz-result-shell">
+
+          <div className="quiz-score-box">
+
+            {percentage >=
+            60 ? (
+
+              <CheckCircle2
+                size={22}
+              />
+
+            ) : (
+
+              <XCircle
+                size={22}
+              />
+
+            )}
+
+            <div>
+
+              <h3>
+                Quiz Submitted
+              </h3>
+
+              <p>
+
+                Score:{" "}
+
+                <b>
+                  {quizScore}
+                </b>{" "}
+
+                / {total} (
+                {percentage}%)
+
+              </p>
+
+            </div>
+
+          </div>
+
+          {quizSaveStatus && (
+
+            <p
+              className="text-sm text-muted-foreground"
+              style={{
+                marginTop: 8,
+              }}
+            >
+
+              {
+                quizSaveStatus
+              }
+
+            </p>
+
+          )}
+
+          <div className="quiz-list">
+
+            {quizQuestions.map(
+              (q, i) => (
+
+                <div
+                  key={q.id || i}
+                  className="quiz-card-upgraded"
+                >
+
+                  <div className="quiz-question-title">
+
+                    {i + 1}.{" "}
+
+                    {q.question}
+
+                  </div>
+
+                  <div className="quiz-options-grid">
+
+                    {q.options.map(
+                      (
+                        opt,
+                        j
+                      ) => {
+
+                        const isCorrect =
+                          opt ===
+                            q.correct_answer ||
+                          j ===
+                            q.correct;
+
+                        const isChosen =
+                          quizAnswers[
+                            i
+                          ] === j;
+
+                        return (
+
+                          <div
+                            key={
+                              j
+                            }
+                            className={`quiz-option-card result-mode ${
+                              isCorrect
+                                ? "correct"
+                                : isChosen
+                                ? "wrong"
+                                : ""
+                            }`}
+                          >
+
+                            <span>
+                              {opt}
+                            </span>
+
+                          </div>
+                        );
+                      }
+                    )}
+
+                  </div>
+
+                </div>
+              )
+            )}
+
+          </div>
+
+          <div className="quiz-actions-row">
+
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={
+                redoQuiz
+              }
+            >
+
+              <RotateCcw
+                size={16}
+              />
+
+              Redo Quiz
+
+            </button>
+
+            {exportQuiz && (
+
+              <button
+                className="sim-btn sim-btn-primary"
+                onClick={
+                  exportQuiz
+                }
+              >
+
+                <Download
+                  size={16}
+                />
+
+                Export Results
+
+              </button>
+
+            )}
+
+          </div>
+
         </div>
       )}
+
     </section>
   );
 }

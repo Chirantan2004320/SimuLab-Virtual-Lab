@@ -1,126 +1,282 @@
 import React from "react";
 
-export default function DVLSIRingOscillatorCircuits({ stages, enabled, analysis }) {
+import {
+  CircuitBoard,
+  Cpu,
+  Activity,
+  Waves
+} from "lucide-react";
+
+export default function DVLSIRingOscillatorCircuits({
+  stages,
+  enabled,
+  analysis
+}) {
   const inverterPositions = [];
+
   const centerX = 380;
   const centerY = 220;
-  const radius = 120;
+  const radius = 135;
 
-  for (let i = 0; i < stages; i++) {
-    const angle = (2 * Math.PI * i) / stages - Math.PI / 2;
+  for (
+    let i = 0;
+    i < stages;
+    i++
+  ) {
+    const angle =
+      (2 * Math.PI * i) /
+        stages -
+      Math.PI / 2;
+
     inverterPositions.push({
-      x: centerX + radius * Math.cos(angle),
-      y: centerY + radius * Math.sin(angle)
+      x:
+        centerX +
+        radius *
+          Math.cos(angle),
+
+      y:
+        centerY +
+        radius *
+          Math.sin(angle)
     });
   }
 
   return (
-    <section className="card experiment">
-      <h2>Circuits</h2>
+    <section className="sorting-simulation-shell">
+      <div className="sorting-sim-title-wrap">
+        <div className="sorting-sim-icon">
+          <CircuitBoard
+            size={18}
+          />
+        </div>
 
-      <div className="info-box" style={{ marginBottom: "1rem" }}>
-        A ring oscillator is a closed loop of inverters. Oscillation occurs only when the
-        loop has an odd number of inverting stages and the circuit is enabled.
-      </div>
+        <div>
+          <h2 className="sorting-sim-title">
+            Ring Oscillator
+            Circuit
+          </h2>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "12px",
-          marginBottom: "1rem"
-        }}
-      >
-        <div className="stat-card">
-          <strong>Stages</strong>
-          <div>{stages}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Enabled</strong>
-          <div>{enabled ? "Yes" : "No"}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Oscillating</strong>
-          <div>{analysis.oscillates ? "Yes" : "No"}</div>
-        </div>
-        <div className="stat-card">
-          <strong>Condition</strong>
-          <div>{analysis.logicCase}</div>
+          <p className="sorting-sim-subtitle">
+            Visualize the inverter
+            feedback loop and study
+            how odd-stage feedback
+            creates continuous
+            oscillation.
+          </p>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem", background: "#0f172a", padding: "20px" }}>
-        <h3 style={{ marginBottom: "1rem" }}>Ring Oscillator Loop</h3>
+      <div className="sorting-stats-grid">
+        <div className="sorting-stat-card">
+          <div className="sorting-stat-icon blue">
+            <Cpu size={18} />
+          </div>
 
-        <div
-          style={{
-            position: "relative",
-            height: "460px",
-            borderRadius: "12px",
-            border: "1px solid rgba(148,163,184,0.2)",
-            background: "linear-gradient(180deg, #111827, #0b1220)",
-            overflow: "hidden"
-          }}
-        >
-          <svg width="100%" height="100%" viewBox="0 0 760 460" preserveAspectRatio="xMidYMid meet">
-            {/* Loop connections */}
-            {inverterPositions.map((pos, i) => {
-              const next = inverterPositions[(i + 1) % inverterPositions.length];
-              return (
-                <line
-                  key={`line-${i}`}
-                  x1={pos.x}
-                  y1={pos.y}
-                  x2={next.x}
-                  y2={next.y}
-                  stroke={analysis.oscillates ? "#22c55e" : "#64748b"}
-                  strokeWidth="4"
-                  opacity="0.8"
-                />
-              );
-            })}
+          <div>
+            <div className="sorting-stat-label">
+              Stages
+            </div>
 
-            {/* Inverters */}
-            {inverterPositions.map((pos, i) => (
-              <g key={`inv-${i}`}>
-                <rect
-                  x={pos.x - 36}
-                  y={pos.y - 24}
-                  width="72"
-                  height="48"
-                  rx="10"
-                  fill={analysis.oscillates ? "rgba(34,197,94,0.18)" : "rgba(148,163,184,0.14)"}
-                  stroke={analysis.oscillates ? "#22c55e" : "#94a3b8"}
-                  strokeWidth="2.5"
-                />
-                <text
-                  x={pos.x}
-                  y={pos.y + 6}
-                  textAnchor="middle"
-                  fill="#e5e7eb"
-                  fontSize="16"
-                  fontWeight="bold"
+            <div className="sorting-stat-value">
+              {stages}
+            </div>
+          </div>
+        </div>
+
+        <div className="sorting-stat-card">
+          <div className="sorting-stat-icon orange">
+            <Activity
+              size={18}
+            />
+          </div>
+
+          <div>
+            <div className="sorting-stat-label">
+              Enabled
+            </div>
+
+            <div className="sorting-stat-value">
+              {enabled
+                ? "YES"
+                : "NO"}
+            </div>
+          </div>
+        </div>
+
+        <div className="sorting-stat-card">
+          <div className="sorting-stat-icon green">
+            <Waves size={18} />
+          </div>
+
+          <div>
+            <div className="sorting-stat-label">
+              Oscillation
+            </div>
+
+            <div className="sorting-stat-value">
+              {analysis.oscillates
+                ? "ACTIVE"
+                : "STOPPED"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="sorting-visual-card">
+        <div className="sorting-visual-header">
+          <h3>
+            Inverter Feedback Loop
+          </h3>
+        </div>
+
+        <div className="sorting-canvas-wrap">
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 760 460"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            {inverterPositions.map(
+              (
+                pos,
+                index
+              ) => {
+                const next =
+                  inverterPositions[
+                    (index + 1) %
+                      inverterPositions.length
+                  ];
+
+                return (
+                  <line
+                    key={`line-${index}`}
+                    x1={pos.x}
+                    y1={pos.y}
+                    x2={next.x}
+                    y2={next.y}
+                    stroke={
+                      analysis.oscillates
+                        ? "#22c55e"
+                        : "#64748b"
+                    }
+                    strokeWidth="4"
+                    opacity="0.85"
+                  />
+                );
+              }
+            )}
+
+            {inverterPositions.map(
+              (
+                pos,
+                index
+              ) => (
+                <g
+                  key={`inv-${index}`}
                 >
-                  INV{i + 1}
-                </text>
-              </g>
-            ))}
+                  <rect
+                    x={
+                      pos.x - 40
+                    }
+                    y={
+                      pos.y - 26
+                    }
+                    width="80"
+                    height="52"
+                    rx="12"
+                    fill={
+                      analysis.oscillates
+                        ? "rgba(34,197,94,0.18)"
+                        : "rgba(148,163,184,0.14)"
+                    }
+                    stroke={
+                      analysis.oscillates
+                        ? "#22c55e"
+                        : "#94a3b8"
+                    }
+                    strokeWidth="2.5"
+                  />
 
-            {/* Center label */}
-            <text x="380" y="225" textAnchor="middle" fill="#fcd34d" fontSize="20" fontWeight="bold">
-              {analysis.oscillates ? "OSCILLATING" : "NO OSCILLATION"}
+                  <text
+                    x={pos.x}
+                    y={
+                      pos.y + 6
+                    }
+                    textAnchor="middle"
+                    fill="#e5e7eb"
+                    fontSize="15"
+                    fontWeight="700"
+                  >
+                    INV
+                    {index + 1}
+                  </text>
+                </g>
+              )
+            )}
+
+            <circle
+              cx="380"
+              cy="220"
+              r="58"
+              fill="rgba(15,23,42,0.8)"
+              stroke="#334155"
+              strokeWidth="2"
+            />
+
+            <text
+              x="380"
+              y="210"
+              textAnchor="middle"
+              fill="#f8fafc"
+              fontSize="18"
+              fontWeight="800"
+            >
+              {analysis.oscillates
+                ? "OSCILLATING"
+                : "STABLE"}
+            </text>
+
+            <text
+              x="380"
+              y="236"
+              textAnchor="middle"
+              fill="#94a3b8"
+              fontSize="13"
+            >
+              {analysis.logicCase}
             </text>
           </svg>
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Circuit Insight</h3>
-        <p style={{ marginTop: "0.75rem", color: "#d1d5db" }}>
-          When the loop contains an odd number of inverters, the feedback cannot settle to a single
-          consistent logic state. Because each inverter also has delay, the signal keeps toggling,
-          producing oscillation.
+      <div className="sorting-info-panel">
+        <h3>
+          Circuit Insight
+        </h3>
+
+        <p>
+          The inverter chain forms
+          a closed feedback loop.
+          An odd number of
+          inversions prevents the
+          loop from reaching a
+          stable logic state,
+          causing the signal to
+          continuously toggle
+          because of propagation
+          delay.
         </p>
+      </div>
+
+      <div className="sorting-conclusion-box">
+        <strong>
+          Key Insight:
+        </strong>{" "}
+        Even-stage feedback loops
+        settle to a fixed state,
+        while odd-stage loops
+        oscillate due to inversion
+        mismatch and delay.
       </div>
     </section>
   );

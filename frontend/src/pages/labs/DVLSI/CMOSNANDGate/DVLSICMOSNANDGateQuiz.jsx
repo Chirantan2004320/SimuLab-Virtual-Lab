@@ -1,121 +1,183 @@
-import React, { useState } from "react";
+import React from "react";
+import {
+  Brain,
+  Lock,
+  Trophy,
+  RotateCcw
+} from "lucide-react";
 
-const questions = [
-  {
-    q: "What is the output of a NAND gate when both inputs are 1?",
-    options: ["1", "0", "Undefined", "Floating"],
-    correct: 1
-  },
-  {
-    q: "In a CMOS NAND gate, the pMOS transistors are connected in:",
-    options: ["Series", "Parallel", "Diagonal", "Feedback"],
-    correct: 1
-  },
-  {
-    q: "In a CMOS NAND gate, the nMOS transistors are connected in:",
-    options: ["Parallel", "Series", "Open circuit", "Cross-coupled"],
-    correct: 1
-  },
-  {
-    q: "If A = 0 and B = 1, the NAND output is:",
-    options: ["0", "1", "VDD/2", "Unknown"],
-    correct: 1
-  },
-  {
-    q: "A NAND gate is called a universal gate because:",
-    options: [
-      "It uses only one transistor",
-      "It can implement any Boolean function",
-      "It has no delay",
-      "It needs no power supply"
-    ],
-    correct: 1
-  }
-];
+export default function DVLSICMOSNANDGateQuiz({
+  experimentRun,
+  questions,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total = questions.length;
 
-export default function DVLSICMOSNANDQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const handleAnswer = (index, value) => {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+  const percentage = total
+    ? Math.round((score / total) * 100)
+    : 0;
 
   return (
-    <section className="card">
-      <h2>Quiz</h2>
+    <section className="quiz-shell">
+      <div
+        className="sorting-sim-title-wrap"
+        style={{ marginBottom: 18 }}
+      >
+        <div className="sorting-sim-icon">
+          <Brain size={18} />
+        </div>
+
+        <div>
+          <h2 className="sorting-sim-title">
+            Quiz
+          </h2>
+
+          <p className="sorting-sim-subtitle">
+            Test your understanding of CMOS
+            NAND gate logic, transistor
+            conduction, pull-up networks,
+            and pull-down paths.
+          </p>
+        </div>
+      </div>
 
       {!experimentRun ? (
-        <p>Please interact with the CMOS NAND simulation before attempting the quiz.</p>
-      ) : (
-        <div>
-          {questions.map((q, i) => (
-            <div key={i} className="quiz-question">
-              <p>
-                <strong>{i + 1}. {q.q}</strong>
-              </p>
+        <div className="quiz-locked-box">
+          <Lock size={18} />
 
-              {q.options.map((opt, j) => (
-                <label
-                  key={j}
-                  className={`quiz-option ${
-                    submitted
-                      ? j === q.correct
-                        ? "correct"
-                        : answers[i] === j
-                        ? "wrong"
+          <span>
+            Please interact with the CMOS
+            NAND simulation before
+            attempting the quiz.
+          </span>
+        </div>
+      ) : !submitted ? (
+        <div className="quiz-list">
+          {questions.map((q, i) => (
+            <div
+              key={i}
+              className="quiz-card-upgraded"
+            >
+              <div className="quiz-question-title">
+                {i + 1}. {q.q}
+              </div>
+
+              <div className="quiz-options-grid">
+                {q.options.map((opt, j) => (
+                  <label
+                    key={j}
+                    className={`quiz-option-card ${
+                      answers[i] === j
+                        ? "selected"
                         : ""
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q${i}`}
-                    value={j}
-                    checked={answers[i] === j}
-                    onChange={() => handleAnswer(i, j)}
-                    disabled={submitted}
-                  />
-                  {opt}
-                </label>
-              ))}
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q${i}`}
+                      checked={
+                        answers[i] === j
+                      }
+                      onChange={() =>
+                        handleAnswer(i, j)
+                      }
+                    />
+
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
 
-          {!submitted ? (
+          <div className="quiz-actions-row">
             <button
-              className="btn primary"
+              className="sim-btn sim-btn-primary"
               onClick={submitQuiz}
               disabled={answers.includes(null)}
             >
               Submit Quiz
             </button>
-          ) : (
+          </div>
+        </div>
+      ) : (
+        <div className="quiz-result-shell">
+          <div className="quiz-score-box">
+            <Trophy size={22} />
+
             <div>
-              <p>Score: {score} / {questions.length}</p>
-              <button className="btn secondary" onClick={redoQuiz}>
-                Redo Quiz
-              </button>
+              <h3>Quiz Completed</h3>
+
+              <p>
+                Score:{" "}
+                <strong>
+                  {score} / {total}
+                </strong>{" "}
+                ({percentage}%)
+              </p>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
           )}
+
+          <div className="quiz-list">
+            {questions.map((q, i) => (
+              <div
+                key={i}
+                className="quiz-card-upgraded"
+              >
+                <div className="quiz-question-title">
+                  {i + 1}. {q.q}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect =
+                      j === q.correct;
+
+                    const isWrong =
+                      answers[i] === j &&
+                      j !== q.correct;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect
+                            ? "correct"
+                            : isWrong
+                            ? "wrong"
+                            : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="quiz-actions-row">
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={redoQuiz}
+            >
+              <RotateCcw size={16} />
+              Retry Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>

@@ -1,131 +1,183 @@
-import React, { useState } from "react";
+import React from "react";
+import {
+  Brain,
+  Lock,
+  Trophy,
+  RotateCcw
+} from "lucide-react";
 
-const questions = [
-  {
-    q: "A transmission gate is made using:",
-    options: [
-      "Two nMOS in series",
-      "One nMOS and one pMOS in parallel",
-      "Only one pMOS",
-      "Only one inverter"
-    ],
-    correct: 1
-  },
-  {
-    q: "A transmission gate is turned ON when:",
-    options: [
-      "Control = 0 and Control̅ = 1",
-      "Control = 1 and Control̅ = 0",
-      "Both controls are 1",
-      "Both controls are 0"
-    ],
-    correct: 1
-  },
-  {
-    q: "Compared to a single nMOS pass transistor, a transmission gate:",
-    options: [
-      "Passes both logic levels better",
-      "Has no transistor",
-      "Always inverts the signal",
-      "Cannot isolate output"
-    ],
-    correct: 0
-  },
-  {
-    q: "When the transmission gate is OFF, the output is typically:",
-    options: ["1", "0", "Z / floating", "Always inverted"],
-    correct: 2
-  },
-  {
-    q: "A single nMOS pass transistor passes strongly:",
-    options: ["Logic 1 only", "Logic 0 only", "Both equally", "Neither"],
-    correct: 1
-  }
-];
+export default function DVLSITransmissionGateQuiz({
+  experimentRun,
+  questions,
+  answers,
+  submitted,
+  score,
+  quizSaveStatus,
+  handleAnswer,
+  submitQuiz,
+  redoQuiz
+}) {
+  const total = questions.length;
 
-export default function DVLSITransmissionGateQuiz({ experimentRun }) {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(null));
-  const [submitted, setSubmitted] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const handleAnswer = (index, value) => {
-    const updated = [...answers];
-    updated[index] = value;
-    setAnswers(updated);
-  };
-
-  const submitQuiz = () => {
-    let total = 0;
-    questions.forEach((q, i) => {
-      if (answers[i] === q.correct) total++;
-    });
-    setScore(total);
-    setSubmitted(true);
-  };
-
-  const redoQuiz = () => {
-    setAnswers(Array(questions.length).fill(null));
-    setSubmitted(false);
-    setScore(0);
-  };
+  const percentage = total
+    ? Math.round((score / total) * 100)
+    : 0;
 
   return (
-    <section className="card">
-      <h2>Quiz</h2>
+    <section className="quiz-shell">
+      <div
+        className="sorting-sim-title-wrap"
+        style={{ marginBottom: 18 }}
+      >
+        <div className="sorting-sim-icon">
+          <Brain size={18} />
+        </div>
+
+        <div>
+          <h2 className="sorting-sim-title">
+            Quiz
+          </h2>
+
+          <p className="sorting-sim-subtitle">
+            Test your understanding of
+            transmission gates, pass transistor
+            logic, complementary control signals,
+            and bidirectional switching behavior.
+          </p>
+        </div>
+      </div>
 
       {!experimentRun ? (
-        <p>Please interact with the transmission gate simulation before attempting the quiz.</p>
-      ) : (
-        <div>
-          {questions.map((q, i) => (
-            <div key={i} className="quiz-question">
-              <p>
-                <strong>{i + 1}. {q.q}</strong>
-              </p>
+        <div className="quiz-locked-box">
+          <Lock size={18} />
 
-              {q.options.map((opt, j) => (
-                <label
-                  key={j}
-                  className={`quiz-option ${
-                    submitted
-                      ? j === q.correct
-                        ? "correct"
-                        : answers[i] === j
-                        ? "wrong"
+          <span>
+            Please interact with the
+            transmission gate simulation before
+            attempting the quiz.
+          </span>
+        </div>
+      ) : !submitted ? (
+        <div className="quiz-list">
+          {questions.map((q, i) => (
+            <div
+              key={i}
+              className="quiz-card-upgraded"
+            >
+              <div className="quiz-question-title">
+                {i + 1}. {q.q}
+              </div>
+
+              <div className="quiz-options-grid">
+                {q.options.map((opt, j) => (
+                  <label
+                    key={j}
+                    className={`quiz-option-card ${
+                      answers[i] === j
+                        ? "selected"
                         : ""
-                      : ""
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name={`q${i}`}
-                    value={j}
-                    checked={answers[i] === j}
-                    onChange={() => handleAnswer(i, j)}
-                    disabled={submitted}
-                  />
-                  {opt}
-                </label>
-              ))}
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name={`q${i}`}
+                      checked={
+                        answers[i] === j
+                      }
+                      onChange={() =>
+                        handleAnswer(i, j)
+                      }
+                    />
+
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
 
-          {!submitted ? (
+          <div className="quiz-actions-row">
             <button
-              className="btn primary"
+              className="sim-btn sim-btn-primary"
               onClick={submitQuiz}
               disabled={answers.includes(null)}
             >
               Submit Quiz
             </button>
-          ) : (
+          </div>
+        </div>
+      ) : (
+        <div className="quiz-result-shell">
+          <div className="quiz-score-box">
+            <Trophy size={22} />
+
             <div>
-              <p>Score: {score} / {questions.length}</p>
-              <button className="btn secondary" onClick={redoQuiz}>
-                Redo Quiz
-              </button>
+              <h3>Quiz Completed</h3>
+
+              <p>
+                Score:{" "}
+                <strong>
+                  {score} / {total}
+                </strong>{" "}
+                ({percentage}%)
+              </p>
             </div>
+          </div>
+
+          {quizSaveStatus && (
+            <p style={{ marginTop: 8 }}>
+              {quizSaveStatus}
+            </p>
           )}
+
+          <div className="quiz-list">
+            {questions.map((q, i) => (
+              <div
+                key={i}
+                className="quiz-card-upgraded"
+              >
+                <div className="quiz-question-title">
+                  {i + 1}. {q.q}
+                </div>
+
+                <div className="quiz-options-grid">
+                  {q.options.map((opt, j) => {
+                    const isCorrect =
+                      j === q.correct;
+
+                    const isWrong =
+                      answers[i] === j &&
+                      j !== q.correct;
+
+                    return (
+                      <div
+                        key={j}
+                        className={`quiz-option-card result-mode ${
+                          isCorrect
+                            ? "correct"
+                            : isWrong
+                            ? "wrong"
+                            : ""
+                        }`}
+                      >
+                        <span>{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="quiz-actions-row">
+            <button
+              className="sim-btn sim-btn-muted"
+              onClick={redoQuiz}
+            >
+              <RotateCcw size={16} />
+              Retry Quiz
+            </button>
+          </div>
         </div>
       )}
     </section>
