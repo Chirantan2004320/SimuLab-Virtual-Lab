@@ -5,9 +5,9 @@ import express from "express";
 import cors from "cors";
 
 //import { testDBConnection } from "./config/db.js";
-import authRoutes from "./Routes/authRoutes.js";
-import progressRoutes from "./Routes/progressRoutes.js";
-import aiRoutes from "./Routes/aiRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import progressRoutes from "./routes/progressRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
 import facultyRoutes from "./routes/facultyRoutes.js";
